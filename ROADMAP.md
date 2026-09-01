@@ -412,8 +412,8 @@ Los PoCs se encuentran en `pocs/` como referencia de funcionamiento.
 
 | PoC | Directorio | Estado |
 |---|---|---|
-| PoC 1: Serial → Widget | `pocs/01-serial-widget/` | ⏳ En progreso |
-| PoC 2: Video Sync | `pocs/02-video-sync/` | ⏳ Pendiente |
+| PoC 1: Serial → Widget | `pocs/01-serial-widget/` | ✅ Validado |
+| PoC 2: Video Sync | `pocs/02-video-sync/` | ⏳ En progreso |
 | PoC 3: Video Export | `pocs/03-video-export/` | ⏳ Pendiente |
 | PoC 4: Packaging | `pocs/04-packaging/` | ⏳ Pendiente |
 
