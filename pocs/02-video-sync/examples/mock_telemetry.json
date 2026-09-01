@@ -1,0 +1,3022 @@
+{
+  "fps": 30,
+  "duration_ms": 9999.9,
+  "num_frames": 300,
+  "fields": [
+    "accX",
+    "accY",
+    "accZ",
+    "gyroX",
+    "gyroY",
+    "gyroZ",
+    "battery"
+  ],
+  "spike": {
+    "frame": 150,
+    "field": "accX",
+    "value": 500,
+    "duration_frames": 5
+  },
+  "frames": [
+    {
+      "timestamp_ms": 0,
+      "accX": 0,
+      "accY": 9.8,
+      "accZ": 9.8,
+      "gyroX": 0,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 100
+    },
+    {
+      "timestamp_ms": 33.33,
+      "accX": 2.04,
+      "accY": 9.59,
+      "accZ": 9.85,
+      "gyroX": 105.8,
+      "gyroY": 145.62,
+      "gyroZ": 0,
+      "battery": 99.9
+    },
+    {
+      "timestamp_ms": 66.67,
+      "accX": 3.99,
+      "accY": 8.95,
+      "accZ": 9.9,
+      "gyroX": 171.19,
+      "gyroY": 55.63,
+      "gyroZ": 0,
+      "battery": 99.8
+    },
+    {
+      "timestamp_ms": 100,
+      "accX": 5.76,
+      "accY": 7.93,
+      "accZ": 9.95,
+      "gyroX": 171.19,
+      "gyroY": -55.62,
+      "gyroZ": 0,
+      "battery": 99.7
+    },
+    {
+      "timestamp_ms": 133.33,
+      "accX": 7.28,
+      "accY": 6.56,
+      "accZ": 10,
+      "gyroX": 105.81,
+      "gyroY": -145.62,
+      "gyroZ": 0,
+      "battery": 99.6
+    },
+    {
+      "timestamp_ms": 166.67,
+      "accX": 8.49,
+      "accY": 4.9,
+      "accZ": 10.05,
+      "gyroX": 0.01,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 99.5
+    },
+    {
+      "timestamp_ms": 200,
+      "accX": 9.32,
+      "accY": 3.03,
+      "accZ": 10.09,
+      "gyroX": -105.8,
+      "gyroY": -145.63,
+      "gyroZ": 0,
+      "battery": 99.4
+    },
+    {
+      "timestamp_ms": 233.33,
+      "accX": 9.75,
+      "accY": 1.02,
+      "accZ": 10.13,
+      "gyroX": -171.19,
+      "gyroY": -55.63,
+      "gyroZ": 0,
+      "battery": 99.3
+    },
+    {
+      "timestamp_ms": 266.66,
+      "accX": 9.75,
+      "accY": -1.02,
+      "accZ": 10.17,
+      "gyroX": -171.19,
+      "gyroY": 55.61,
+      "gyroZ": 0,
+      "battery": 99.2
+    },
+    {
+      "timestamp_ms": 300,
+      "accX": 9.32,
+      "accY": -3.03,
+      "accZ": 10.2,
+      "gyroX": -105.81,
+      "gyroY": 145.62,
+      "gyroZ": 0,
+      "battery": 99.1
+    },
+    {
+      "timestamp_ms": 333.33,
+      "accX": 8.49,
+      "accY": -4.9,
+      "accZ": 10.23,
+      "gyroX": -0.01,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 99
+    },
+    {
+      "timestamp_ms": 366.66,
+      "accX": 7.28,
+      "accY": -6.56,
+      "accZ": 10.26,
+      "gyroX": 105.79,
+      "gyroY": 145.63,
+      "gyroZ": 0,
+      "battery": 98.9
+    },
+    {
+      "timestamp_ms": 400,
+      "accX": 5.76,
+      "accY": -7.93,
+      "accZ": 10.28,
+      "gyroX": 171.19,
+      "gyroY": 55.64,
+      "gyroZ": 0,
+      "battery": 98.8
+    },
+    {
+      "timestamp_ms": 433.33,
+      "accX": 3.99,
+      "accY": -8.95,
+      "accZ": 10.29,
+      "gyroX": 171.19,
+      "gyroY": -55.61,
+      "gyroZ": 0,
+      "battery": 98.7
+    },
+    {
+      "timestamp_ms": 466.66,
+      "accX": 2.04,
+      "accY": -9.59,
+      "accZ": 10.3,
+      "gyroX": 105.81,
+      "gyroY": -145.61,
+      "gyroZ": 0,
+      "battery": 98.6
+    },
+    {
+      "timestamp_ms": 500,
+      "accX": 0,
+      "accY": -9.8,
+      "accZ": 10.3,
+      "gyroX": 0.02,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 98.5
+    },
+    {
+      "timestamp_ms": 533.33,
+      "accX": -2.04,
+      "accY": -9.59,
+      "accZ": 10.3,
+      "gyroX": -105.79,
+      "gyroY": -145.63,
+      "gyroZ": 0,
+      "battery": 98.4
+    },
+    {
+      "timestamp_ms": 566.66,
+      "accX": -3.99,
+      "accY": -8.95,
+      "accZ": 10.29,
+      "gyroX": -171.18,
+      "gyroY": -55.64,
+      "gyroZ": 0,
+      "battery": 98.3
+    },
+    {
+      "timestamp_ms": 599.99,
+      "accX": -5.76,
+      "accY": -7.93,
+      "accZ": 10.28,
+      "gyroX": -171.2,
+      "gyroY": 55.6,
+      "gyroZ": 0,
+      "battery": 98.2
+    },
+    {
+      "timestamp_ms": 633.33,
+      "accX": -7.28,
+      "accY": -6.56,
+      "accZ": 10.26,
+      "gyroX": -105.82,
+      "gyroY": 145.61,
+      "gyroZ": 0,
+      "battery": 98.1
+    },
+    {
+      "timestamp_ms": 666.66,
+      "accX": -8.49,
+      "accY": -4.9,
+      "accZ": 10.23,
+      "gyroX": -0.02,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 98
+    },
+    {
+      "timestamp_ms": 699.99,
+      "accX": -9.32,
+      "accY": -3.03,
+      "accZ": 10.2,
+      "gyroX": 105.78,
+      "gyroY": 145.64,
+      "gyroZ": 0,
+      "battery": 97.9
+    },
+    {
+      "timestamp_ms": 733.33,
+      "accX": -9.75,
+      "accY": -1.02,
+      "accZ": 10.17,
+      "gyroX": 171.18,
+      "gyroY": 55.65,
+      "gyroZ": 0,
+      "battery": 97.8
+    },
+    {
+      "timestamp_ms": 766.66,
+      "accX": -9.75,
+      "accY": 1.02,
+      "accZ": 10.13,
+      "gyroX": 171.2,
+      "gyroY": -55.6,
+      "gyroZ": 0,
+      "battery": 97.7
+    },
+    {
+      "timestamp_ms": 799.99,
+      "accX": -9.32,
+      "accY": 3.03,
+      "accZ": 10.09,
+      "gyroX": 105.82,
+      "gyroY": -145.61,
+      "gyroZ": 0,
+      "battery": 97.6
+    },
+    {
+      "timestamp_ms": 833.33,
+      "accX": -8.49,
+      "accY": 4.9,
+      "accZ": 10.05,
+      "gyroX": 0.03,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 97.5
+    },
+    {
+      "timestamp_ms": 866.66,
+      "accX": -7.28,
+      "accY": 6.56,
+      "accZ": 10,
+      "gyroX": -105.78,
+      "gyroY": -145.64,
+      "gyroZ": 0,
+      "battery": 97.4
+    },
+    {
+      "timestamp_ms": 899.99,
+      "accX": -5.76,
+      "accY": 7.93,
+      "accZ": 9.95,
+      "gyroX": -171.18,
+      "gyroY": -55.65,
+      "gyroZ": 0,
+      "battery": 97.3
+    },
+    {
+      "timestamp_ms": 933.32,
+      "accX": -3.99,
+      "accY": 8.95,
+      "accZ": 9.9,
+      "gyroX": -171.2,
+      "gyroY": 55.59,
+      "gyroZ": 0,
+      "battery": 97.2
+    },
+    {
+      "timestamp_ms": 966.66,
+      "accX": -2.04,
+      "accY": 9.59,
+      "accZ": 9.85,
+      "gyroX": -105.83,
+      "gyroY": 145.6,
+      "gyroZ": 0,
+      "battery": 97.1
+    },
+    {
+      "timestamp_ms": 999.99,
+      "accX": 0,
+      "accY": 9.8,
+      "accZ": 9.8,
+      "gyroX": -0.03,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 97
+    },
+    {
+      "timestamp_ms": 1033.32,
+      "accX": 2.04,
+      "accY": 9.59,
+      "accZ": 9.75,
+      "gyroX": 105.77,
+      "gyroY": 145.64,
+      "gyroZ": 0,
+      "battery": 96.9
+    },
+    {
+      "timestamp_ms": 1066.66,
+      "accX": 3.99,
+      "accY": 8.95,
+      "accZ": 9.7,
+      "gyroX": 171.18,
+      "gyroY": 55.66,
+      "gyroZ": 0,
+      "battery": 96.8
+    },
+    {
+      "timestamp_ms": 1099.99,
+      "accX": 5.76,
+      "accY": 7.93,
+      "accZ": 9.65,
+      "gyroX": 171.2,
+      "gyroY": -55.59,
+      "gyroZ": 0,
+      "battery": 96.7
+    },
+    {
+      "timestamp_ms": 1133.32,
+      "accX": 7.28,
+      "accY": 6.56,
+      "accZ": 9.6,
+      "gyroX": 105.83,
+      "gyroY": -145.6,
+      "gyroZ": 0,
+      "battery": 96.6
+    },
+    {
+      "timestamp_ms": 1166.66,
+      "accX": 8.49,
+      "accY": 4.9,
+      "accZ": 9.55,
+      "gyroX": 0.04,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 96.5
+    },
+    {
+      "timestamp_ms": 1199.99,
+      "accX": 9.32,
+      "accY": 3.03,
+      "accZ": 9.51,
+      "gyroX": -105.77,
+      "gyroY": -145.65,
+      "gyroZ": 0,
+      "battery": 96.4
+    },
+    {
+      "timestamp_ms": 1233.32,
+      "accX": 9.75,
+      "accY": 1.03,
+      "accZ": 9.47,
+      "gyroX": -171.18,
+      "gyroY": -55.66,
+      "gyroZ": 0,
+      "battery": 96.3
+    },
+    {
+      "timestamp_ms": 1266.65,
+      "accX": 9.75,
+      "accY": -1.02,
+      "accZ": 9.43,
+      "gyroX": -171.2,
+      "gyroY": 55.58,
+      "gyroZ": 0,
+      "battery": 96.2
+    },
+    {
+      "timestamp_ms": 1299.99,
+      "accX": 9.32,
+      "accY": -3.03,
+      "accZ": 9.4,
+      "gyroX": -105.84,
+      "gyroY": 145.6,
+      "gyroZ": 0,
+      "battery": 96.1
+    },
+    {
+      "timestamp_ms": 1333.32,
+      "accX": 8.49,
+      "accY": -4.9,
+      "accZ": 9.37,
+      "gyroX": -0.05,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 96
+    },
+    {
+      "timestamp_ms": 1366.65,
+      "accX": 7.28,
+      "accY": -6.56,
+      "accZ": 9.34,
+      "gyroX": 105.76,
+      "gyroY": 145.65,
+      "gyroZ": 0,
+      "battery": 95.9
+    },
+    {
+      "timestamp_ms": 1399.99,
+      "accX": 5.76,
+      "accY": -7.93,
+      "accZ": 9.32,
+      "gyroX": 171.18,
+      "gyroY": 55.67,
+      "gyroZ": 0,
+      "battery": 95.8
+    },
+    {
+      "timestamp_ms": 1433.32,
+      "accX": 3.99,
+      "accY": -8.95,
+      "accZ": 9.31,
+      "gyroX": 171.21,
+      "gyroY": -55.58,
+      "gyroZ": 0,
+      "battery": 95.7
+    },
+    {
+      "timestamp_ms": 1466.65,
+      "accX": 2.04,
+      "accY": -9.59,
+      "accZ": 9.3,
+      "gyroX": 105.84,
+      "gyroY": -145.59,
+      "gyroZ": 0,
+      "battery": 95.6
+    },
+    {
+      "timestamp_ms": 1499.99,
+      "accX": 0,
+      "accY": -9.8,
+      "accZ": 9.3,
+      "gyroX": 0.05,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 95.5
+    },
+    {
+      "timestamp_ms": 1533.32,
+      "accX": -2.04,
+      "accY": -9.59,
+      "accZ": 9.3,
+      "gyroX": -105.76,
+      "gyroY": -145.65,
+      "gyroZ": 0,
+      "battery": 95.4
+    },
+    {
+      "timestamp_ms": 1566.65,
+      "accX": -3.99,
+      "accY": -8.95,
+      "accZ": 9.31,
+      "gyroX": -171.17,
+      "gyroY": -55.67,
+      "gyroZ": 0,
+      "battery": 95.3
+    },
+    {
+      "timestamp_ms": 1599.98,
+      "accX": -5.76,
+      "accY": -7.93,
+      "accZ": 9.32,
+      "gyroX": -171.21,
+      "gyroY": 55.57,
+      "gyroZ": 0,
+      "battery": 95.2
+    },
+    {
+      "timestamp_ms": 1633.32,
+      "accX": -7.28,
+      "accY": -6.56,
+      "accZ": 9.34,
+      "gyroX": -105.85,
+      "gyroY": 145.59,
+      "gyroZ": 0,
+      "battery": 95.1
+    },
+    {
+      "timestamp_ms": 1666.65,
+      "accX": -8.49,
+      "accY": -4.9,
+      "accZ": 9.37,
+      "gyroX": -0.06,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 95
+    },
+    {
+      "timestamp_ms": 1699.98,
+      "accX": -9.32,
+      "accY": -3.03,
+      "accZ": 9.4,
+      "gyroX": 105.75,
+      "gyroY": 145.66,
+      "gyroZ": 0,
+      "battery": 94.9
+    },
+    {
+      "timestamp_ms": 1733.32,
+      "accX": -9.75,
+      "accY": -1.03,
+      "accZ": 9.43,
+      "gyroX": 171.17,
+      "gyroY": 55.68,
+      "gyroZ": 0,
+      "battery": 94.8
+    },
+    {
+      "timestamp_ms": 1766.65,
+      "accX": -9.75,
+      "accY": 1.02,
+      "accZ": 9.47,
+      "gyroX": 171.21,
+      "gyroY": -55.57,
+      "gyroZ": 0,
+      "battery": 94.7
+    },
+    {
+      "timestamp_ms": 1799.98,
+      "accX": -9.32,
+      "accY": 3.03,
+      "accZ": 9.51,
+      "gyroX": 105.85,
+      "gyroY": -145.59,
+      "gyroZ": 0,
+      "battery": 94.6
+    },
+    {
+      "timestamp_ms": 1833.31,
+      "accX": -8.49,
+      "accY": 4.9,
+      "accZ": 9.55,
+      "gyroX": 0.06,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 94.5
+    },
+    {
+      "timestamp_ms": 1866.65,
+      "accX": -7.28,
+      "accY": 6.56,
+      "accZ": 9.6,
+      "gyroX": -105.75,
+      "gyroY": -145.66,
+      "gyroZ": 0,
+      "battery": 94.4
+    },
+    {
+      "timestamp_ms": 1899.98,
+      "accX": -5.76,
+      "accY": 7.93,
+      "accZ": 9.65,
+      "gyroX": -171.17,
+      "gyroY": -55.68,
+      "gyroZ": 0,
+      "battery": 94.3
+    },
+    {
+      "timestamp_ms": 1933.31,
+      "accX": -3.99,
+      "accY": 8.95,
+      "accZ": 9.7,
+      "gyroX": -171.21,
+      "gyroY": 55.56,
+      "gyroZ": 0,
+      "battery": 94.2
+    },
+    {
+      "timestamp_ms": 1966.65,
+      "accX": -2.04,
+      "accY": 9.59,
+      "accZ": 9.75,
+      "gyroX": -105.86,
+      "gyroY": 145.58,
+      "gyroZ": 0,
+      "battery": 94.1
+    },
+    {
+      "timestamp_ms": 1999.98,
+      "accX": 0,
+      "accY": 9.8,
+      "accZ": 9.8,
+      "gyroX": -0.07,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 94
+    },
+    {
+      "timestamp_ms": 2033.31,
+      "accX": 2.04,
+      "accY": 9.59,
+      "accZ": 9.85,
+      "gyroX": 105.75,
+      "gyroY": 145.66,
+      "gyroZ": 0,
+      "battery": 93.9
+    },
+    {
+      "timestamp_ms": 2066.65,
+      "accX": 3.98,
+      "accY": 8.95,
+      "accZ": 9.9,
+      "gyroX": 171.17,
+      "gyroY": 55.69,
+      "gyroZ": 0,
+      "battery": 93.8
+    },
+    {
+      "timestamp_ms": 2099.98,
+      "accX": 5.76,
+      "accY": 7.93,
+      "accZ": 9.95,
+      "gyroX": 171.21,
+      "gyroY": -55.56,
+      "gyroZ": 0,
+      "battery": 93.7
+    },
+    {
+      "timestamp_ms": 2133.31,
+      "accX": 7.28,
+      "accY": 6.56,
+      "accZ": 10,
+      "gyroX": 105.86,
+      "gyroY": -145.58,
+      "gyroZ": 0,
+      "battery": 93.6
+    },
+    {
+      "timestamp_ms": 2166.65,
+      "accX": 8.49,
+      "accY": 4.9,
+      "accZ": 10.05,
+      "gyroX": 0.07,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 93.5
+    },
+    {
+      "timestamp_ms": 2199.98,
+      "accX": 9.32,
+      "accY": 3.03,
+      "accZ": 10.09,
+      "gyroX": -105.74,
+      "gyroY": -145.67,
+      "gyroZ": 0,
+      "battery": 93.4
+    },
+    {
+      "timestamp_ms": 2233.31,
+      "accX": 9.75,
+      "accY": 1.03,
+      "accZ": 10.13,
+      "gyroX": -171.17,
+      "gyroY": -55.7,
+      "gyroZ": 0,
+      "battery": 93.3
+    },
+    {
+      "timestamp_ms": 2266.64,
+      "accX": 9.75,
+      "accY": -1.02,
+      "accZ": 10.17,
+      "gyroX": -171.21,
+      "gyroY": 55.55,
+      "gyroZ": 0,
+      "battery": 93.2
+    },
+    {
+      "timestamp_ms": 2299.98,
+      "accX": 9.32,
+      "accY": -3.03,
+      "accZ": 10.2,
+      "gyroX": -105.86,
+      "gyroY": 145.58,
+      "gyroZ": 0,
+      "battery": 93.1
+    },
+    {
+      "timestamp_ms": 2333.31,
+      "accX": 8.49,
+      "accY": -4.9,
+      "accZ": 10.23,
+      "gyroX": -0.08,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 93
+    },
+    {
+      "timestamp_ms": 2366.64,
+      "accX": 7.28,
+      "accY": -6.56,
+      "accZ": 10.26,
+      "gyroX": 105.74,
+      "gyroY": 145.67,
+      "gyroZ": 0,
+      "battery": 92.9
+    },
+    {
+      "timestamp_ms": 2399.98,
+      "accX": 5.76,
+      "accY": -7.93,
+      "accZ": 10.28,
+      "gyroX": 171.16,
+      "gyroY": 55.7,
+      "gyroZ": 0,
+      "battery": 92.8
+    },
+    {
+      "timestamp_ms": 2433.31,
+      "accX": 3.99,
+      "accY": -8.95,
+      "accZ": 10.29,
+      "gyroX": 171.22,
+      "gyroY": -55.54,
+      "gyroZ": 0,
+      "battery": 92.7
+    },
+    {
+      "timestamp_ms": 2466.64,
+      "accX": 2.04,
+      "accY": -9.59,
+      "accZ": 10.3,
+      "gyroX": 105.87,
+      "gyroY": -145.57,
+      "gyroZ": 0,
+      "battery": 92.6
+    },
+    {
+      "timestamp_ms": 2499.98,
+      "accX": 0,
+      "accY": -9.8,
+      "accZ": 10.3,
+      "gyroX": 0.08,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 92.5
+    },
+    {
+      "timestamp_ms": 2533.31,
+      "accX": -2.04,
+      "accY": -9.59,
+      "accZ": 10.3,
+      "gyroX": -105.73,
+      "gyroY": -145.67,
+      "gyroZ": 0,
+      "battery": 92.4
+    },
+    {
+      "timestamp_ms": 2566.64,
+      "accX": -3.98,
+      "accY": -8.95,
+      "accZ": 10.29,
+      "gyroX": -171.16,
+      "gyroY": -55.71,
+      "gyroZ": 0,
+      "battery": 92.3
+    },
+    {
+      "timestamp_ms": 2599.97,
+      "accX": -5.76,
+      "accY": -7.93,
+      "accZ": 10.28,
+      "gyroX": -171.22,
+      "gyroY": 55.54,
+      "gyroZ": 0,
+      "battery": 92.2
+    },
+    {
+      "timestamp_ms": 2633.31,
+      "accX": -7.28,
+      "accY": -6.56,
+      "accZ": 10.26,
+      "gyroX": -105.87,
+      "gyroY": 145.57,
+      "gyroZ": 0,
+      "battery": 92.1
+    },
+    {
+      "timestamp_ms": 2666.64,
+      "accX": -8.49,
+      "accY": -4.9,
+      "accZ": 10.23,
+      "gyroX": -0.09,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 92
+    },
+    {
+      "timestamp_ms": 2699.97,
+      "accX": -9.32,
+      "accY": -3.03,
+      "accZ": 10.2,
+      "gyroX": 105.73,
+      "gyroY": 145.68,
+      "gyroZ": 0,
+      "battery": 91.9
+    },
+    {
+      "timestamp_ms": 2733.31,
+      "accX": -9.75,
+      "accY": -1.03,
+      "accZ": 10.17,
+      "gyroX": 171.16,
+      "gyroY": 55.71,
+      "gyroZ": 0,
+      "battery": 91.8
+    },
+    {
+      "timestamp_ms": 2766.64,
+      "accX": -9.75,
+      "accY": 1.02,
+      "accZ": 10.13,
+      "gyroX": 171.22,
+      "gyroY": -55.53,
+      "gyroZ": 0,
+      "battery": 91.7
+    },
+    {
+      "timestamp_ms": 2799.97,
+      "accX": -9.32,
+      "accY": 3.03,
+      "accZ": 10.09,
+      "gyroX": 105.88,
+      "gyroY": -145.57,
+      "gyroZ": 0,
+      "battery": 91.6
+    },
+    {
+      "timestamp_ms": 2833.31,
+      "accX": -8.49,
+      "accY": 4.9,
+      "accZ": 10.05,
+      "gyroX": 0.1,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 91.5
+    },
+    {
+      "timestamp_ms": 2866.64,
+      "accX": -7.28,
+      "accY": 6.56,
+      "accZ": 10,
+      "gyroX": -105.72,
+      "gyroY": -145.68,
+      "gyroZ": 0,
+      "battery": 91.4
+    },
+    {
+      "timestamp_ms": 2899.97,
+      "accX": -5.76,
+      "accY": 7.93,
+      "accZ": 9.95,
+      "gyroX": -171.16,
+      "gyroY": -55.72,
+      "gyroZ": 0,
+      "battery": 91.3
+    },
+    {
+      "timestamp_ms": 2933.3,
+      "accX": -3.99,
+      "accY": 8.95,
+      "accZ": 9.9,
+      "gyroX": -171.22,
+      "gyroY": 55.53,
+      "gyroZ": 0,
+      "battery": 91.2
+    },
+    {
+      "timestamp_ms": 2966.64,
+      "accX": -2.04,
+      "accY": 9.59,
+      "accZ": 9.85,
+      "gyroX": -105.88,
+      "gyroY": 145.56,
+      "gyroZ": 0,
+      "battery": 91.1
+    },
+    {
+      "timestamp_ms": 2999.97,
+      "accX": 0,
+      "accY": 9.8,
+      "accZ": 9.8,
+      "gyroX": -0.1,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 91
+    },
+    {
+      "timestamp_ms": 3033.3,
+      "accX": 2.04,
+      "accY": 9.59,
+      "accZ": 9.75,
+      "gyroX": 105.72,
+      "gyroY": 145.68,
+      "gyroZ": 0,
+      "battery": 90.9
+    },
+    {
+      "timestamp_ms": 3066.64,
+      "accX": 3.98,
+      "accY": 8.95,
+      "accZ": 9.7,
+      "gyroX": 171.16,
+      "gyroY": 55.72,
+      "gyroZ": 0,
+      "battery": 90.8
+    },
+    {
+      "timestamp_ms": 3099.97,
+      "accX": 5.76,
+      "accY": 7.93,
+      "accZ": 9.65,
+      "gyroX": 171.22,
+      "gyroY": -55.52,
+      "gyroZ": 0,
+      "battery": 90.7
+    },
+    {
+      "timestamp_ms": 3133.3,
+      "accX": 7.28,
+      "accY": 6.56,
+      "accZ": 9.6,
+      "gyroX": 105.89,
+      "gyroY": -145.56,
+      "gyroZ": 0,
+      "battery": 90.6
+    },
+    {
+      "timestamp_ms": 3166.64,
+      "accX": 8.49,
+      "accY": 4.9,
+      "accZ": 9.55,
+      "gyroX": 0.11,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 90.5
+    },
+    {
+      "timestamp_ms": 3199.97,
+      "accX": 9.32,
+      "accY": 3.03,
+      "accZ": 9.51,
+      "gyroX": -105.71,
+      "gyroY": -145.69,
+      "gyroZ": 0,
+      "battery": 90.4
+    },
+    {
+      "timestamp_ms": 3233.3,
+      "accX": 9.75,
+      "accY": 1.03,
+      "accZ": 9.47,
+      "gyroX": -171.16,
+      "gyroY": -55.73,
+      "gyroZ": 0,
+      "battery": 90.3
+    },
+    {
+      "timestamp_ms": 3266.63,
+      "accX": 9.75,
+      "accY": -1.02,
+      "accZ": 9.43,
+      "gyroX": -171.22,
+      "gyroY": 55.52,
+      "gyroZ": 0,
+      "battery": 90.2
+    },
+    {
+      "timestamp_ms": 3299.97,
+      "accX": 9.32,
+      "accY": -3.03,
+      "accZ": 9.4,
+      "gyroX": -105.89,
+      "gyroY": 145.56,
+      "gyroZ": 0,
+      "battery": 90.1
+    },
+    {
+      "timestamp_ms": 3333.3,
+      "accX": 8.49,
+      "accY": -4.9,
+      "accZ": 9.37,
+      "gyroX": -0.11,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 90
+    },
+    {
+      "timestamp_ms": 3366.63,
+      "accX": 7.28,
+      "accY": -6.56,
+      "accZ": 9.34,
+      "gyroX": 105.71,
+      "gyroY": 145.69,
+      "gyroZ": 0,
+      "battery": 89.9
+    },
+    {
+      "timestamp_ms": 3399.97,
+      "accX": 5.76,
+      "accY": -7.93,
+      "accZ": 9.32,
+      "gyroX": 171.15,
+      "gyroY": 55.73,
+      "gyroZ": 0,
+      "battery": 89.8
+    },
+    {
+      "timestamp_ms": 3433.3,
+      "accX": 3.99,
+      "accY": -8.95,
+      "accZ": 9.31,
+      "gyroX": 171.23,
+      "gyroY": -55.51,
+      "gyroZ": 0,
+      "battery": 89.7
+    },
+    {
+      "timestamp_ms": 3466.63,
+      "accX": 2.04,
+      "accY": -9.59,
+      "accZ": 9.3,
+      "gyroX": 105.9,
+      "gyroY": -145.55,
+      "gyroZ": 0,
+      "battery": 89.6
+    },
+    {
+      "timestamp_ms": 3499.96,
+      "accX": 0,
+      "accY": -9.8,
+      "accZ": 9.3,
+      "gyroX": 0.12,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 89.5
+    },
+    {
+      "timestamp_ms": 3533.3,
+      "accX": -2.04,
+      "accY": -9.59,
+      "accZ": 9.3,
+      "gyroX": -105.7,
+      "gyroY": -145.69,
+      "gyroZ": 0,
+      "battery": 89.4
+    },
+    {
+      "timestamp_ms": 3566.63,
+      "accX": -3.98,
+      "accY": -8.95,
+      "accZ": 9.31,
+      "gyroX": -171.15,
+      "gyroY": -55.74,
+      "gyroZ": 0,
+      "battery": 89.3
+    },
+    {
+      "timestamp_ms": 3599.96,
+      "accX": -5.76,
+      "accY": -7.93,
+      "accZ": 9.32,
+      "gyroX": -171.23,
+      "gyroY": 55.51,
+      "gyroZ": 0,
+      "battery": 89.2
+    },
+    {
+      "timestamp_ms": 3633.3,
+      "accX": -7.28,
+      "accY": -6.56,
+      "accZ": 9.34,
+      "gyroX": -105.9,
+      "gyroY": 145.55,
+      "gyroZ": 0,
+      "battery": 89.1
+    },
+    {
+      "timestamp_ms": 3666.63,
+      "accX": -8.49,
+      "accY": -4.9,
+      "accZ": 9.37,
+      "gyroX": -0.12,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 89
+    },
+    {
+      "timestamp_ms": 3699.96,
+      "accX": -9.32,
+      "accY": -3.03,
+      "accZ": 9.4,
+      "gyroX": 105.7,
+      "gyroY": 145.7,
+      "gyroZ": 0,
+      "battery": 88.9
+    },
+    {
+      "timestamp_ms": 3733.3,
+      "accX": -9.75,
+      "accY": -1.03,
+      "accZ": 9.43,
+      "gyroX": 171.15,
+      "gyroY": 55.74,
+      "gyroZ": 0,
+      "battery": 88.8
+    },
+    {
+      "timestamp_ms": 3766.63,
+      "accX": -9.75,
+      "accY": 1.02,
+      "accZ": 9.47,
+      "gyroX": 171.23,
+      "gyroY": -55.5,
+      "gyroZ": 0,
+      "battery": 88.7
+    },
+    {
+      "timestamp_ms": 3799.96,
+      "accX": -9.32,
+      "accY": 3.03,
+      "accZ": 9.51,
+      "gyroX": 105.91,
+      "gyroY": -145.55,
+      "gyroZ": 0,
+      "battery": 88.6
+    },
+    {
+      "timestamp_ms": 3833.29,
+      "accX": -8.49,
+      "accY": 4.9,
+      "accZ": 9.55,
+      "gyroX": 0.13,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 88.5
+    },
+    {
+      "timestamp_ms": 3866.63,
+      "accX": -7.28,
+      "accY": 6.56,
+      "accZ": 9.6,
+      "gyroX": -105.7,
+      "gyroY": -145.7,
+      "gyroZ": 0,
+      "battery": 88.4
+    },
+    {
+      "timestamp_ms": 3899.96,
+      "accX": -5.76,
+      "accY": 7.93,
+      "accZ": 9.65,
+      "gyroX": -171.15,
+      "gyroY": -55.75,
+      "gyroZ": 0,
+      "battery": 88.3
+    },
+    {
+      "timestamp_ms": 3933.29,
+      "accX": -3.99,
+      "accY": 8.95,
+      "accZ": 9.7,
+      "gyroX": -171.23,
+      "gyroY": 55.5,
+      "gyroZ": 0,
+      "battery": 88.2
+    },
+    {
+      "timestamp_ms": 3966.63,
+      "accX": -2.04,
+      "accY": 9.59,
+      "accZ": 9.75,
+      "gyroX": -105.91,
+      "gyroY": 145.54,
+      "gyroZ": 0,
+      "battery": 88.1
+    },
+    {
+      "timestamp_ms": 3999.96,
+      "accX": 0,
+      "accY": 9.8,
+      "accZ": 9.8,
+      "gyroX": -0.14,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 88
+    },
+    {
+      "timestamp_ms": 4033.29,
+      "accX": 2.04,
+      "accY": 9.59,
+      "accZ": 9.85,
+      "gyroX": 105.69,
+      "gyroY": 145.7,
+      "gyroZ": 0,
+      "battery": 87.9
+    },
+    {
+      "timestamp_ms": 4066.63,
+      "accX": 3.98,
+      "accY": 8.95,
+      "accZ": 9.9,
+      "gyroX": 171.15,
+      "gyroY": 55.75,
+      "gyroZ": 0,
+      "battery": 87.8
+    },
+    {
+      "timestamp_ms": 4099.96,
+      "accX": 5.76,
+      "accY": 7.93,
+      "accZ": 9.95,
+      "gyroX": 171.23,
+      "gyroY": -55.49,
+      "gyroZ": 0,
+      "battery": 87.7
+    },
+    {
+      "timestamp_ms": 4133.29,
+      "accX": 7.28,
+      "accY": 6.56,
+      "accZ": 10,
+      "gyroX": 105.91,
+      "gyroY": -145.54,
+      "gyroZ": 0,
+      "battery": 87.6
+    },
+    {
+      "timestamp_ms": 4166.63,
+      "accX": 8.49,
+      "accY": 4.9,
+      "accZ": 10.05,
+      "gyroX": 0.14,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 87.5
+    },
+    {
+      "timestamp_ms": 4199.96,
+      "accX": 9.32,
+      "accY": 3.03,
+      "accZ": 10.09,
+      "gyroX": -105.69,
+      "gyroY": -145.71,
+      "gyroZ": 0,
+      "battery": 87.4
+    },
+    {
+      "timestamp_ms": 4233.29,
+      "accX": 9.75,
+      "accY": 1.03,
+      "accZ": 10.13,
+      "gyroX": -171.15,
+      "gyroY": -55.76,
+      "gyroZ": 0,
+      "battery": 87.3
+    },
+    {
+      "timestamp_ms": 4266.62,
+      "accX": 9.75,
+      "accY": -1.02,
+      "accZ": 10.17,
+      "gyroX": -171.23,
+      "gyroY": 55.49,
+      "gyroZ": 0,
+      "battery": 87.2
+    },
+    {
+      "timestamp_ms": 4299.96,
+      "accX": 9.32,
+      "accY": -3.03,
+      "accZ": 10.2,
+      "gyroX": -105.92,
+      "gyroY": 145.54,
+      "gyroZ": 0,
+      "battery": 87.1
+    },
+    {
+      "timestamp_ms": 4333.29,
+      "accX": 8.49,
+      "accY": -4.9,
+      "accZ": 10.23,
+      "gyroX": -0.15,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 87
+    },
+    {
+      "timestamp_ms": 4366.62,
+      "accX": 7.28,
+      "accY": -6.56,
+      "accZ": 10.26,
+      "gyroX": 105.68,
+      "gyroY": 145.71,
+      "gyroZ": 0,
+      "battery": 86.9
+    },
+    {
+      "timestamp_ms": 4399.96,
+      "accX": 5.76,
+      "accY": -7.93,
+      "accZ": 10.28,
+      "gyroX": 171.14,
+      "gyroY": 55.77,
+      "gyroZ": 0,
+      "battery": 86.8
+    },
+    {
+      "timestamp_ms": 4433.29,
+      "accX": 3.99,
+      "accY": -8.95,
+      "accZ": 10.29,
+      "gyroX": 171.24,
+      "gyroY": -55.48,
+      "gyroZ": 0,
+      "battery": 86.7
+    },
+    {
+      "timestamp_ms": 4466.62,
+      "accX": 2.04,
+      "accY": -9.59,
+      "accZ": 10.3,
+      "gyroX": 105.92,
+      "gyroY": -145.53,
+      "gyroZ": 0,
+      "battery": 86.6
+    },
+    {
+      "timestamp_ms": 4499.96,
+      "accX": 0,
+      "accY": -9.8,
+      "accZ": 10.3,
+      "gyroX": 0.15,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 86.5
+    },
+    {
+      "timestamp_ms": 4533.29,
+      "accX": -2.03,
+      "accY": -9.59,
+      "accZ": 10.3,
+      "gyroX": -105.68,
+      "gyroY": -145.71,
+      "gyroZ": 0,
+      "battery": 86.4
+    },
+    {
+      "timestamp_ms": 4566.62,
+      "accX": -3.98,
+      "accY": -8.95,
+      "accZ": 10.29,
+      "gyroX": -171.14,
+      "gyroY": -55.77,
+      "gyroZ": 0,
+      "battery": 86.3
+    },
+    {
+      "timestamp_ms": 4599.95,
+      "accX": -5.76,
+      "accY": -7.93,
+      "accZ": 10.28,
+      "gyroX": -171.24,
+      "gyroY": 55.47,
+      "gyroZ": 0,
+      "battery": 86.2
+    },
+    {
+      "timestamp_ms": 4633.29,
+      "accX": -7.28,
+      "accY": -6.56,
+      "accZ": 10.26,
+      "gyroX": -105.93,
+      "gyroY": 145.53,
+      "gyroZ": 0,
+      "battery": 86.1
+    },
+    {
+      "timestamp_ms": 4666.62,
+      "accX": -8.49,
+      "accY": -4.9,
+      "accZ": 10.23,
+      "gyroX": -0.16,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 86
+    },
+    {
+      "timestamp_ms": 4699.95,
+      "accX": -9.32,
+      "accY": -3.03,
+      "accZ": 10.2,
+      "gyroX": 105.67,
+      "gyroY": 145.72,
+      "gyroZ": 0,
+      "battery": 85.9
+    },
+    {
+      "timestamp_ms": 4733.29,
+      "accX": -9.75,
+      "accY": -1.03,
+      "accZ": 10.17,
+      "gyroX": 171.14,
+      "gyroY": 55.78,
+      "gyroZ": 0,
+      "battery": 85.8
+    },
+    {
+      "timestamp_ms": 4766.62,
+      "accX": -9.75,
+      "accY": 1.02,
+      "accZ": 10.13,
+      "gyroX": 171.24,
+      "gyroY": -55.47,
+      "gyroZ": 0,
+      "battery": 85.7
+    },
+    {
+      "timestamp_ms": 4799.95,
+      "accX": -9.32,
+      "accY": 3.03,
+      "accZ": 10.09,
+      "gyroX": 105.93,
+      "gyroY": -145.53,
+      "gyroZ": 0,
+      "battery": 85.6
+    },
+    {
+      "timestamp_ms": 4833.29,
+      "accX": -8.49,
+      "accY": 4.9,
+      "accZ": 10.05,
+      "gyroX": 0.16,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 85.5
+    },
+    {
+      "timestamp_ms": 4866.62,
+      "accX": -7.28,
+      "accY": 6.56,
+      "accZ": 10,
+      "gyroX": -105.67,
+      "gyroY": -145.72,
+      "gyroZ": 0,
+      "battery": 85.4
+    },
+    {
+      "timestamp_ms": 4899.95,
+      "accX": -5.76,
+      "accY": 7.93,
+      "accZ": 9.95,
+      "gyroX": -171.14,
+      "gyroY": -55.78,
+      "gyroZ": 0,
+      "battery": 85.3
+    },
+    {
+      "timestamp_ms": 4933.28,
+      "accX": -3.99,
+      "accY": 8.95,
+      "accZ": 9.9,
+      "gyroX": -171.24,
+      "gyroY": 55.46,
+      "gyroZ": 0,
+      "battery": 85.2
+    },
+    {
+      "timestamp_ms": 4966.62,
+      "accX": -2.04,
+      "accY": 9.59,
+      "accZ": 9.85,
+      "gyroX": -105.94,
+      "gyroY": 145.52,
+      "gyroZ": 0,
+      "battery": 85.1
+    },
+    {
+      "timestamp_ms": 4999.95,
+      "accX": 500,
+      "accY": 9.8,
+      "accZ": 9.8,
+      "gyroX": -0.17,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 85
+    },
+    {
+      "timestamp_ms": 5033.28,
+      "accX": 500,
+      "accY": 9.59,
+      "accZ": 9.75,
+      "gyroX": 105.66,
+      "gyroY": 145.72,
+      "gyroZ": 0,
+      "battery": 84.9
+    },
+    {
+      "timestamp_ms": 5066.62,
+      "accX": 500,
+      "accY": 8.95,
+      "accZ": 9.7,
+      "gyroX": 171.14,
+      "gyroY": 55.79,
+      "gyroZ": 0,
+      "battery": 84.8
+    },
+    {
+      "timestamp_ms": 5099.95,
+      "accX": 500,
+      "accY": 7.93,
+      "accZ": 9.65,
+      "gyroX": 171.24,
+      "gyroY": -55.46,
+      "gyroZ": 0,
+      "battery": 84.7
+    },
+    {
+      "timestamp_ms": 5133.28,
+      "accX": 500,
+      "accY": 6.56,
+      "accZ": 9.6,
+      "gyroX": 105.94,
+      "gyroY": -145.52,
+      "gyroZ": 0,
+      "battery": 84.6
+    },
+    {
+      "timestamp_ms": 5166.62,
+      "accX": 8.49,
+      "accY": 4.9,
+      "accZ": 9.55,
+      "gyroX": 0.18,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 84.5
+    },
+    {
+      "timestamp_ms": 5199.95,
+      "accX": 9.32,
+      "accY": 3.03,
+      "accZ": 9.51,
+      "gyroX": -105.66,
+      "gyroY": -145.73,
+      "gyroZ": 0,
+      "battery": 84.4
+    },
+    {
+      "timestamp_ms": 5233.28,
+      "accX": 9.75,
+      "accY": 1.03,
+      "accZ": 9.47,
+      "gyroX": -171.14,
+      "gyroY": -55.79,
+      "gyroZ": 0,
+      "battery": 84.3
+    },
+    {
+      "timestamp_ms": 5266.61,
+      "accX": 9.75,
+      "accY": -1.02,
+      "accZ": 9.43,
+      "gyroX": -171.25,
+      "gyroY": 55.45,
+      "gyroZ": 0,
+      "battery": 84.2
+    },
+    {
+      "timestamp_ms": 5299.95,
+      "accX": 9.32,
+      "accY": -3.03,
+      "accZ": 9.4,
+      "gyroX": -105.95,
+      "gyroY": 145.52,
+      "gyroZ": 0,
+      "battery": 84.1
+    },
+    {
+      "timestamp_ms": 5333.28,
+      "accX": 8.49,
+      "accY": -4.9,
+      "accZ": 9.37,
+      "gyroX": -0.18,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 84
+    },
+    {
+      "timestamp_ms": 5366.61,
+      "accX": 7.29,
+      "accY": -6.56,
+      "accZ": 9.34,
+      "gyroX": 105.65,
+      "gyroY": 145.73,
+      "gyroZ": 0,
+      "battery": 83.9
+    },
+    {
+      "timestamp_ms": 5399.95,
+      "accX": 5.76,
+      "accY": -7.93,
+      "accZ": 9.32,
+      "gyroX": 171.13,
+      "gyroY": 55.8,
+      "gyroZ": 0,
+      "battery": 83.8
+    },
+    {
+      "timestamp_ms": 5433.28,
+      "accX": 3.99,
+      "accY": -8.95,
+      "accZ": 9.31,
+      "gyroX": 171.25,
+      "gyroY": -55.45,
+      "gyroZ": 0,
+      "battery": 83.7
+    },
+    {
+      "timestamp_ms": 5466.61,
+      "accX": 2.04,
+      "accY": -9.59,
+      "accZ": 9.3,
+      "gyroX": 105.95,
+      "gyroY": -145.51,
+      "gyroZ": 0,
+      "battery": 83.6
+    },
+    {
+      "timestamp_ms": 5499.95,
+      "accX": 0,
+      "accY": -9.8,
+      "accZ": 9.3,
+      "gyroX": 0.19,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 83.5
+    },
+    {
+      "timestamp_ms": 5533.28,
+      "accX": -2.03,
+      "accY": -9.59,
+      "accZ": 9.3,
+      "gyroX": -105.65,
+      "gyroY": -145.73,
+      "gyroZ": 0,
+      "battery": 83.4
+    },
+    {
+      "timestamp_ms": 5566.61,
+      "accX": -3.98,
+      "accY": -8.95,
+      "accZ": 9.31,
+      "gyroX": -171.13,
+      "gyroY": -55.8,
+      "gyroZ": 0,
+      "battery": 83.3
+    },
+    {
+      "timestamp_ms": 5599.94,
+      "accX": -5.76,
+      "accY": -7.93,
+      "accZ": 9.32,
+      "gyroX": -171.25,
+      "gyroY": 55.44,
+      "gyroZ": 0,
+      "battery": 83.2
+    },
+    {
+      "timestamp_ms": 5633.28,
+      "accX": -7.28,
+      "accY": -6.56,
+      "accZ": 9.34,
+      "gyroX": -105.96,
+      "gyroY": 145.51,
+      "gyroZ": 0,
+      "battery": 83.1
+    },
+    {
+      "timestamp_ms": 5666.61,
+      "accX": -8.49,
+      "accY": -4.9,
+      "accZ": 9.37,
+      "gyroX": -0.19,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 83
+    },
+    {
+      "timestamp_ms": 5699.94,
+      "accX": -9.32,
+      "accY": -3.03,
+      "accZ": 9.4,
+      "gyroX": 105.64,
+      "gyroY": 145.74,
+      "gyroZ": 0,
+      "battery": 82.9
+    },
+    {
+      "timestamp_ms": 5733.28,
+      "accX": -9.75,
+      "accY": -1.03,
+      "accZ": 9.43,
+      "gyroX": 171.13,
+      "gyroY": 55.81,
+      "gyroZ": 0,
+      "battery": 82.8
+    },
+    {
+      "timestamp_ms": 5766.61,
+      "accX": -9.75,
+      "accY": 1.02,
+      "accZ": 9.47,
+      "gyroX": 171.25,
+      "gyroY": -55.44,
+      "gyroZ": 0,
+      "battery": 82.7
+    },
+    {
+      "timestamp_ms": 5799.94,
+      "accX": -9.32,
+      "accY": 3.02,
+      "accZ": 9.51,
+      "gyroX": 105.96,
+      "gyroY": -145.51,
+      "gyroZ": 0,
+      "battery": 82.6
+    },
+    {
+      "timestamp_ms": 5833.28,
+      "accX": -8.49,
+      "accY": 4.9,
+      "accZ": 9.55,
+      "gyroX": 0.2,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 82.5
+    },
+    {
+      "timestamp_ms": 5866.61,
+      "accX": -7.29,
+      "accY": 6.55,
+      "accZ": 9.6,
+      "gyroX": -105.64,
+      "gyroY": -145.74,
+      "gyroZ": 0,
+      "battery": 82.4
+    },
+    {
+      "timestamp_ms": 5899.94,
+      "accX": -5.76,
+      "accY": 7.93,
+      "accZ": 9.65,
+      "gyroX": -171.13,
+      "gyroY": -55.81,
+      "gyroZ": 0,
+      "battery": 82.3
+    },
+    {
+      "timestamp_ms": 5933.27,
+      "accX": -3.99,
+      "accY": 8.95,
+      "accZ": 9.7,
+      "gyroX": -171.25,
+      "gyroY": 55.43,
+      "gyroZ": 0,
+      "battery": 82.2
+    },
+    {
+      "timestamp_ms": 5966.61,
+      "accX": -2.04,
+      "accY": 9.59,
+      "accZ": 9.75,
+      "gyroX": -105.97,
+      "gyroY": 145.5,
+      "gyroZ": 0,
+      "battery": 82.1
+    },
+    {
+      "timestamp_ms": 5999.94,
+      "accX": 0,
+      "accY": 9.8,
+      "accZ": 9.8,
+      "gyroX": -0.2,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 82
+    },
+    {
+      "timestamp_ms": 6033.27,
+      "accX": 2.03,
+      "accY": 9.59,
+      "accZ": 9.85,
+      "gyroX": 105.64,
+      "gyroY": 145.74,
+      "gyroZ": 0,
+      "battery": 81.9
+    },
+    {
+      "timestamp_ms": 6066.61,
+      "accX": 3.98,
+      "accY": 8.95,
+      "accZ": 9.9,
+      "gyroX": 171.13,
+      "gyroY": 55.82,
+      "gyroZ": 0,
+      "battery": 81.8
+    },
+    {
+      "timestamp_ms": 6099.94,
+      "accX": 5.76,
+      "accY": 7.93,
+      "accZ": 9.95,
+      "gyroX": 171.25,
+      "gyroY": -55.43,
+      "gyroZ": 0,
+      "battery": 81.7
+    },
+    {
+      "timestamp_ms": 6133.27,
+      "accX": 7.28,
+      "accY": 6.56,
+      "accZ": 10,
+      "gyroX": 105.97,
+      "gyroY": -145.5,
+      "gyroZ": 0,
+      "battery": 81.6
+    },
+    {
+      "timestamp_ms": 6166.61,
+      "accX": 8.49,
+      "accY": 4.9,
+      "accZ": 10.05,
+      "gyroX": 0.21,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 81.5
+    },
+    {
+      "timestamp_ms": 6199.94,
+      "accX": 9.32,
+      "accY": 3.03,
+      "accZ": 10.09,
+      "gyroX": -105.63,
+      "gyroY": -145.75,
+      "gyroZ": 0,
+      "battery": 81.4
+    },
+    {
+      "timestamp_ms": 6233.27,
+      "accX": 9.75,
+      "accY": 1.03,
+      "accZ": 10.13,
+      "gyroX": -171.12,
+      "gyroY": -55.82,
+      "gyroZ": 0,
+      "battery": 81.3
+    },
+    {
+      "timestamp_ms": 6266.6,
+      "accX": 9.75,
+      "accY": -1.02,
+      "accZ": 10.17,
+      "gyroX": -171.26,
+      "gyroY": 55.42,
+      "gyroZ": 0,
+      "battery": 81.2
+    },
+    {
+      "timestamp_ms": 6299.94,
+      "accX": 9.32,
+      "accY": -3.02,
+      "accZ": 10.2,
+      "gyroX": -105.97,
+      "gyroY": 145.5,
+      "gyroZ": 0,
+      "battery": 81.1
+    },
+    {
+      "timestamp_ms": 6333.27,
+      "accX": 8.49,
+      "accY": -4.9,
+      "accZ": 10.23,
+      "gyroX": -0.21,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 81
+    },
+    {
+      "timestamp_ms": 6366.6,
+      "accX": 7.29,
+      "accY": -6.55,
+      "accZ": 10.26,
+      "gyroX": 105.63,
+      "gyroY": 145.75,
+      "gyroZ": 0,
+      "battery": 80.9
+    },
+    {
+      "timestamp_ms": 6399.94,
+      "accX": 5.76,
+      "accY": -7.93,
+      "accZ": 10.28,
+      "gyroX": 171.12,
+      "gyroY": 55.83,
+      "gyroZ": 0,
+      "battery": 80.8
+    },
+    {
+      "timestamp_ms": 6433.27,
+      "accX": 3.99,
+      "accY": -8.95,
+      "accZ": 10.29,
+      "gyroX": 171.26,
+      "gyroY": -55.42,
+      "gyroZ": 0,
+      "battery": 80.7
+    },
+    {
+      "timestamp_ms": 6466.6,
+      "accX": 2.04,
+      "accY": -9.59,
+      "accZ": 10.3,
+      "gyroX": 105.98,
+      "gyroY": -145.49,
+      "gyroZ": 0,
+      "battery": 80.6
+    },
+    {
+      "timestamp_ms": 6499.94,
+      "accX": 0,
+      "accY": -9.8,
+      "accZ": 10.3,
+      "gyroX": 0.22,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 80.5
+    },
+    {
+      "timestamp_ms": 6533.27,
+      "accX": -2.03,
+      "accY": -9.59,
+      "accZ": 10.3,
+      "gyroX": -105.62,
+      "gyroY": -145.75,
+      "gyroZ": 0,
+      "battery": 80.4
+    },
+    {
+      "timestamp_ms": 6566.6,
+      "accX": -3.98,
+      "accY": -8.95,
+      "accZ": 10.29,
+      "gyroX": -171.12,
+      "gyroY": -55.83,
+      "gyroZ": 0,
+      "battery": 80.3
+    },
+    {
+      "timestamp_ms": 6599.93,
+      "accX": -5.76,
+      "accY": -7.93,
+      "accZ": 10.28,
+      "gyroX": -171.26,
+      "gyroY": 55.41,
+      "gyroZ": 0,
+      "battery": 80.2
+    },
+    {
+      "timestamp_ms": 6633.27,
+      "accX": -7.28,
+      "accY": -6.56,
+      "accZ": 10.26,
+      "gyroX": -105.98,
+      "gyroY": 145.49,
+      "gyroZ": 0,
+      "battery": 80.1
+    },
+    {
+      "timestamp_ms": 6666.6,
+      "accX": -8.48,
+      "accY": -4.9,
+      "accZ": 10.23,
+      "gyroX": -0.23,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 80
+    },
+    {
+      "timestamp_ms": 6699.93,
+      "accX": -9.32,
+      "accY": -3.03,
+      "accZ": 10.2,
+      "gyroX": 105.62,
+      "gyroY": 145.76,
+      "gyroZ": 0,
+      "battery": 79.9
+    },
+    {
+      "timestamp_ms": 6733.27,
+      "accX": -9.75,
+      "accY": -1.03,
+      "accZ": 10.17,
+      "gyroX": 171.12,
+      "gyroY": 55.84,
+      "gyroZ": 0,
+      "battery": 79.8
+    },
+    {
+      "timestamp_ms": 6766.6,
+      "accX": -9.75,
+      "accY": 1.02,
+      "accZ": 10.13,
+      "gyroX": 171.26,
+      "gyroY": -55.4,
+      "gyroZ": 0,
+      "battery": 79.7
+    },
+    {
+      "timestamp_ms": 6799.93,
+      "accX": -9.32,
+      "accY": 3.02,
+      "accZ": 10.09,
+      "gyroX": 105.99,
+      "gyroY": -145.49,
+      "gyroZ": 0,
+      "battery": 79.6
+    },
+    {
+      "timestamp_ms": 6833.27,
+      "accX": -8.49,
+      "accY": 4.9,
+      "accZ": 10.05,
+      "gyroX": 0.23,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 79.5
+    },
+    {
+      "timestamp_ms": 6866.6,
+      "accX": -7.29,
+      "accY": 6.55,
+      "accZ": 10,
+      "gyroX": -105.61,
+      "gyroY": -145.76,
+      "gyroZ": 0,
+      "battery": 79.4
+    },
+    {
+      "timestamp_ms": 6899.93,
+      "accX": -5.76,
+      "accY": 7.93,
+      "accZ": 9.95,
+      "gyroX": -171.12,
+      "gyroY": -55.85,
+      "gyroZ": 0,
+      "battery": 79.3
+    },
+    {
+      "timestamp_ms": 6933.26,
+      "accX": -3.99,
+      "accY": 8.95,
+      "accZ": 9.9,
+      "gyroX": -171.26,
+      "gyroY": 55.4,
+      "gyroZ": 0,
+      "battery": 79.2
+    },
+    {
+      "timestamp_ms": 6966.6,
+      "accX": -2.04,
+      "accY": 9.58,
+      "accZ": 9.85,
+      "gyroX": -105.99,
+      "gyroY": 145.48,
+      "gyroZ": 0,
+      "battery": 79.1
+    },
+    {
+      "timestamp_ms": 6999.93,
+      "accX": 0,
+      "accY": 9.8,
+      "accZ": 9.8,
+      "gyroX": -0.24,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 79
+    },
+    {
+      "timestamp_ms": 7033.26,
+      "accX": 2.03,
+      "accY": 9.59,
+      "accZ": 9.75,
+      "gyroX": 105.61,
+      "gyroY": 145.76,
+      "gyroZ": 0,
+      "battery": 78.9
+    },
+    {
+      "timestamp_ms": 7066.6,
+      "accX": 3.98,
+      "accY": 8.95,
+      "accZ": 9.7,
+      "gyroX": 171.12,
+      "gyroY": 55.85,
+      "gyroZ": 0,
+      "battery": 78.8
+    },
+    {
+      "timestamp_ms": 7099.93,
+      "accX": 5.76,
+      "accY": 7.93,
+      "accZ": 9.65,
+      "gyroX": 171.26,
+      "gyroY": -55.39,
+      "gyroZ": 0,
+      "battery": 78.7
+    },
+    {
+      "timestamp_ms": 7133.26,
+      "accX": 7.28,
+      "accY": 6.56,
+      "accZ": 9.6,
+      "gyroX": 106,
+      "gyroY": -145.48,
+      "gyroZ": 0,
+      "battery": 78.6
+    },
+    {
+      "timestamp_ms": 7166.59,
+      "accX": 8.48,
+      "accY": 4.9,
+      "accZ": 9.55,
+      "gyroX": 0.24,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 78.5
+    },
+    {
+      "timestamp_ms": 7199.93,
+      "accX": 9.32,
+      "accY": 3.03,
+      "accZ": 9.51,
+      "gyroX": -105.6,
+      "gyroY": -145.77,
+      "gyroZ": 0,
+      "battery": 78.4
+    },
+    {
+      "timestamp_ms": 7233.26,
+      "accX": 9.75,
+      "accY": 1.03,
+      "accZ": 9.47,
+      "gyroX": -171.11,
+      "gyroY": -55.86,
+      "gyroZ": 0,
+      "battery": 78.3
+    },
+    {
+      "timestamp_ms": 7266.59,
+      "accX": 9.75,
+      "accY": -1.02,
+      "accZ": 9.43,
+      "gyroX": -171.27,
+      "gyroY": 55.39,
+      "gyroZ": 0,
+      "battery": 78.2
+    },
+    {
+      "timestamp_ms": 7299.93,
+      "accX": 9.32,
+      "accY": -3.02,
+      "accZ": 9.4,
+      "gyroX": -106,
+      "gyroY": 145.48,
+      "gyroZ": 0,
+      "battery": 78.1
+    },
+    {
+      "timestamp_ms": 7333.26,
+      "accX": 8.49,
+      "accY": -4.9,
+      "accZ": 9.37,
+      "gyroX": -0.25,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 78
+    },
+    {
+      "timestamp_ms": 7366.59,
+      "accX": 7.29,
+      "accY": -6.55,
+      "accZ": 9.34,
+      "gyroX": 105.6,
+      "gyroY": 145.77,
+      "gyroZ": 0,
+      "battery": 77.9
+    },
+    {
+      "timestamp_ms": 7399.93,
+      "accX": 5.76,
+      "accY": -7.93,
+      "accZ": 9.32,
+      "gyroX": 171.11,
+      "gyroY": 55.86,
+      "gyroZ": 0,
+      "battery": 77.8
+    },
+    {
+      "timestamp_ms": 7433.26,
+      "accX": 3.99,
+      "accY": -8.95,
+      "accZ": 9.31,
+      "gyroX": 171.27,
+      "gyroY": -55.38,
+      "gyroZ": 0,
+      "battery": 77.7
+    },
+    {
+      "timestamp_ms": 7466.59,
+      "accX": 2.04,
+      "accY": -9.58,
+      "accZ": 9.3,
+      "gyroX": 106.01,
+      "gyroY": -145.47,
+      "gyroZ": 0,
+      "battery": 77.6
+    },
+    {
+      "timestamp_ms": 7499.92,
+      "accX": 0,
+      "accY": -9.8,
+      "accZ": 9.3,
+      "gyroX": 0.25,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 77.5
+    },
+    {
+      "timestamp_ms": 7533.26,
+      "accX": -2.03,
+      "accY": -9.59,
+      "accZ": 9.3,
+      "gyroX": -105.59,
+      "gyroY": -145.77,
+      "gyroZ": 0,
+      "battery": 77.4
+    },
+    {
+      "timestamp_ms": 7566.59,
+      "accX": -3.98,
+      "accY": -8.95,
+      "accZ": 9.31,
+      "gyroX": -171.11,
+      "gyroY": -55.87,
+      "gyroZ": 0,
+      "battery": 77.3
+    },
+    {
+      "timestamp_ms": 7599.92,
+      "accX": -5.76,
+      "accY": -7.93,
+      "accZ": 9.32,
+      "gyroX": -171.27,
+      "gyroY": 55.38,
+      "gyroZ": 0,
+      "battery": 77.2
+    },
+    {
+      "timestamp_ms": 7633.26,
+      "accX": -7.28,
+      "accY": -6.56,
+      "accZ": 9.34,
+      "gyroX": -106.01,
+      "gyroY": 145.47,
+      "gyroZ": 0,
+      "battery": 77.1
+    },
+    {
+      "timestamp_ms": 7666.59,
+      "accX": -8.48,
+      "accY": -4.9,
+      "accZ": 9.37,
+      "gyroX": -0.26,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 77
+    },
+    {
+      "timestamp_ms": 7699.92,
+      "accX": -9.32,
+      "accY": -3.03,
+      "accZ": 9.4,
+      "gyroX": 105.59,
+      "gyroY": 145.78,
+      "gyroZ": 0,
+      "battery": 76.9
+    },
+    {
+      "timestamp_ms": 7733.26,
+      "accX": -9.75,
+      "accY": -1.03,
+      "accZ": 9.43,
+      "gyroX": 171.11,
+      "gyroY": 55.87,
+      "gyroZ": 0,
+      "battery": 76.8
+    },
+    {
+      "timestamp_ms": 7766.59,
+      "accX": -9.75,
+      "accY": 1.02,
+      "accZ": 9.47,
+      "gyroX": 171.27,
+      "gyroY": -55.37,
+      "gyroZ": 0,
+      "battery": 76.7
+    },
+    {
+      "timestamp_ms": 7799.92,
+      "accX": -9.32,
+      "accY": 3.02,
+      "accZ": 9.51,
+      "gyroX": 106.02,
+      "gyroY": -145.47,
+      "gyroZ": 0,
+      "battery": 76.6
+    },
+    {
+      "timestamp_ms": 7833.25,
+      "accX": -8.49,
+      "accY": 4.9,
+      "accZ": 9.55,
+      "gyroX": 0.27,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 76.5
+    },
+    {
+      "timestamp_ms": 7866.59,
+      "accX": -7.29,
+      "accY": 6.55,
+      "accZ": 9.6,
+      "gyroX": -105.59,
+      "gyroY": -145.78,
+      "gyroZ": 0,
+      "battery": 76.4
+    },
+    {
+      "timestamp_ms": 7899.92,
+      "accX": -5.76,
+      "accY": 7.93,
+      "accZ": 9.65,
+      "gyroX": -171.11,
+      "gyroY": -55.88,
+      "gyroZ": 0,
+      "battery": 76.3
+    },
+    {
+      "timestamp_ms": 7933.25,
+      "accX": -3.99,
+      "accY": 8.95,
+      "accZ": 9.7,
+      "gyroX": -171.27,
+      "gyroY": 55.37,
+      "gyroZ": 0,
+      "battery": 76.2
+    },
+    {
+      "timestamp_ms": 7966.59,
+      "accX": -2.04,
+      "accY": 9.58,
+      "accZ": 9.75,
+      "gyroX": -106.02,
+      "gyroY": 145.46,
+      "gyroZ": 0,
+      "battery": 76.1
+    },
+    {
+      "timestamp_ms": 7999.92,
+      "accX": 0,
+      "accY": 9.8,
+      "accZ": 9.8,
+      "gyroX": -0.27,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 76
+    },
+    {
+      "timestamp_ms": 8033.25,
+      "accX": 2.03,
+      "accY": 9.59,
+      "accZ": 9.85,
+      "gyroX": 105.58,
+      "gyroY": 145.78,
+      "gyroZ": 0,
+      "battery": 75.9
+    },
+    {
+      "timestamp_ms": 8066.59,
+      "accX": 3.98,
+      "accY": 8.95,
+      "accZ": 9.9,
+      "gyroX": 171.11,
+      "gyroY": 55.88,
+      "gyroZ": 0,
+      "battery": 75.8
+    },
+    {
+      "timestamp_ms": 8099.92,
+      "accX": 5.76,
+      "accY": 7.93,
+      "accZ": 9.95,
+      "gyroX": 171.27,
+      "gyroY": -55.36,
+      "gyroZ": 0,
+      "battery": 75.7
+    },
+    {
+      "timestamp_ms": 8133.25,
+      "accX": 7.28,
+      "accY": 6.56,
+      "accZ": 10,
+      "gyroX": 106.02,
+      "gyroY": -145.46,
+      "gyroZ": 0,
+      "battery": 75.6
+    },
+    {
+      "timestamp_ms": 8166.59,
+      "accX": 8.48,
+      "accY": 4.9,
+      "accZ": 10.05,
+      "gyroX": 0.28,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 75.5
+    },
+    {
+      "timestamp_ms": 8199.92,
+      "accX": 9.32,
+      "accY": 3.03,
+      "accZ": 10.09,
+      "gyroX": -105.58,
+      "gyroY": -145.79,
+      "gyroZ": 0,
+      "battery": 75.4
+    },
+    {
+      "timestamp_ms": 8233.25,
+      "accX": 9.75,
+      "accY": 1.03,
+      "accZ": 10.13,
+      "gyroX": -171.1,
+      "gyroY": -55.89,
+      "gyroZ": 0,
+      "battery": 75.3
+    },
+    {
+      "timestamp_ms": 8266.58,
+      "accX": 9.75,
+      "accY": -1.02,
+      "accZ": 10.17,
+      "gyroX": -171.28,
+      "gyroY": 55.36,
+      "gyroZ": 0,
+      "battery": 75.2
+    },
+    {
+      "timestamp_ms": 8299.92,
+      "accX": 9.32,
+      "accY": -3.02,
+      "accZ": 10.2,
+      "gyroX": -106.03,
+      "gyroY": 145.46,
+      "gyroZ": 0,
+      "battery": 75.1
+    },
+    {
+      "timestamp_ms": 8333.25,
+      "accX": 8.49,
+      "accY": -4.9,
+      "accZ": 10.23,
+      "gyroX": -0.28,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 75
+    },
+    {
+      "timestamp_ms": 8366.58,
+      "accX": 7.29,
+      "accY": -6.55,
+      "accZ": 10.26,
+      "gyroX": 105.57,
+      "gyroY": 145.79,
+      "gyroZ": 0,
+      "battery": 74.9
+    },
+    {
+      "timestamp_ms": 8399.92,
+      "accX": 5.76,
+      "accY": -7.93,
+      "accZ": 10.28,
+      "gyroX": 171.1,
+      "gyroY": 55.89,
+      "gyroZ": 0,
+      "battery": 74.8
+    },
+    {
+      "timestamp_ms": 8433.25,
+      "accX": 3.99,
+      "accY": -8.95,
+      "accZ": 10.29,
+      "gyroX": 171.28,
+      "gyroY": -55.35,
+      "gyroZ": 0,
+      "battery": 74.7
+    },
+    {
+      "timestamp_ms": 8466.58,
+      "accX": 2.04,
+      "accY": -9.58,
+      "accZ": 10.3,
+      "gyroX": 106.03,
+      "gyroY": -145.45,
+      "gyroZ": 0,
+      "battery": 74.6
+    },
+    {
+      "timestamp_ms": 8499.91,
+      "accX": 0.01,
+      "accY": -9.8,
+      "accZ": 10.3,
+      "gyroX": 0.29,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 74.5
+    },
+    {
+      "timestamp_ms": 8533.25,
+      "accX": -2.03,
+      "accY": -9.59,
+      "accZ": 10.3,
+      "gyroX": -105.57,
+      "gyroY": -145.79,
+      "gyroZ": 0,
+      "battery": 74.4
+    },
+    {
+      "timestamp_ms": 8566.58,
+      "accX": -3.98,
+      "accY": -8.95,
+      "accZ": 10.29,
+      "gyroX": -171.1,
+      "gyroY": -55.9,
+      "gyroZ": 0,
+      "battery": 74.3
+    },
+    {
+      "timestamp_ms": 8599.91,
+      "accX": -5.76,
+      "accY": -7.93,
+      "accZ": 10.28,
+      "gyroX": -171.28,
+      "gyroY": 55.35,
+      "gyroZ": 0,
+      "battery": 74.2
+    },
+    {
+      "timestamp_ms": 8633.25,
+      "accX": -7.28,
+      "accY": -6.56,
+      "accZ": 10.26,
+      "gyroX": -106.04,
+      "gyroY": 145.45,
+      "gyroZ": 0,
+      "battery": 74.1
+    },
+    {
+      "timestamp_ms": 8666.58,
+      "accX": -8.48,
+      "accY": -4.9,
+      "accZ": 10.23,
+      "gyroX": -0.29,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 74
+    },
+    {
+      "timestamp_ms": 8699.91,
+      "accX": -9.32,
+      "accY": -3.03,
+      "accZ": 10.2,
+      "gyroX": 105.56,
+      "gyroY": 145.8,
+      "gyroZ": 0,
+      "battery": 73.9
+    },
+    {
+      "timestamp_ms": 8733.25,
+      "accX": -9.75,
+      "accY": -1.03,
+      "accZ": 10.17,
+      "gyroX": 171.1,
+      "gyroY": 55.9,
+      "gyroZ": 0,
+      "battery": 73.8
+    },
+    {
+      "timestamp_ms": 8766.58,
+      "accX": -9.75,
+      "accY": 1.02,
+      "accZ": 10.13,
+      "gyroX": 171.28,
+      "gyroY": -55.34,
+      "gyroZ": 0,
+      "battery": 73.7
+    },
+    {
+      "timestamp_ms": 8799.91,
+      "accX": -9.32,
+      "accY": 3.02,
+      "accZ": 10.09,
+      "gyroX": 106.04,
+      "gyroY": -145.45,
+      "gyroZ": 0,
+      "battery": 73.6
+    },
+    {
+      "timestamp_ms": 8833.24,
+      "accX": -8.49,
+      "accY": 4.9,
+      "accZ": 10.05,
+      "gyroX": 0.3,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 73.5
+    },
+    {
+      "timestamp_ms": 8866.58,
+      "accX": -7.29,
+      "accY": 6.55,
+      "accZ": 10,
+      "gyroX": -105.56,
+      "gyroY": -145.8,
+      "gyroZ": 0,
+      "battery": 73.4
+    },
+    {
+      "timestamp_ms": 8899.91,
+      "accX": -5.76,
+      "accY": 7.93,
+      "accZ": 9.95,
+      "gyroX": -171.1,
+      "gyroY": -55.91,
+      "gyroZ": 0,
+      "battery": 73.3
+    },
+    {
+      "timestamp_ms": 8933.24,
+      "accX": -3.99,
+      "accY": 8.95,
+      "accZ": 9.9,
+      "gyroX": -171.28,
+      "gyroY": 55.33,
+      "gyroZ": 0,
+      "battery": 73.2
+    },
+    {
+      "timestamp_ms": 8966.58,
+      "accX": -2.04,
+      "accY": 9.58,
+      "accZ": 9.85,
+      "gyroX": -106.05,
+      "gyroY": 145.44,
+      "gyroZ": 0,
+      "battery": 73.1
+    },
+    {
+      "timestamp_ms": 8999.91,
+      "accX": -0.01,
+      "accY": 9.8,
+      "accZ": 9.8,
+      "gyroX": -0.31,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 73
+    },
+    {
+      "timestamp_ms": 9033.24,
+      "accX": 2.03,
+      "accY": 9.59,
+      "accZ": 9.75,
+      "gyroX": 105.55,
+      "gyroY": 145.8,
+      "gyroZ": 0,
+      "battery": 72.9
+    },
+    {
+      "timestamp_ms": 9066.58,
+      "accX": 3.98,
+      "accY": 8.96,
+      "accZ": 9.7,
+      "gyroX": 171.09,
+      "gyroY": 55.92,
+      "gyroZ": 0,
+      "battery": 72.8
+    },
+    {
+      "timestamp_ms": 9099.91,
+      "accX": 5.76,
+      "accY": 7.93,
+      "accZ": 9.65,
+      "gyroX": 171.29,
+      "gyroY": -55.33,
+      "gyroZ": 0,
+      "battery": 72.7
+    },
+    {
+      "timestamp_ms": 9133.24,
+      "accX": 7.28,
+      "accY": 6.56,
+      "accZ": 9.6,
+      "gyroX": 106.05,
+      "gyroY": -145.44,
+      "gyroZ": 0,
+      "battery": 72.6
+    },
+    {
+      "timestamp_ms": 9166.57,
+      "accX": 8.48,
+      "accY": 4.9,
+      "accZ": 9.55,
+      "gyroX": 0.31,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 72.5
+    },
+    {
+      "timestamp_ms": 9199.91,
+      "accX": 9.32,
+      "accY": 3.03,
+      "accZ": 9.51,
+      "gyroX": -105.55,
+      "gyroY": -145.81,
+      "gyroZ": 0,
+      "battery": 72.4
+    },
+    {
+      "timestamp_ms": 9233.24,
+      "accX": 9.75,
+      "accY": 1.03,
+      "accZ": 9.47,
+      "gyroX": -171.09,
+      "gyroY": -55.92,
+      "gyroZ": 0,
+      "battery": 72.3
+    },
+    {
+      "timestamp_ms": 9266.57,
+      "accX": 9.75,
+      "accY": -1.02,
+      "accZ": 9.43,
+      "gyroX": -171.29,
+      "gyroY": 55.32,
+      "gyroZ": 0,
+      "battery": 72.2
+    },
+    {
+      "timestamp_ms": 9299.91,
+      "accX": 9.32,
+      "accY": -3.02,
+      "accZ": 9.4,
+      "gyroX": -106.06,
+      "gyroY": 145.44,
+      "gyroZ": 0,
+      "battery": 72.1
+    },
+    {
+      "timestamp_ms": 9333.24,
+      "accX": 8.49,
+      "accY": -4.9,
+      "accZ": 9.37,
+      "gyroX": -0.32,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 72
+    },
+    {
+      "timestamp_ms": 9366.57,
+      "accX": 7.29,
+      "accY": -6.55,
+      "accZ": 9.34,
+      "gyroX": 105.54,
+      "gyroY": 145.81,
+      "gyroZ": 0,
+      "battery": 71.9
+    },
+    {
+      "timestamp_ms": 9399.91,
+      "accX": 5.76,
+      "accY": -7.92,
+      "accZ": 9.32,
+      "gyroX": 171.09,
+      "gyroY": 55.93,
+      "gyroZ": 0,
+      "battery": 71.8
+    },
+    {
+      "timestamp_ms": 9433.24,
+      "accX": 3.99,
+      "accY": -8.95,
+      "accZ": 9.31,
+      "gyroX": 171.29,
+      "gyroY": -55.32,
+      "gyroZ": 0,
+      "battery": 71.7
+    },
+    {
+      "timestamp_ms": 9466.57,
+      "accX": 2.04,
+      "accY": -9.58,
+      "accZ": 9.3,
+      "gyroX": 106.06,
+      "gyroY": -145.43,
+      "gyroZ": 0,
+      "battery": 71.6
+    },
+    {
+      "timestamp_ms": 9499.9,
+      "accX": 0.01,
+      "accY": -9.8,
+      "accZ": 9.3,
+      "gyroX": 0.32,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 71.5
+    },
+    {
+      "timestamp_ms": 9533.24,
+      "accX": -2.03,
+      "accY": -9.59,
+      "accZ": 9.3,
+      "gyroX": -105.54,
+      "gyroY": -145.81,
+      "gyroZ": 0,
+      "battery": 71.4
+    },
+    {
+      "timestamp_ms": 9566.57,
+      "accX": -3.98,
+      "accY": -8.96,
+      "accZ": 9.31,
+      "gyroX": -171.09,
+      "gyroY": -55.93,
+      "gyroZ": 0,
+      "battery": 71.3
+    },
+    {
+      "timestamp_ms": 9599.9,
+      "accX": -5.76,
+      "accY": -7.93,
+      "accZ": 9.32,
+      "gyroX": -171.29,
+      "gyroY": 55.31,
+      "gyroZ": 0,
+      "battery": 71.2
+    },
+    {
+      "timestamp_ms": 9633.24,
+      "accX": -7.28,
+      "accY": -6.56,
+      "accZ": 9.34,
+      "gyroX": -106.07,
+      "gyroY": 145.43,
+      "gyroZ": 0,
+      "battery": 71.1
+    },
+    {
+      "timestamp_ms": 9666.57,
+      "accX": -8.48,
+      "accY": -4.91,
+      "accZ": 9.37,
+      "gyroX": -0.33,
+      "gyroY": 180,
+      "gyroZ": 0,
+      "battery": 71
+    },
+    {
+      "timestamp_ms": 9699.9,
+      "accX": -9.32,
+      "accY": -3.03,
+      "accZ": 9.4,
+      "gyroX": 105.53,
+      "gyroY": 145.82,
+      "gyroZ": 0,
+      "battery": 70.9
+    },
+    {
+      "timestamp_ms": 9733.24,
+      "accX": -9.75,
+      "accY": -1.03,
+      "accZ": 9.43,
+      "gyroX": 171.09,
+      "gyroY": 55.94,
+      "gyroZ": 0,
+      "battery": 70.8
+    },
+    {
+      "timestamp_ms": 9766.57,
+      "accX": -9.75,
+      "accY": 1.02,
+      "accZ": 9.47,
+      "gyroX": 171.29,
+      "gyroY": -55.31,
+      "gyroZ": 0,
+      "battery": 70.7
+    },
+    {
+      "timestamp_ms": 9799.9,
+      "accX": -9.32,
+      "accY": 3.02,
+      "accZ": 9.51,
+      "gyroX": 106.07,
+      "gyroY": -145.43,
+      "gyroZ": 0,
+      "battery": 70.6
+    },
+    {
+      "timestamp_ms": 9833.23,
+      "accX": -8.49,
+      "accY": 4.89,
+      "accZ": 9.55,
+      "gyroX": 0.33,
+      "gyroY": -180,
+      "gyroZ": 0,
+      "battery": 70.5
+    },
+    {
+      "timestamp_ms": 9866.57,
+      "accX": -7.29,
+      "accY": 6.55,
+      "accZ": 9.6,
+      "gyroX": -105.53,
+      "gyroY": -145.82,
+      "gyroZ": 0,
+      "battery": 70.4
+    },
+    {
+      "timestamp_ms": 9899.9,
+      "accX": -5.77,
+      "accY": 7.92,
+      "accZ": 9.65,
+      "gyroX": -171.09,
+      "gyroY": -55.94,
+      "gyroZ": 0,
+      "battery": 70.3
+    },
+    {
+      "timestamp_ms": 9933.23,
+      "accX": -3.99,
+      "accY": 8.95,
+      "accZ": 9.7,
+      "gyroX": -171.29,
+      "gyroY": 55.3,
+      "gyroZ": 0,
+      "battery": 70.2
+    },
+    {
+      "timestamp_ms": 9966.57,
+      "accX": -2.04,
+      "accY": 9.58,
+      "accZ": 9.75,
+      "gyroX": -106.07,
+      "gyroY": 145.42,
+      "gyroZ": 0,
+      "battery": 70.1
+    }
+  ]
+}
