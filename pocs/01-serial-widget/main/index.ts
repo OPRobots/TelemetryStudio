@@ -61,7 +61,9 @@ function createWindow(): void {
 // IPC Handlers
 ipcMain.handle('serial:list', async () => {
   const ports = await SerialPort.list();
-  return ports.map(p => ({ path: p.path, manufacturer: p.manufacturer }));
+  return ports
+    .filter(p => p.vendorId || p.manufacturer || p.serialNumber)
+    .map(p => ({ path: p.path, manufacturer: p.manufacturer }));
 });
 
 ipcMain.handle('serial:open', async (_event, path: string, baudRate: number) => {
