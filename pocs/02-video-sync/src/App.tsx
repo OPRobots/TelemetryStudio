@@ -209,6 +209,14 @@ function App(): React.ReactElement {
     }
   }, [playbackRate]);
 
+  // Reload video when src changes
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && videoSrc) {
+      video.load();
+    }
+  }, [videoSrc]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -220,7 +228,7 @@ function App(): React.ReactElement {
   const loadVideo = async () => {
     const result = await window.syncAPI.openVideo();
     if (!result.canceled && result.filePath) {
-      setVideoSrc(result.filePath);
+      setVideoSrc(`file://${result.filePath}`);
       addLog(`Vídeo cargado: ${result.filePath}`);
     }
   };

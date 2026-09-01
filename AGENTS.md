@@ -21,6 +21,11 @@ Main Process (Node.js) ←→ Renderer Process (Chromium) ←→ Worker Threads
 
 Regla estricta: **nunca** importar desde `renderer/` hacia `main/` o `workers/`. Comunicación exclusivamente via IPC.
 
+## Reglas de Trabajo
+
+### Bugs: No commitear hasta confirmar resolución
+**NUNCA** commitear cambios de resolución de bugs hasta que el usuario confirme que el bug está resuelto. Primero hacer el cambio, luego pedir al usuario que pruebe, y solo commitear después de confirmación.
+
 ## Convenciones de Commits
 
 ### Formato
