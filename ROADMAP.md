@@ -21,34 +21,39 @@ Fase 9: Polish + Testing              ← 1 semana
 
 ---
 
-## FASE 0: Setup del Proyecto (1 semana)
+## FASE 0: Setup del Proyecto (1 semana) ✅ COMPLETADA
 
 ### Objetivo
 Scaffold completo del proyecto con todas las configs, dependencias y herramientas de build funcionando.
 
 ### Entregables
-- [ ] `npm init` + `package.json` con todas las dependencias
-- [ ] `electron.vite.config.ts` configurado (main, preload, renderer)
-- [ ] `tsconfig.json` + `tsconfig.node.json` optimizados
-- [ ] `electron-builder.yml` con configs para las 3 plataformas
-- [ ] `tailwind.config.ts` con paleta OPRobots
-- [ ] Ventana Electron mínima mostrando "OPRobots Telemetry Studio"
-- [ ] HMR funcionando en renderer (cambios CSS/TS en vivo)
-- [ ] Hot reload en main process
-- [ ] `serialport` en `dependencies` (NO en devDependencies)
-- [ ] `postinstall` ejecutando `electron-builder install-app-deps`
-- [ ] Estructura de carpetas creada según `docs/03-FOLDER-STRUCTURE.md`
-- [ ] `.gitignore` configurado
-- [ ] ESLint + Prettier configurados
-- [ ] Vitest configurado con 1 test mínimo pasando
+- [x] `npm init` + `package.json` con todas las dependencias
+- [x] `electron.vite.config.ts` configurado (main, preload, renderer)
+- [x] `tsconfig.json` + `tsconfig.node.json` optimizados
+- [x] `electron-builder.yml` con configs para las 3 plataformas
+- [ ] `tailwind.config.ts` con paleta OPRobots (usado CSS variables en globals.css)
+- [x] Ventana Electron mínima mostrando "OPRobots Telemetry Studio"
+- [ ] HMR funcionando en renderer (pendiente de probar con `npm run dev`)
+- [ ] Hot reload en main process (pendiente de probar con `npm run dev`)
+- [x] `serialport` en `dependencies` (NO en devDependencies)
+- [x] `postinstall` ejecutando `electron-builder install-app-deps`
+- [x] Estructura de carpetas creada según `docs/03-FOLDER-STRUCTURE.md`
+- [x] `.gitignore` configurado
+- [ ] ESLint + Prettier configurados (pendiente configuración)
+- [x] Vitest configurado con 1 test mínimo pasando
 
 ### Validación
 ```bash
-npm run dev                    # App abre, HMR funciona
-npm run build                  # Build exitoso sin errores
-npm run typecheck              # Sin errores de TypeScript
-npm run test                   # 1 test pasa
+npm run dev                    # App abre, HMR funciona (pendiente de probar)
+npm run build                  # Build exitoso sin errores (pendiente de probar)
+npm run typecheck              # ✅ Sin errores de TypeScript
+npm run test                   # ✅ 2 tests pasan
 ```
+
+### Notas
+- Tailwind CSS 4 configurado via `@tailwindcss/vite` plugin (no necesita tailwind.config.ts)
+- Paleta de colores implementada via CSS variables en `globals.css`
+- API de preload expuesta para serial, video, sesiones y exportación
 
 ---
 

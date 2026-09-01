@@ -222,3 +222,22 @@ Toda la documentación vive en `docs/`:
 | `ROADMAP.md` | Fases y timeline |
 
 **Regla**: Si se modifica el código, actualizar la documentación correspondiente. Los docs deben reflejar siempre el estado actual del proyecto.
+
+### Comandos de Desarrollo
+
+```bash
+npm run dev          # Electron-vite dev (HMR en renderer, hot reload en main)
+npm run build        # Build de producción
+npm run typecheck    # Verificar tipos TypeScript
+npm run test         # Ejecutar tests (Vitest)
+npm run test:watch   # Tests en watch mode
+npm run lint         # ESLint (pendiente configurar)
+```
+
+### Estado del Proyecto
+
+| Fase | Estado | Commits |
+|---|---|---|
+| Fase 0: Setup | ✅ Completada | `792cf03` |
+| Fase 1: Core Data Engine | ⏳ Pendiente | — |
+| PoCs (4 pruebas) | ⏳ Pendiente | — |

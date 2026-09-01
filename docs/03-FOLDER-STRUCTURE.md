@@ -9,8 +9,8 @@ oprobots-telemetry-studio/
 ├── tsconfig.json                    # Configuración TypeScript
 ├── tsconfig.node.json               # TS config para main process + workers
 ├── electron-builder.yml             # Configuración de empaquetado
-├── index.html                       # Entry HTML para el renderer
-├── tailwind.config.ts               # Configuración de Tailwind CSS
+├── vitest.config.ts                 # Configuración de Vitest (tests)
+├── .gitignore                       # Archivos ignorados por git
 │
 ├── resources/                       # Assets estáticos empaquetados
 │   ├── icon.ico                     # Icono Windows
