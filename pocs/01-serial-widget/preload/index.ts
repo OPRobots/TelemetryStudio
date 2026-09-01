@@ -26,6 +26,11 @@ const serialAPI = {
     ipcRenderer.on('serial:frame', handler);
     return () => ipcRenderer.removeListener('serial:frame', handler);
   },
+  onRaw: (callback: (line: string) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, line: string): void => callback(line);
+    ipcRenderer.on('serial:raw', handler);
+    return () => ipcRenderer.removeListener('serial:raw', handler);
+  },
   onDisconnected: (callback: () => void) => {
     const handler = (): void => callback();
     ipcRenderer.on('serial:disconnected', handler);

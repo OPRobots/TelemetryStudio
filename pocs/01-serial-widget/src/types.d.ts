@@ -19,6 +19,7 @@ interface SerialAPI {
   open: (path: string, baudRate: number) => Promise<{ success: boolean; error?: string }>;
   close: () => Promise<boolean>;
   onFrame: (callback: (frame: TelemetryFrame) => void) => () => void;
+  onRaw: (callback: (line: string) => void) => () => void;
   onDisconnected: (callback: () => void) => () => void;
   onError: (callback: (error: string) => void) => () => void;
 }

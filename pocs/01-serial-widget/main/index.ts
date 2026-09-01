@@ -71,7 +71,11 @@ ipcMain.handle('serial:open', async (_event, path: string, baudRate: number) => 
     parser = serialPort.pipe(new ReadlineParser({ delimiter: '\n' }));
 
     parser.on('data', (line: string) => {
-      const frame = parseFrame(line.trim());
+      const raw = line.trim();
+      if (mainWindow) {
+        mainWindow.webContents.send('serial:raw', raw);
+      }
+      const frame = parseFrame(raw);
       if (frame && mainWindow) {
         mainWindow.webContents.send('serial:frame', frame);
       }

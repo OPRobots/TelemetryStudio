@@ -19,13 +19,7 @@ interface SerialPortInfo {
 }
 
 const MAX_POINTS = 300;
-
-const SERIES_CONFIG: { key: keyof TelemetryFrame; label: string; color: string }[] = [
-  { key: 'accX', label: 'Acc X', color: '#3b82f6' },
-  { key: 'accY', label: 'Acc Y', color: '#22c55e' },
-  { key: 'accZ', label: 'Acc Z', color: '#ef4444' },
-  { key: 'battery', label: 'Battery', color: '#F2BE22' }
-];
+const MAX_LOG_LINES = 50;
 
 function App(): React.ReactElement {
   const [ports, setPorts] = useState<SerialPortInfo[]>([]);
@@ -34,22 +28,31 @@ function App(): React.ReactElement {
   const [connected, setConnected] = useState(false);
   const [frameCount, setFrameCount] = useState(0);
   const [fps, setFps] = useState(0);
+  const [error, setError] = useState<string>('');
+  const [logLines, setLogLines] = useState<string[]>([]);
 
   const chartRef = useRef<HTMLDivElement>(null);
   const uplotRef = useRef<uPlot | null>(null);
   const dataRef = useRef<(number | null)[][]>([
-    [], // timestamp
-    [], [], [], [] // accX, accY, accZ, battery
+    [],
+    [], [], [], []
   ]);
   const frameCountRef = useRef(0);
   const fpsTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const addLog = useCallback((msg: string) => {
+    setLogLines(prev => {
+      const next = [...prev, msg];
+      return next.length > MAX_LOG_LINES ? next.slice(-MAX_LOG_LINES) : next;
+    });
+  }, []);
 
   // Initialize uPlot
   useEffect(() => {
     if (!chartRef.current) return;
 
     const opts: uPlot.Options = {
-      width: 1100,
+      width: chartRef.current.clientWidth - 20,
       height: 500,
       series: [
         {},
@@ -84,6 +87,11 @@ function App(): React.ReactElement {
     };
   }, []);
 
+  // Auto-load ports on mount
+  useEffect(() => {
+    loadPorts();
+  }, []);
+
   // Handle new frame
   const handleFrame = useCallback((frame: TelemetryFrame) => {
     const data = dataRef.current;
@@ -93,7 +101,6 @@ function App(): React.ReactElement {
     data[3].push(frame.accZ);
     data[4].push(frame.battery);
 
-    // Keep only last MAX_POINTS
     if (data[0].length > MAX_POINTS) {
       for (let i = 0; i < data.length; i++) {
         data[i] = data[i].slice(-MAX_POINTS);
@@ -106,64 +113,91 @@ function App(): React.ReactElement {
     uplotRef.current?.setData(data as uPlot.AlignedData);
   }, []);
 
-  // Connect to serial
+  // Handle raw data for log
+  const handleRawLine = useCallback((line: string) => {
+    addLog(`→ ${line}`);
+  }, [addLog]);
+
+  // Connect to serial listeners
   useEffect(() => {
     if (!connected) return;
 
     const unsubscribeFrame = window.serialAPI.onFrame(handleFrame);
+    const unsubscribeRaw = window.serialAPI.onRaw(handleRawLine);
     const unsubscribeDisconnect = window.serialAPI.onDisconnected(() => {
       setConnected(false);
+      addLog('⚠ Desconectado');
     });
     const unsubscribeError = window.serialAPI.onError((err) => {
-      console.error('Serial error:', err);
+      setError(err);
       setConnected(false);
+      addLog(`✗ Error: ${err}`);
     });
 
     return () => {
       unsubscribeFrame();
+      unsubscribeRaw();
       unsubscribeDisconnect();
       unsubscribeError();
     };
-  }, [connected, handleFrame]);
+  }, [connected, handleFrame, handleRawLine, addLog]);
 
   const loadPorts = async () => {
-    const availablePorts = await window.serialAPI.listPorts();
-    setPorts(availablePorts);
-    if (availablePorts.length > 0 && !selectedPort) {
-      setSelectedPort(availablePorts[0].path);
+    setError('');
+    try {
+      const availablePorts = await window.serialAPI.listPorts();
+      setPorts(availablePorts);
+      addLog(`Puertos encontrados: ${availablePorts.length}`);
+      if (availablePorts.length > 0 && !selectedPort) {
+        setSelectedPort(availablePorts[0].path);
+      }
+    } catch (err) {
+      setError(`Error listando puertos: ${(err as Error).message}`);
     }
   };
 
   const connect = async () => {
     if (!selectedPort) return;
+    setError('');
+    addLog(`Conectando a ${selectedPort} @ ${baudRate} baud...`);
+
     const result = await window.serialAPI.open(selectedPort, baudRate);
     if (result.success) {
       setConnected(true);
       dataRef.current = [[], [], [], [], []];
       setFrameCount(0);
+      addLog(`✓ Conectado a ${selectedPort}`);
     } else {
-      alert(`Error: ${result.error}`);
+      setError(result.error || 'Error desconocido');
+      addLog(`✗ Error: ${result.error}`);
     }
   };
 
   const disconnect = async () => {
     await window.serialAPI.close();
     setConnected(false);
+    addLog('Desconectado');
   };
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', backgroundColor: '#0a0e17', color: '#e2e8f0', minHeight: '100vh', padding: '20px' }}>
       <h1 style={{ marginBottom: '20px', color: '#3b82f6' }}>PoC 1: Serial → Widget</h1>
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center' }}>
+      {error && (
+        <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#F2051920', border: '1px solid #F20519', borderRadius: '6px', color: '#ef4444', fontSize: '13px' }}>
+          {error}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
         <button onClick={loadPorts} style={buttonStyle}>
-          Listar Puertos
+          ⟳ Refrescar
         </button>
 
         <select
           value={selectedPort}
           onChange={(e) => setSelectedPort(e.target.value)}
-          style={selectStyle}
+          style={{ ...selectStyle, minWidth: '250px' }}
         >
           <option value="">Seleccionar puerto...</option>
           {ports.map(p => (
@@ -183,6 +217,9 @@ function App(): React.ReactElement {
           <option value={38400}>38400</option>
           <option value={57600}>57600</option>
           <option value={115200}>115200</option>
+          <option value={230400}>230400</option>
+          <option value={460800}>460800</option>
+          <option value={921600}>921600</option>
         </select>
 
         {!connected ? (
@@ -202,9 +239,26 @@ function App(): React.ReactElement {
         </strong></span>
         <span>FPS: <strong style={{ color: '#3b82f6' }}>{fps}</strong></span>
         <span>Frames: <strong style={{ color: '#F2BE22' }}>{frameCount}</strong></span>
+        <span>Puertos: <strong style={{ color: '#94a3b8' }}>{ports.length}</strong></span>
       </div>
 
-      <div ref={chartRef} style={{ backgroundColor: '#111827', borderRadius: '8px', padding: '10px' }} />
+      <div style={{ display: 'flex', gap: '15px' }}>
+        <div ref={chartRef} style={{ flex: 1, backgroundColor: '#111827', borderRadius: '8px', padding: '10px', minWidth: 0 }} />
+
+        <div style={{ width: '320px', backgroundColor: '#111827', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column' }}>
+          <h3 style={{ marginBottom: '8px', fontSize: '13px', color: '#94a3b8' }}>Log (últimas líneas)</h3>
+          <div style={{ flex: 1, overflow: 'auto', fontFamily: 'monospace', fontSize: '11px', color: '#64748b' }}>
+            {logLines.length === 0 && (
+              <div style={{ color: '#475569' }}>Esperando datos...</div>
+            )}
+            {logLines.map((line, i) => (
+              <div key={i} style={{ padding: '1px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {line}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
