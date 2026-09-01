@@ -11,10 +11,9 @@ Validar el pipeline completo: Serial UART → parse → EventBus → uPlot widge
 - [ ] No hay memory leaks tras 5 minutos de uso
 
 ## Ejecución
+Desde el directorio raíz del proyecto:
 ```bash
-cd pocs/01-serial-widget
-npm install
-npm start
+npm run poc:1
 ```
 
 ## Requisitos
@@ -24,5 +23,6 @@ npm start
 ## Archivos
 - `main/index.ts` — Proceso principal con serialport
 - `preload/index.ts` — Puente seguro
-- `renderer/index.html` — UI con uPlot
+- `src/App.tsx` — UI con uPlot
+- `index.html` — Entry HTML
 - `examples/telemetry.ino` — Sketch Arduino para generar datos

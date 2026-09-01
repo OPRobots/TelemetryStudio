@@ -2,41 +2,46 @@ import { resolve } from 'path';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 
+const pocRoot = resolve(__dirname);
+const projectRoot = resolve(__dirname, '..', '..');
+
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
     build: {
+      lib: {
+        entry: resolve(pocRoot, 'main/index.ts'),
+        formats: ['cjs'],
+      },
       rollupOptions: {
-        input: {
-          index: resolve(__dirname, 'main/index.ts')
-        }
-      }
-    }
+        external: ['serialport', '@serialport/*'],
+      },
+      outDir: resolve(projectRoot, 'out/main'),
+    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
     build: {
-      rollupOptions: {
-        input: {
-          index: resolve(__dirname, 'preload/index.ts')
-        }
-      }
-    }
+      lib: {
+        entry: resolve(pocRoot, 'preload/index.ts'),
+        formats: ['cjs'],
+      },
+      outDir: resolve(projectRoot, 'out/preload'),
+    },
   },
   renderer: {
-    root: resolve(__dirname, 'renderer'),
+    root: pocRoot,
     build: {
       rollupOptions: {
-        input: {
-          index: resolve(__dirname, 'renderer/index.html')
-        }
-      }
+        input: resolve(pocRoot, 'index.html'),
+      },
+      outDir: resolve(pocRoot, 'out'),
     },
-    plugins: [react()],
     resolve: {
       alias: {
-        '@': resolve(__dirname, 'renderer/src')
-      }
-    }
-  }
+        '@': resolve(pocRoot, 'src'),
+      },
+    },
+    plugins: [react()],
+  },
 });
