@@ -12,6 +12,12 @@ oprobots-telemetry-studio/
 ├── vitest.config.ts                 # Configuración de Vitest (tests)
 ├── .gitignore                       # Archivos ignorados por git
 │
+├── pocs/                            # Pruebas de concepto (referencia)
+│   ├── 01-serial-widget/            # PoC 1: Serial → parse → EventBus → uPlot
+│   ├── 02-video-sync/               # PoC 2: Video Sync (requestVideoFrameCallback)
+│   ├── 03-video-export/             # PoC 3: Video Export (canvas capture)
+│   └── 04-packaging/                # PoC 4: Packaging multiplataforma
+│
 ├── resources/                       # Assets estáticos empaquetados
 │   ├── icon.ico                     # Icono Windows
 │   ├── icon.icns                    # Icono macOS

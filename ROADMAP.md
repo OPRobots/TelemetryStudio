@@ -383,7 +383,7 @@ npm run typecheck              # Sin errores TS
 ## Dependencias entre Fases
 
 ```
-Fase 0 (Setup)
+Fase 0 (Setup) ✅
     ↓
 Fase 1 (Core) ← No depende de nada más
     ↓
@@ -408,12 +408,16 @@ Fase 9 (Polish) ← Depende de todo empaquetado
 
 ## PoCs Obligatorios (antes de Fase 0)
 
-Ver `docs/13-POC-TESTS.md` para los 4 PoCs detallados. Orden recomendado:
+Los PoCs se encuentran en `pocs/` como referencia de funcionamiento.
 
-1. **PoC 4** (Packaging) — Validar que el stack empaqueta
-2. **PoC 1** (Serial → Widget) — Validar pipeline de datos
-3. **PoC 2** (Video Sync) — Validar sincronización
-4. **PoC 3** (Video Export) — Validar exportación
+| PoC | Directorio | Estado |
+|---|---|---|
+| PoC 1: Serial → Widget | `pocs/01-serial-widget/` | ⏳ En progreso |
+| PoC 2: Video Sync | `pocs/02-video-sync/` | ⏳ Pendiente |
+| PoC 3: Video Export | `pocs/03-video-export/` | ⏳ Pendiente |
+| PoC 4: Packaging | `pocs/04-packaging/` | ⏳ Pendiente |
+
+Ver `docs/13-POC-TESTS.md` para los 4 PoCs detallados con criterios de éxito.
 
 ---
 
