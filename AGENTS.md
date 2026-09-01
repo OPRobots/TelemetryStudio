@@ -240,4 +240,7 @@ npm run lint         # ESLint (pendiente configurar)
 |---|---|---|
 | Fase 0: Setup | ✅ Completada | `792cf03` |
 | Fase 1: Core Data Engine | ⏳ Pendiente | — |
-| PoCs (4 pruebas) | ⏳ Pendiente | — |
+| PoC 1: Serial → Widget | ⏳ En progreso | `639ce0c` |
+| PoC 2: Video Sync | ⏳ Pendiente | — |
+| PoC 3: Video Export | ⏳ Pendiente | — |
+| PoC 4: Packaging | ⏳ Pendiente | — |
