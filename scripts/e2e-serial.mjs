@@ -131,6 +131,24 @@ app.whenReady().then(async () => {
     })()`);
 
     console.log('E2E_RESULT ' + JSON.stringify({ opened, connected, ...state }));
+
+    // Verificar el editor de layout: abrir config del widget y comprobar los campos
+    await win.webContents.executeJavaScript(`(() => {
+      const btn = document.querySelector('.widget-card .icon-button');
+      if (btn) btn.click();
+      return !!btn;
+    })()`);
+    await new Promise((r) => setTimeout(r, 400));
+    const dialogState = await win.webContents.executeJavaScript(`(() => {
+      const panel = document.querySelector('.dialog-panel');
+      const fieldBoxes = panel ? panel.querySelectorAll('.dialog-fields input[type=checkbox]').length : 0;
+      const text = panel ? panel.innerText : '';
+      const cancelBtn = Array.from(document.querySelectorAll('button')).find((b) => b.textContent.trim() === 'Cancelar');
+      if (cancelBtn) cancelBtn.click();
+      return { dialogOpen: !!panel, fieldBoxes, hasFieldsLabel: text.includes('Campos de datos') };
+    })()`);
+    console.log('E2E_DIALOG ' + JSON.stringify(dialogState));
+
     if (errors.length > 0) console.log('E2E_ERRORS ' + JSON.stringify(errors.slice(0, 20)));
 
     const framesMatch = /Frames:\s*(\d+)/.exec(state.footerText);
@@ -144,6 +162,9 @@ app.whenReady().then(async () => {
       state.widgetCards >= 1 &&
       state.canvasCount >= 1 &&
       state.drawnPixels > 100 &&
+      dialogState.dialogOpen &&
+      dialogState.fieldBoxes === 7 &&
+      dialogState.hasFieldsLabel &&
       frameCount > 10 &&
       errors.length === 0;
 
