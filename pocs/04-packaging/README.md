@@ -2,37 +2,24 @@
 
 App Electron mínima que lista puertos serie. Objetivo: validar que `serialport` (módulo nativo C++) se empaqueta correctamente.
 
-## IMPORTANTE
-
-**Todos los comandos se ejecutan desde la raíz del proyecto** (`OPRobots-TelemetryPlayer/`), NO desde esta carpeta.
-
-Si copias el proyecto a otro ordenador, copia la **carpeta completa del proyecto**, no solo esta carpeta.
-
 ## Build Instructions
 
-### Linux
+### Opción 1: Desde esta carpeta (standalone)
+
 ```bash
-cd OPRobots-TelemetryPlayer
+cd pocs/04-packaging
 npm install
-npm run build:linux
-# Ejecutar:
-./release/*.AppImage
+npm run build:linux    # o build:mac, build:win
+# Los builds se generan en release/
 ```
 
-### macOS
-```bash
-cd OPRobots-TelemetryPlayer
-npm install
-npm run build:mac
-# Abrir el .dmg generado en release/
-```
+### Opción 2: Desde la raíz del proyecto
 
-### Windows
 ```bash
 cd OPRobots-TelemetryPlayer
 npm install
-npm run build:win
-# Ejecutar el .exe (NSIS installer o portable) en release/
+npm run build:linux    # o build:mac, build:win
+# Los builds se generan en release/
 ```
 
 ### Requisitos
@@ -43,7 +30,7 @@ npm run build:win
 ### Linux: serial sin root
 En Linux, para acceder a puertos serie sin permisos de administrador:
 ```bash
-sudo cp pocs/04-packaging/examples/udev/69-oprobots-serial.rules /etc/udev/rules.d/
+sudo cp examples/udev/69-oprobots-serial.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 sudo usermod -a -G dialout $USER

@@ -240,7 +240,14 @@ npm run lint         # ESLint (pendiente configurar)
 npm run poc:1        # PoC 1: Serial → Widget
 npm run poc:2        # PoC 2: Video Sync
 npm run poc:3        # PoC 3: Video Export
-npm run poc:4        # PoC 4: Packaging test
+npm run poc:4        # PoC 4: Packaging test (dev)
+```
+
+### Comandos de Build (PoC 4)
+
+```bash
+cd pocs/04-packaging
+npm install
 npm run build:linux  # Build Linux (AppImage + DEB)
 npm run build:mac    # Build macOS (DMG)
 npm run build:win    # Build Windows (NSIS + portable)
