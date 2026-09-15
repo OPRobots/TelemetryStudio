@@ -237,6 +237,13 @@ npm run typecheck    # Verificar tipos TypeScript
 npm run test         # Ejecutar tests (Vitest)
 npm run test:watch   # Tests en watch mode
 npm run lint         # ESLint (pendiente configurar)
+npm run poc:1        # PoC 1: Serial → Widget
+npm run poc:2        # PoC 2: Video Sync
+npm run poc:3        # PoC 3: Video Export
+npm run poc:4        # PoC 4: Packaging test
+npm run build:linux  # Build Linux (AppImage + DEB)
+npm run build:mac    # Build macOS (DMG)
+npm run build:win    # Build Windows (NSIS + portable)
 ```
 
 ### Estado del Proyecto
@@ -247,5 +254,5 @@ npm run lint         # ESLint (pendiente configurar)
 | Fase 1: Core Data Engine | ⏳ Pendiente | — |
 | PoC 1: Serial → Widget | ✅ Validado (hardware real) | `e89a14c` |
 | PoC 2: Video Sync | ✅ Funcional | `8ee0cd5`, `5f6adde` |
-| PoC 3: Video Export | ✅ Funcional | (pendiente commit) |
-| PoC 4: Packaging | ⏳ Pendiente | — |
+| PoC 3: Video Export | ✅ Funcional | `ddd9354` |
+| PoC 4: Packaging | ✅ Build Linux OK | (pendiente commit) |

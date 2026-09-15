@@ -3,6 +3,7 @@ productName: OPRobots Telemetry Studio
 directories:
   buildResources: build
 files:
+  - "out/**/*"
   - "!**/.vscode/*"
   - "!src/*"
   - "!electron.vite.config.*"

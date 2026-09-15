@@ -1,0 +1,19 @@
+# OPRobots — Permisos de acceso a puertos serie para usuarios en grupo 'dialout'
+
+# FTDI (FT232R, FT232H)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", MODE="0666", GROUP="dialout"
+
+# SiLabs CP210x
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", MODE="0666", GROUP="dialout"
+
+# CH340/CH341
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", MODE="0666", GROUP="dialout"
+
+# Prolific PL2303
+SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", MODE="0666", GROUP="dialout"
+
+# STM32 ST-Link VCP
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", MODE="0666", GROUP="dialout"
+
+# Generic CDC-ACM (USB Console)
+SUBSYSTEM=="tty", ATTRS{bInterfaceClass}=="02", MODE="0666", GROUP="dialout"

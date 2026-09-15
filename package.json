@@ -2,6 +2,7 @@
   "name": "oprobots-telemetry-studio",
   "version": "0.1.0",
   "description": "Aplicación de escritorio para análisis de telemetría de robots OPRobots con vídeo sincronizado",
+  "homepage": "https://github.com/robotaleh/OPRobots-TelemetryPlayer",
   "main": "./out/main/index.js",
   "author": "robotaleh",
   "license": "PolyForm-Noncommercial-1.0.0",
@@ -16,6 +17,10 @@
     "poc:1": "FONTCONFIG_PATH=/dev/null electron-vite dev --config pocs/01-serial-widget/electron.vite.config.ts",
     "poc:2": "FONTCONFIG_PATH=/dev/null electron-vite dev --config pocs/02-video-sync/electron.vite.config.ts",
     "poc:3": "FONTCONFIG_PATH=/dev/null electron-vite dev --config pocs/03-video-export/electron.vite.config.ts",
+    "poc:4": "FONTCONFIG_PATH=/dev/null electron-vite dev --config pocs/04-packaging/electron.vite.config.ts",
+    "build:linux": "FONTCONFIG_PATH=/dev/null electron-vite build --config pocs/04-packaging/electron.vite.config.ts && electron-builder --linux --config",
+    "build:mac": "electron-vite build --config pocs/04-packaging/electron.vite.config.ts && electron-builder --mac --config",
+    "build:win": "electron-vite build --config pocs/04-packaging/electron.vite.config.ts && electron-builder --win --config",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
