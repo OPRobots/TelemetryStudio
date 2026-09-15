@@ -8,6 +8,7 @@ import { WidgetToolbar } from '../widgets/WidgetToolbar';
 import { SerialConnectDialog } from '../dialogs/SerialConnectDialog';
 import { LayoutDialog } from '../dialogs/LayoutDialog';
 import { SaveSessionDialog } from '../dialogs/SaveSessionDialog';
+import { SessionBrowserDialog } from '../dialogs/SessionBrowserDialog';
 import { openVideoDialog, openSessionDialog } from '../../lib/session-actions';
 import { useAppStore } from '../../stores/app-store';
 
@@ -15,6 +16,7 @@ export function AppShell(): React.ReactElement {
   const [serialOpen, setSerialOpen] = useState(false);
   const [layoutsOpen, setLayoutsOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [sessionsOpen, setSessionsOpen] = useState(false);
   const videoSrc = useAppStore((s) => s.videoSrc);
 
   return (
@@ -47,6 +49,7 @@ export function AppShell(): React.ReactElement {
           onOpenSerial={() => setSerialOpen(true)}
           onSaveSession={() => setSaveOpen(true)}
           onOpenLayouts={() => setLayoutsOpen(true)}
+          onOpenSessions={() => setSessionsOpen(true)}
         />
 
         <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -89,6 +92,7 @@ export function AppShell(): React.ReactElement {
       {serialOpen && <SerialConnectDialog onClose={() => setSerialOpen(false)} />}
       {layoutsOpen && <LayoutDialog onClose={() => setLayoutsOpen(false)} />}
       {saveOpen && <SaveSessionDialog onClose={() => setSaveOpen(false)} />}
+      {sessionsOpen && <SessionBrowserDialog onClose={() => setSessionsOpen(false)} />}
     </div>
   );
 }

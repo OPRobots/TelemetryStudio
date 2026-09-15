@@ -1,12 +1,8 @@
-import {
-  decodeSession,
-  encodeSession,
-  sessionToDataset,
-  datasetToSession,
-} from '@core/session-codec';
+import { sessionToDataset, datasetToSession } from '@core/session-codec';
 import { telemetryStore } from '@core/telemetry-store';
 import { videoSynchronizer } from '@core/video-synchronizer';
 import { createEmptyLayout } from '@services/layout-manager';
+import { sessionManager } from '@services/session-manager';
 import type { SessionWidget } from '@core/types/session';
 import type { DashboardLayout, WidgetConfig } from '@core/types/layout';
 import { useAppStore } from '../stores/app-store';
@@ -32,20 +28,19 @@ export async function openSessionDialog(): Promise<void> {
   await loadSession(res.filePath);
 }
 
+/**
+ * Carga una sesión completa: telemetría, vídeo, sincronización y layout.
+ */
 export async function loadSession(jsonPath: string): Promise<void> {
-  const api = window.api;
-  if (!api) return;
-
-  const json = await api.sessionRead(jsonPath);
-  const session = decodeSession(json);
+  const session = await sessionManager.readSession(jsonPath);
   const dataset = sessionToDataset(session);
 
   telemetryStore.loadDataset(dataset);
   useAppStore.getState().setDataset(dataset, dataset.schema);
 
   if (session.video.file) {
-    const videoPath = await api.sessionGetVideoPath(jsonPath, session.video.file);
-    useAppStore.getState().setVideo(videoPath, videoPath);
+    const videoPath = await sessionManager.resolveVideoPath(jsonPath, session.video.file);
+    if (videoPath) useAppStore.getState().setVideo(videoPath, videoPath);
   }
 
   videoSynchronizer.setDriftOffset(session.sync.offset_ms);
@@ -79,10 +74,10 @@ export async function loadSession(jsonPath: string): Promise<void> {
   useAppStore.getState().setStatusMessage(`Sesión cargada: ${session.name}`);
 }
 
+/**
+ * Construye y persiste la sesión actual.
+ */
 export async function saveSession(name: string, outputDir: string): Promise<void> {
-  const api = window.api;
-  if (!api) return;
-
   const { dataset, videoPath, videoInfo, syncOffsetMs, playbackRate } = useAppStore.getState();
   if (!dataset) {
     useAppStore.getState().setStatusMessage('No hay telemetría para guardar');
@@ -115,6 +110,6 @@ export async function saveSession(name: string, outputDir: string): Promise<void
   );
   session.name = name;
 
-  const dir = await api.sessionExport(name, outputDir, encodeSession(session), videoPath ?? '');
+  const dir = await sessionManager.saveSession(session, outputDir, videoPath ?? '');
   useAppStore.getState().setStatusMessage(`Sesión guardada en ${dir}`);
 }

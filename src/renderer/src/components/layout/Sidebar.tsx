@@ -8,9 +8,10 @@ interface SidebarProps {
   onOpenSerial: () => void;
   onSaveSession: () => void;
   onOpenLayouts: () => void;
+  onOpenSessions: () => void;
 }
 
-export function Sidebar({ onOpenSerial, onSaveSession, onOpenLayouts }: SidebarProps): React.ReactElement {
+export function Sidebar({ onOpenSerial, onSaveSession, onOpenLayouts, onOpenSessions }: SidebarProps): React.ReactElement {
   const schema = useAppStore((s) => s.schema);
   const dataset = useAppStore((s) => s.dataset);
   const syncOffsetMs = useAppStore((s) => s.syncOffsetMs);
@@ -45,6 +46,9 @@ export function Sidebar({ onOpenSerial, onSaveSession, onOpenLayouts }: SidebarP
           </button>
           <button className="sidebar-button" onClick={() => void openSessionDialog()}>
             Abrir sesión
+          </button>
+          <button className="sidebar-button" onClick={onOpenSessions}>
+            Explorar sesiones
           </button>
           <button className="sidebar-button" onClick={onSaveSession} disabled={!dataset}>
             Guardar sesión
