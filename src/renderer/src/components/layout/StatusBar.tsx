@@ -29,7 +29,7 @@ export function StatusBar({ onOpenSerial, onOpenVideo }: StatusBarProps): React.
 
   return (
     <footer
-      className="flex h-8 items-center justify-between px-3 text-xs"
+      className="flex h-9 items-center justify-between px-4 text-xs"
       style={{
         backgroundColor: 'var(--bg-panel)',
         borderTop: '1px solid var(--bg-border)',

@@ -30,21 +30,25 @@ export function Inspector(): React.ReactElement {
 
   return (
     <aside
-      className="flex w-64 flex-col overflow-y-auto px-4 py-4"
-      style={{ backgroundColor: 'var(--bg-panel)', borderRight: '1px solid var(--bg-border)' }}
+      className="flex w-72 flex-col overflow-y-auto"
+      style={{
+        padding: '24px 20px',
+        backgroundColor: 'var(--bg-panel)',
+        borderRight: '1px solid var(--bg-border)',
+      }}
     >
-      <section className="inspector-section">
+      <section>
         <span className="section-label">Sincronización</span>
 
-        <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Offset
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <input
               type="number"
               className="dialog-input mono"
-              style={{ width: 78, height: 26, padding: '0 6px', textAlign: 'right' }}
+              style={{ width: 84, height: 30, padding: '0 8px', textAlign: 'right' }}
               value={syncOffsetMs}
               onChange={(e) => applyOffset(Number(e.target.value))}
             />
@@ -64,7 +68,7 @@ export function Inspector(): React.ReactElement {
           className="timeline-slider"
         />
 
-        <div className="mt-2 flex gap-1.5">
+        <div className="mt-4 flex gap-2">
           <button className="toolbar-button toolbar-button--compact flex-1" onClick={alignToStart}>
             Alinear al inicio
           </button>
@@ -73,7 +77,7 @@ export function Inspector(): React.ReactElement {
           </button>
         </div>
 
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-5 flex items-center justify-between">
           <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
             t telemetría
           </span>
@@ -83,7 +87,10 @@ export function Inspector(): React.ReactElement {
         </div>
       </section>
 
-      <section className="inspector-section min-h-0 flex-1">
+      <section
+        className="min-h-0"
+        style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--bg-border)' }}
+      >
         <span className="section-label">Campos · {schema.length}</span>
 
         {schema.length === 0 ? (
@@ -92,7 +99,7 @@ export function Inspector(): React.ReactElement {
             una sesión.
           </p>
         ) : (
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             {schema.map((f) => (
               <div key={f.name} className="field-row">
                 <span className="field-name">{f.name}</span>

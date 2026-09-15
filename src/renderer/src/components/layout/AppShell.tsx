@@ -144,7 +144,7 @@ export function AppShell(): React.ReactElement {
           </section>
         ) : (
           <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <div className="min-h-0 px-3 pt-3" style={{ height: '42%' }}>
+            <div className="min-h-0" style={{ height: '42%', padding: '16px 20px 0' }}>
               {videoSrc ? (
                 <VideoPlayer />
               ) : (
@@ -157,14 +157,17 @@ export function AppShell(): React.ReactElement {
 
             {videoSrc && <Toolbar />}
 
-            <div className="flex items-center justify-between px-4 pb-2 pt-3">
+            <div
+              className="flex items-center justify-between"
+              style={{ padding: '16px 20px 10px' }}
+            >
               <span className="section-label" style={{ marginBottom: 0 }}>
                 Widgets
               </span>
               <WidgetToolbar open={widgetMenuOpen} onOpenChange={setWidgetMenuOpen} />
             </div>
 
-            <div className="min-h-0 flex-1 px-3 pb-3">
+            <div className="min-h-0 flex-1" style={{ padding: '0 20px 20px' }}>
               <WidgetHost onRequestAdd={() => setWidgetMenuOpen(true)} />
             </div>
           </section>

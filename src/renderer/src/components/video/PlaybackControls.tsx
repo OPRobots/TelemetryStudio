@@ -25,7 +25,7 @@ export function PlaybackControls(): React.ReactElement {
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2.5">
       <button
         onClick={() => videoSynchronizer.stepBackward()}
         className="toolbar-button"
@@ -35,7 +35,7 @@ export function PlaybackControls(): React.ReactElement {
       </button>
       <button
         onClick={togglePlay}
-        className="toolbar-button toolbar-button-primary min-w-[70px]"
+        className="toolbar-button toolbar-button-primary min-w-[72px]"
         title={isPlaying ? 'Pausa' : 'Reproducir'}
       >
         {isPlaying ? 'Pausa' : 'Play'}
@@ -48,23 +48,34 @@ export function PlaybackControls(): React.ReactElement {
         ▶
       </button>
 
-      <span className="ml-2 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
-        {formatTime(currentTime)} / {formatTime(duration)}
+      <span className="mono ml-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+        {formatTime(currentTime)}
+        <span style={{ color: 'var(--text-disabled)' }}> / </span>
+        {formatTime(duration)}
       </span>
 
-      <div className="ml-3 flex items-center gap-1">
-        {SPEEDS.map((rate) => (
-          <button
-            key={rate}
-            onClick={() => videoSynchronizer.setPlaybackRate(rate)}
-            className="toolbar-button text-xs"
-            style={{
-              backgroundColor: playbackRate === rate ? '#2563eb' : '#193773',
-            }}
-          >
-            {rate}x
-          </button>
-        ))}
+      <div className="ml-auto flex items-center gap-1">
+        {SPEEDS.map((rate) => {
+          const active = playbackRate === rate;
+          return (
+            <button
+              key={rate}
+              onClick={() => videoSynchronizer.setPlaybackRate(rate)}
+              className="toolbar-button toolbar-button--compact"
+              style={
+                active
+                  ? {
+                      background: 'var(--accent-soft)',
+                      borderColor: 'var(--accent-border)',
+                      color: 'var(--accent)',
+                    }
+                  : undefined
+              }
+            >
+              {rate}x
+            </button>
+          );
+        })}
       </div>
     </div>
   );

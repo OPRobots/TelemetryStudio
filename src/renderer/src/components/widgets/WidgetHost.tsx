@@ -66,12 +66,12 @@ export function WidgetHost({
   return (
     <>
       <div
-        className="h-full w-full overflow-auto p-2"
+        className="h-full w-full overflow-auto"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(12, minmax(0, 1fr))',
           gridAutoRows: '42px',
-          gap: '8px',
+          gap: '12px',
         }}
       >
         {widgets
