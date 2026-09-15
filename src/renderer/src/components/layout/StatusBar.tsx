@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../../stores/app-store';
+import { useComparisonStore } from '../../stores/comparison-store';
 import { videoSynchronizer } from '@core/video-synchronizer';
 
-export function StatusBar(): React.ReactElement {
+interface StatusBarProps {
+  onOpenSerial: () => void;
+  onOpenVideo: () => void;
+}
+
+export function StatusBar({ onOpenSerial, onOpenVideo }: StatusBarProps): React.ReactElement {
   const serialConnected = useAppStore((s) => s.serialConnected);
   const serialPort = useAppStore((s) => s.serialPort);
   const frameCount = useAppStore((s) => s.frameCount);
@@ -10,43 +16,69 @@ export function StatusBar(): React.ReactElement {
   const videoInfo = useAppStore((s) => s.videoInfo);
   const streamState = useAppStore((s) => s.streamState);
   const statusMessage = useAppStore((s) => s.statusMessage);
+  const comparisonActive = useComparisonStore((s) => s.active);
   const [drift, setDrift] = useState(0);
 
   useEffect(() => {
-    const id = window.setInterval(() => {
-      setDrift(videoSynchronizer.averageDrift);
-    }, 500);
+    const id = window.setInterval(() => setDrift(videoSynchronizer.averageDrift), 500);
     return () => window.clearInterval(id);
   }, []);
 
   const streamLabel =
-    streamState === 'streaming' ? 'Grabando' : streamState === 'stopped' ? 'Detenido' : 'Inactivo';
+    streamState === 'streaming' ? 'grabando' : streamState === 'stopped' ? 'detenido' : 'inactivo';
 
   return (
     <footer
-      className="flex items-center justify-between px-3 py-1 text-xs"
+      className="flex h-8 items-center justify-between px-3 text-xs"
       style={{
-        backgroundColor: 'var(--bg-secondary)',
+        backgroundColor: 'var(--bg-panel)',
         borderTop: '1px solid var(--bg-border)',
         color: 'var(--text-tertiary)',
       }}
     >
-      <div className="flex items-center gap-4">
-        <span>
+      <div className="flex items-center gap-1">
+        <button className="chip chip--button" onClick={onOpenSerial} title="Configurar Serial">
           <span
-            className="mr-1 inline-block h-2 w-2 rounded-full"
-            style={{ backgroundColor: serialConnected ? '#4ade80' : '#64748b' }}
+            className="chip__dot"
+            style={{ backgroundColor: serialConnected ? 'var(--ok)' : 'var(--text-disabled)' }}
           />
-          {serialConnected ? `Serial: ${serialPort ?? 'conectado'} (${streamLabel})` : 'Serial: desconectado'}
-        </span>
-        <span>{videoInfo ? `Vídeo: ${videoInfo.filename}` : 'Sin vídeo'}</span>
+          <span>Serial</span>
+          <span className="chip__value">
+            {serialConnected ? (serialPort ?? 'conectado') : 'desconectado'}
+          </span>
+          {serialConnected && <span className="chip__value">· {streamLabel}</span>}
+        </button>
+
+        <button className="chip chip--button" onClick={onOpenVideo} title="Abrir vídeo">
+          <span>Vídeo</span>
+          <span className="chip__value">{videoInfo?.filename ?? 'sin cargar'}</span>
+        </button>
+
+        {comparisonActive && (
+          <span className="chip">
+            <span className="chip__dot" style={{ backgroundColor: 'var(--accent)' }} />
+            Comparando
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-4">
-        <span style={{ color: statusMessage ? 'var(--text-secondary)' : undefined }}>{statusMessage}</span>
-        <span>Campos: {schema.length}</span>
-        <span>Frames: {frameCount}</span>
-        <span style={{ color: drift < 33 ? '#4ade80' : '#F2BE22' }}>Drift: {drift.toFixed(1)} ms</span>
+        <span style={{ color: 'var(--text-secondary)' }}>{statusMessage}</span>
+        <span>
+          Campos <span className="chip__value mono">{schema.length}</span>
+        </span>
+        <span>
+          Frames <span className="chip__value mono">{frameCount}</span>
+        </span>
+        <span>
+          Drift{' '}
+          <span
+            className="mono"
+            style={{ color: drift < 33 ? 'var(--ok)' : 'var(--warn)' }}
+          >
+            {drift.toFixed(1)} ms
+          </span>
+        </span>
       </div>
     </footer>
   );

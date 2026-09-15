@@ -32,6 +32,7 @@ oprobots-telemetry-studio/
 │   ├── e2e-comparison.mjs           # E2E: comparación side-by-side
 │   ├── e2e-export.mjs               # E2E: composición de exportación
 │   ├── run-electron.mjs             # Lanzador de Electron (filtra ruido ambiental)
+│   ├── screenshot.mjs               # Captura de pantalla para revisión visual
 │   ├── fonts.conf                   # Config mínima de fontconfig para dev
 │   └── fetch-ffmpeg.mjs             # Descarga FFmpeg a resources/bin (sidecar)
 │
@@ -47,6 +48,7 @@ oprobots-telemetry-studio/
 ├── src/
 │   ├── main/                        # ═══ MAIN PROCESS (Node.js) ═══
 │   │   ├── index.ts                 # Entry point: app lifecycle, window creation
+│   │   ├── app-menu.ts              # Menú nativo (Archivo/Datos/Ver/Ayuda)
 │   │   ├── ipc-handlers.ts          # Registro de todos los ipcMain.handle
 │   │   ├── serial-service.ts        # Servicio SerialPort (apertura, streaming, cierre)
 │   │   └── export-service.ts        # Exportación de vídeo con FFmpeg (raw RGBA)
@@ -104,10 +106,10 @@ oprobots-telemetry-studio/
 │   │       ├── global.d.ts          # Tipos de window.api (bridge de preload)
 │   │       ├── components/
 │   │       │   ├── layout/
-│   │       │   │   ├── AppShell.tsx     # Layout principal (header + sidebar + workspace)
-│   │       │   │   ├── Sidebar.tsx      # Fuentes de datos, sincronización, campos
+│   │       │   │   ├── AppShell.tsx     # Layout principal (menú, inspector, workspace)
+│   │       │   │   ├── Inspector.tsx    # Panel izquierdo: sincronización y campos
 │   │       │   │   ├── Toolbar.tsx      # Slider temporal + controles de reproducción
-│   │       │   │   ├── StatusBar.tsx    # Barra de estado inferior
+│   │       │   │   ├── StatusBar.tsx    # Barra de estado inferior (chips)
 │   │       │   │   └── SplitView.tsx    # Vista split de comparación
 │   │       │   ├── video/
 │   │       │   │   ├── VideoPlayer.tsx      # Contenedor del elemento video

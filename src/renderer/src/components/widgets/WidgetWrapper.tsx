@@ -16,23 +16,20 @@ export function WidgetWrapper({
   children,
 }: WidgetWrapperProps): React.ReactElement {
   return (
-    <div
-      className="widget-card flex h-full w-full flex-col overflow-hidden"
-      style={{ backgroundColor: 'var(--bg-panel)', border: '1px solid var(--bg-border)' }}
-    >
+    <div className="widget-card flex h-full w-full flex-col overflow-hidden">
       <div
-        className="flex items-center justify-between px-2 py-1"
-        style={{ borderBottom: '1px solid var(--bg-border)', backgroundColor: 'var(--bg-elevated)' }}
+        className="flex items-center justify-between gap-2 px-2.5 py-1.5"
+        style={{ borderBottom: '1px solid var(--bg-border)' }}
       >
-        <div className="flex items-center gap-2 overflow-hidden">
+        <div className="flex min-w-0 items-baseline gap-2">
           <span className="truncate text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
             {title}
           </span>
-          <span className="truncate text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+          <span className="truncate text-[10px]" style={{ color: 'var(--text-disabled)' }}>
             {type}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-shrink-0 items-center gap-0.5">
           {onConfigure && (
             <button onClick={onConfigure} className="icon-button" title="Configurar">
               ⚙

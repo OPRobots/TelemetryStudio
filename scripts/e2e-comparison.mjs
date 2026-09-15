@@ -96,13 +96,19 @@ app.whenReady().then(async () => {
     await win.loadFile(join(root, 'out/renderer/index.html'));
     await new Promise((r) => setTimeout(r, 1000));
 
-    // Cargar sesión A
-    const openedA = await win.webContents.executeJavaScript(clickByText('Abrir sesión'));
-    await new Promise((r) => setTimeout(r, 800));
+    // Cargar sesión A (vía menú nativo)
+    win.webContents.send('menu:action', 'open-session');
+    await new Promise((r) => setTimeout(r, 900));
+    const openedA = await win.webContents.executeJavaScript(
+      `document.querySelectorAll('.widget-card').length >= 1`
+    );
 
-    // Abrir diálogo de comparación y elegir sesión B
-    const openedDialog = await win.webContents.executeJavaScript(clickByText('Comparar con otra sesión'));
-    await new Promise((r) => setTimeout(r, 300));
+    // Abrir diálogo de comparación (vía menú nativo) y elegir sesión B
+    win.webContents.send('menu:action', 'compare');
+    await new Promise((r) => setTimeout(r, 400));
+    const openedDialog = await win.webContents.executeJavaScript(
+      `document.body.innerText.includes('Comparar con otra sesión')`
+    );
     await win.webContents.executeJavaScript(clickByText('Elegir sesión…'));
     await new Promise((r) => setTimeout(r, 1200));
 

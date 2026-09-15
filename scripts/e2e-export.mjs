@@ -102,19 +102,22 @@ app.whenReady().then(async () => {
     await win.loadFile(join(root, 'out/renderer/index.html'));
     await new Promise((r) => setTimeout(r, 1000));
 
-    // Serial para disponer de widgets
-    await win.webContents.executeJavaScript(clickByText('Conectar Serial'));
+    // Serial para disponer de widgets (vía menú nativo)
+    win.webContents.send('menu:action', 'connect-serial');
     await new Promise((r) => setTimeout(r, 400));
     await win.webContents.executeJavaScript(clickByText('Conectar'));
     await new Promise((r) => setTimeout(r, 900));
 
-    // Vídeo
-    await win.webContents.executeJavaScript(clickByText('Abrir vídeo'));
+    // Vídeo (vía menú nativo)
+    win.webContents.send('menu:action', 'open-video');
     await new Promise((r) => setTimeout(r, 1500));
 
-    // Abrir diálogo de exportación
-    const opened = await win.webContents.executeJavaScript(clickByText('Exportar'));
+    // Abrir diálogo de exportación (vía menú nativo)
+    win.webContents.send('menu:action', 'export-video');
     await new Promise((r) => setTimeout(r, 400));
+    const opened = await win.webContents.executeJavaScript(
+      `document.body.innerText.includes('Exportar vídeo')`
+    );
 
     // Configurar 10 frames a 160x90
     await win.webContents.executeJavaScript(setInput('export-width', 160));

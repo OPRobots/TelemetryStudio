@@ -83,14 +83,14 @@ app.whenReady().then(async () => {
     await win.loadFile(join(root, 'out/renderer/index.html'));
     await new Promise((r) => setTimeout(r, 1000));
 
-    // Conectar Serial
-    await win.webContents.executeJavaScript(clickByText('Conectar Serial'));
+    // Conectar Serial (vía menú nativo)
+    win.webContents.send('menu:action', 'connect-serial');
     await new Promise((r) => setTimeout(r, 400));
     await win.webContents.executeJavaScript(clickByText('Conectar'));
     await new Promise((r) => setTimeout(r, 800));
 
-    // Abrir vídeo (diálogo mockeado)
-    await win.webContents.executeJavaScript(clickByText('Abrir vídeo'));
+    // Abrir vídeo (diálogo mockeado, vía menú nativo)
+    win.webContents.send('menu:action', 'open-video');
     await new Promise((r) => setTimeout(r, 2500));
 
     const videoInfo = await win.webContents.executeJavaScript(`(() => {
@@ -111,7 +111,7 @@ app.whenReady().then(async () => {
 
     const syncState = await win.webContents.executeJavaScript(`(() => {
       const text = document.body.innerText;
-      const m = text.match(/t telemetría:\\s*([\\d.]+)\\s*ms/);
+      const m = text.match(/t telemetr[íi]a\\s*:?\\s*([\\d.]+)\\s*ms/);
       const footer = document.querySelector('footer');
       return {
         telemetryTimeMs: m ? Number(m[1]) : -1,
@@ -124,7 +124,7 @@ app.whenReady().then(async () => {
 
     const durationOk = videoInfo.duration > 0;
     const syncedOk = syncState.telemetryTimeMs >= 900 && syncState.telemetryTimeMs <= 1200;
-    const footerOk = syncState.footerText.includes('Vídeo:');
+    const footerOk = syncState.footerText.includes('mock_video.mp4');
 
     const ok = durationOk && syncedOk && footerOk && errors.length === 0;
     console.log(ok ? 'E2E_VIDEO_OK' : 'E2E_VIDEO_FAIL');

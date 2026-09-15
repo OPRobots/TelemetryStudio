@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { comparisonManager } from '@core/comparison-manager';
 import { VideoPlayer } from '../video/VideoPlayer';
 import { Toolbar } from './Toolbar';
-import { Sidebar } from './Sidebar';
+import { Inspector } from './Inspector';
 import { StatusBar } from './StatusBar';
 import { SplitView } from './SplitView';
 import { WidgetHost } from '../widgets/WidgetHost';
@@ -13,6 +14,7 @@ import { SessionBrowserDialog } from '../dialogs/SessionBrowserDialog';
 import { ComparisonDialog } from '../dialogs/ComparisonDialog';
 import { ExportDialog } from '../dialogs/ExportDialog';
 import { openVideoDialog, openSessionDialog, loadSession } from '../../lib/session-actions';
+import { serialIngest } from '../../lib/serial-ingest';
 import { useAppStore } from '../../stores/app-store';
 import { useComparisonStore } from '../../stores/comparison-store';
 
@@ -23,11 +25,63 @@ export function AppShell(): React.ReactElement {
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(true);
+  const [widgetMenuOpen, setWidgetMenuOpen] = useState(false);
+
   const videoSrc = useAppStore((s) => s.videoSrc);
   const appError = useAppStore((s) => s.errorMessage);
   const setError = useAppStore((s) => s.setError);
   const comparisonActive = useComparisonStore((s) => s.active);
   const comparisonError = useComparisonStore((s) => s.errorMessage);
+
+  const stopComparison = (): void => {
+    comparisonManager.stopComparison();
+    useComparisonStore.getState().stop();
+  };
+
+  // Acciones del menú nativo
+  useEffect(() => {
+    const unsubscribe = window.api?.menuOnAction((action) => {
+      switch (action) {
+        case 'open-video':
+          void openVideoDialog();
+          break;
+        case 'open-session':
+          void openSessionDialog();
+          break;
+        case 'browse-sessions':
+          setSessionsOpen(true);
+          break;
+        case 'save-session':
+          setSaveOpen(true);
+          break;
+        case 'export-video':
+          setExportOpen(true);
+          break;
+        case 'connect-serial':
+          setSerialOpen(true);
+          break;
+        case 'disconnect-serial':
+          void serialIngest.disconnect();
+          break;
+        case 'compare':
+          setCompareOpen(true);
+          break;
+        case 'stop-comparison':
+          stopComparison();
+          break;
+        case 'toggle-inspector':
+          setInspectorOpen((v) => !v);
+          break;
+        case 'layouts':
+          setLayoutsOpen(true);
+          break;
+        default:
+          break;
+      }
+    });
+    return () => unsubscribe?.();
+  }, []);
 
   const handleDrop = (e: React.DragEvent): void => {
     e.preventDefault();
@@ -48,44 +102,18 @@ export function AppShell(): React.ReactElement {
   return (
     <div
       className="flex h-screen flex-col"
-      style={{ backgroundColor: 'var(--bg-primary)' }}
+      style={{ backgroundColor: 'var(--bg-app)' }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
-      <header
-        className="flex items-center justify-between px-4 py-2"
-        style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--bg-border)' }}
-      >
-        <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-          OPRobots Telemetry Studio
-        </h1>
-        <div className="flex items-center gap-2">
-          <button className="toolbar-button" onClick={() => void openVideoDialog()}>
-            Abrir vídeo
-          </button>
-          <button className="toolbar-button" onClick={() => void openSessionDialog()}>
-            Abrir sesión
-          </button>
-          <button className="toolbar-button" onClick={() => setSerialOpen(true)}>
-            Serial
-          </button>
-          <button
-            className="toolbar-button"
-            onClick={() => setExportOpen(true)}
-            disabled={!videoSrc || comparisonActive}
-          >
-            Exportar
-          </button>
-          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            v1.0.0
-          </span>
-        </div>
-      </header>
-
       {appError && (
         <div
-          className="flex items-center justify-between px-4 py-1 text-xs"
-          style={{ backgroundColor: '#F2051920', color: '#f87171', borderBottom: '1px solid #F20519' }}
+          className="flex items-center justify-between px-4 py-1.5 text-xs"
+          style={{
+            backgroundColor: 'rgba(248, 113, 113, 0.12)',
+            color: 'var(--error)',
+            borderBottom: '1px solid rgba(248, 113, 113, 0.35)',
+          }}
         >
           <span className="truncate">{appError}</span>
           <button className="icon-button" onClick={() => setError(null)} title="Descartar">
@@ -96,21 +124,19 @@ export function AppShell(): React.ReactElement {
 
       {comparisonError && (
         <div
-          className="px-4 py-1 text-xs"
-          style={{ backgroundColor: '#F2051920', color: '#f87171', borderBottom: '1px solid #F20519' }}
+          className="px-4 py-1.5 text-xs"
+          style={{
+            backgroundColor: 'rgba(248, 113, 113, 0.12)',
+            color: 'var(--error)',
+            borderBottom: '1px solid rgba(248, 113, 113, 0.35)',
+          }}
         >
           {comparisonError}
         </div>
       )}
 
       <main className="flex min-h-0 flex-1 overflow-hidden">
-        <Sidebar
-          onOpenSerial={() => setSerialOpen(true)}
-          onSaveSession={() => setSaveOpen(true)}
-          onOpenLayouts={() => setLayoutsOpen(true)}
-          onOpenSessions={() => setSessionsOpen(true)}
-          onCompare={() => setCompareOpen(true)}
-        />
+        {inspectorOpen && <Inspector />}
 
         {comparisonActive ? (
           <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -118,45 +144,37 @@ export function AppShell(): React.ReactElement {
           </section>
         ) : (
           <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <div className="min-h-0" style={{ height: '42%' }}>
+            <div className="min-h-0 px-3 pt-3" style={{ height: '42%' }}>
               {videoSrc ? (
                 <VideoPlayer />
               ) : (
-                <div
-                  className="flex h-full flex-col items-center justify-center gap-2"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  <p className="text-sm">Carga un vídeo para comenzar</p>
-                  <button
-                    className="toolbar-button toolbar-button-primary"
-                    onClick={() => void openVideoDialog()}
-                  >
-                    Abrir vídeo
-                  </button>
-                </div>
+                <button className="empty-drop" onClick={() => void openVideoDialog()}>
+                  <span className="empty-drop__title">Sin vídeo</span>
+                  <span className="empty-drop__hint">Pulsa para abrir o arrastra un .mp4</span>
+                </button>
               )}
             </div>
 
             {videoSrc && <Toolbar />}
 
-            <div
-              className="flex items-center justify-between px-3 py-1"
-              style={{ backgroundColor: 'var(--bg-secondary)', borderTop: '1px solid var(--bg-border)' }}
-            >
-              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <div className="flex items-center justify-between px-4 pb-2 pt-3">
+              <span className="section-label" style={{ marginBottom: 0 }}>
                 Widgets
               </span>
-              <WidgetToolbar />
+              <WidgetToolbar open={widgetMenuOpen} onOpenChange={setWidgetMenuOpen} />
             </div>
 
-            <div className="min-h-0 flex-1 overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
-              <WidgetHost />
+            <div className="min-h-0 flex-1 px-3 pb-3">
+              <WidgetHost onRequestAdd={() => setWidgetMenuOpen(true)} />
             </div>
           </section>
         )}
       </main>
 
-      <StatusBar />
+      <StatusBar
+        onOpenSerial={() => setSerialOpen(true)}
+        onOpenVideo={() => void openVideoDialog()}
+      />
 
       {serialOpen && <SerialConnectDialog onClose={() => setSerialOpen(false)} />}
       {layoutsOpen && <LayoutDialog onClose={() => setLayoutsOpen(false)} />}

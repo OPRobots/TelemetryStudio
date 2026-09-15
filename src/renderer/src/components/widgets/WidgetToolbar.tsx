@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { widgetRegistry } from '@widgets/widget-registry';
 import type { WidgetConfig } from '@core/types/layout';
 import type { FieldSchema } from '@core/types/telemetry';
@@ -26,8 +25,12 @@ function pickFields(widgetType: string, schema: FieldSchema[]): string[] {
   return schema.filter((s) => s.type === 'number').map((s) => s.name);
 }
 
-export function WidgetToolbar(): React.ReactElement {
-  const [open, setOpen] = useState(false);
+interface WidgetToolbarProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function WidgetToolbar({ open, onOpenChange }: WidgetToolbarProps): React.ReactElement {
   const schema = useAppStore((s) => s.schema);
   const widgets = useLayoutStore((s) => s.widgets);
   const addWidget = useLayoutStore((s) => s.addWidget);
@@ -55,16 +58,20 @@ export function WidgetToolbar(): React.ReactElement {
     };
 
     addWidget(widget);
-    setOpen(false);
+    onOpenChange(false);
   };
 
   return (
     <div className="relative">
-      <button className="toolbar-button toolbar-button-primary" onClick={() => setOpen((v) => !v)}>
-        + Widget
+      <button
+        className="toolbar-button toolbar-button--compact"
+        onClick={() => onOpenChange(!open)}
+        aria-expanded={open}
+      >
+        + Añadir widget
       </button>
       {open && (
-        <div className="widget-menu" onMouseLeave={() => setOpen(false)}>
+        <div className="widget-menu" onMouseLeave={() => onOpenChange(false)}>
           {widgetRegistry.getAll().map((def) => (
             <button
               key={def.metadata.name}

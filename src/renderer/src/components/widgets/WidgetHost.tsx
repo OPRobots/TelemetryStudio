@@ -16,12 +16,15 @@ interface WidgetHostProps {
   dataset?: 'primary' | 'comparison';
   /** Si el panel es el primario (recibe también frames de streaming). */
   primary?: boolean;
+  /** Abre el selector de widgets (estado vacío). */
+  onRequestAdd?: () => void;
 }
 
 export function WidgetHost({
   eventName = 'sync:frame',
   dataset = 'primary',
   primary = true,
+  onRequestAdd,
 }: WidgetHostProps): React.ReactElement {
   const widgets = useLayoutStore((s) => s.widgets);
   const removeWidget = useLayoutStore((s) => s.removeWidget);
@@ -48,12 +51,15 @@ export function WidgetHost({
 
   if (widgets.length === 0) {
     return (
-      <div
-        className="flex h-full items-center justify-center text-sm"
-        style={{ color: 'var(--text-tertiary)' }}
+      <button
+        className="empty-drop"
+        onClick={onRequestAdd}
+        disabled={!onRequestAdd}
+        style={{ cursor: onRequestAdd ? 'pointer' : 'default' }}
       >
-        Añade widgets para visualizar la telemetría
-      </div>
+        <span className="empty-drop__title">Sin widgets</span>
+        <span className="empty-drop__hint">Pulsa para añadir una visualización</span>
+      </button>
     );
   }
 

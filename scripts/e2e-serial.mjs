@@ -95,8 +95,11 @@ app.whenReady().then(async () => {
     await win.loadFile(join(root, 'out/renderer/index.html'));
     await new Promise((r) => setTimeout(r, 1200));
 
-    const opened = await win.webContents.executeJavaScript(clickByText('Conectar Serial'));
+    win.webContents.send('menu:action', 'connect-serial');
     await new Promise((r) => setTimeout(r, 500));
+    const opened = await win.webContents.executeJavaScript(
+      `document.body.innerText.includes('Conexión Serial')`
+    );
     const connected = await win.webContents.executeJavaScript(clickByText('Conectar'));
 
     // Dejar fluir telemetría ~2 s
@@ -152,7 +155,7 @@ app.whenReady().then(async () => {
 
     if (errors.length > 0) console.log('E2E_ERRORS ' + JSON.stringify(errors.slice(0, 20)));
 
-    const framesMatch = /Frames:\s*(\d+)/.exec(state.footerText);
+    const framesMatch = /Frames:?\s*(\d+)/.exec(state.footerText);
     const frameCount = framesMatch ? Number(framesMatch[1]) : 0;
 
     const ok =

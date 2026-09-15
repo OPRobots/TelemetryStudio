@@ -3,6 +3,7 @@ import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import { registerIpcHandlers } from './ipc-handlers';
 import { registerExportHandlers } from './export-service';
+import { buildAppMenu } from './app-menu';
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -11,8 +12,8 @@ function createWindow(): void {
     minWidth: 1024,
     minHeight: 600,
     show: false,
-    autoHideMenuBar: true,
-    backgroundColor: '#0a0e17',
+    autoHideMenuBar: false,
+    backgroundColor: '#0b0e14',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -24,6 +25,7 @@ function createWindow(): void {
 
   registerIpcHandlers(mainWindow);
   registerExportHandlers(mainWindow);
+  buildAppMenu(mainWindow);
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show();

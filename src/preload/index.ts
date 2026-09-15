@@ -25,6 +25,13 @@ const api = {
   // === Utilidades ===
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 
+  // === Menú nativo ===
+  menuOnAction: (callback: (action: string) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, action: string): void => callback(action);
+    ipcRenderer.on('menu:action', handler);
+    return () => ipcRenderer.removeListener('menu:action', handler);
+  },
+
   // === Dialogs ===
   dialogOpenVideo: (): Promise<DialogResult> => ipcRenderer.invoke('dialog:openVideo'),
   dialogOpenSession: (): Promise<DialogResult> => ipcRenderer.invoke('dialog:openSession'),

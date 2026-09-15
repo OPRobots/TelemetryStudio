@@ -86,7 +86,7 @@ export const useAppStore = create<AppState>((set) => ({
   statusMessage: 'Listo',
   errorMessage: null,
 
-  setVideo: (path, src) => set({ videoPath: path, videoSrc: src, statusMessage: `Vídeo: ${path}` }),
+  setVideo: (path, src) => set({ videoPath: path, videoSrc: src, statusMessage: '' }),
   setVideoInfo: (info) => set({ videoInfo: info }),
   setVideoElementState: (state) => set(state),
   setPlaybackRate: (rate) => set({ playbackRate: rate }),

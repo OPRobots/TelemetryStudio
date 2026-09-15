@@ -97,49 +97,49 @@ feat(widgets): Añade widget TimeSeriesChart con integración uPlot
 
 ## Paleta de Colores — Dark Theme
 
-### Fondos
+> UI con base neutra y **acento azul OPR usado con moderación** (solo acciones
+> primarias, foco y estados activos). El resto de controles son *ghost*
+> (transparentes con hover neutro). Los tokens viven en `globals.css`.
+
+### Superficies
 ```
-#0a0e17  ← Fondo principal (más oscuro)
-#111827  ← Paneles, cards
-#1a1f2e  ← Sidebar, elementos elevados
-#1e293b  ← Bordes, separadores
+#0b0e14  ← Fondo de la app (--bg-app)
+#11151d  ← Paneles, barra de estado (--bg-panel)
+#161b26  ← Elementos elevados, diálogos (--bg-elevated)
+#1c2331  ← Hover (--bg-hover)
+#232a38  ← Bordes y separadores (--bg-border)
+#2f3949  ← Bordes fuertes (--border-strong)
 ```
 
-### Acentos Azul (Primario)
+### Acento (Azul OPR — moderado)
 ```
-#193773  ← Azul oscuro principal (botones, headers)
-#2563eb  ← Hover states
-#3b82f6  ← Elementos activos, links
-#60a5fa  ← Texto sobre fondo oscuro
-```
-
-### Acentos Amarillo (Alertas)
-```
-#F2BE22  ← Avisos, warnings
-#fbbf24  ← Hover warnings
-#f59e0b  ← Texto de warning
+#2563eb  ← Acción primaria (--accent-strong)
+#3b82f6  ← Hover / foco / activo (--accent)
+rgba(59,130,246,0.14)  ← Fondos suaves de acento (--accent-soft)
 ```
 
-### Acentos Rojo (Errores)
+### Semánticos
 ```
-#F20519  ← Errores críticos
-#ef4444  ← Hover errores
-#dc2626  ← Texto de error
+#34d399  ← OK / conectado (--ok)
+#F2BE22  ← Avisos, warnings (--warn)
+#f87171  ← Errores (--error)
 ```
 
 ### Texto
 ```
-#e2e8f0  ← Texto primario
-#94a3b8  ← Texto secundario
-#64748b  ← Texto terciario, placeholders
-#475569  ← Texto deshabilitado
+#e6eaf2  ← Texto primario
+#a2adc0  ← Texto secundario
+#6b7688  ← Texto terciario, placeholders
+#454e5e  ← Texto deshabilitado
 ```
 
 ### Reglas de Color
-- Usar colores con criterio: azul = navegación/acción, amarillo = advertencia, rojo = error
-- No abusar de animaciones: solo transiciones suaves (150-300ms) para hover/focus
-- Sin gradientes neón, sin glow excesivo, sin partículas decorativas
-- Exceptions: LED glow en DigitalBitmask (funcional, no decorativo)
+- Base neutra; el azul se reserva a **acción primaria, foco y estado activo**
+- Jerarquía por superficies (app → panel → elevado) y bordes sutiles, no por color
+- Amarillo = advertencia, rojo = error; verde = correcto/conectado
+- Transiciones suaves (120-200ms) para hover/focus; sin gradientes, glow ni partículas
+- Excepción: LED glow en DigitalBitmask (funcional, no decorativo)
+- Tipografía: base 13px; labels 11px mayúsculas con tracking; números `tabular-nums`/mono
 
 ## Testing
 

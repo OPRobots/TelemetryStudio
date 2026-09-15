@@ -61,14 +61,13 @@ app.whenReady().then(async () => {
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const result = await win.webContents.executeJavaScript(`(() => {
-      const header = document.querySelector('header');
       const root = document.getElementById('root');
       return {
-        hasHeader: !!header,
-        headerText: (header && header.textContent) || '',
         rootChildren: root ? root.children.length : 0,
-        buttons: Array.from(document.querySelectorAll('button')).map((b) => b.textContent.trim()).slice(0, 20),
+        hasEmptyDrop: !!document.querySelector('.empty-drop'),
+        hasInspector: document.body.innerText.toLowerCase().includes('sincronización'),
         hasStatusBar: !!document.querySelector('footer'),
+        buttons: Array.from(document.querySelectorAll('button')).map((b) => b.textContent.trim()).slice(0, 20),
       };
     })()`);
 
@@ -77,10 +76,10 @@ app.whenReady().then(async () => {
     if (logs.length > 0) console.log('SMOKE_LOGS ' + JSON.stringify(logs.slice(0, 40)));
 
     const ok =
-      result.hasHeader &&
       result.rootChildren > 0 &&
+      result.hasEmptyDrop &&
+      result.hasInspector &&
       result.hasStatusBar &&
-      result.headerText.includes('OPRobots') &&
       errors.length === 0;
 
     console.log(ok ? 'SMOKE_OK' : 'SMOKE_FAIL');
