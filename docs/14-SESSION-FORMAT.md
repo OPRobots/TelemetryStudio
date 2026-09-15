@@ -405,6 +405,10 @@ export function datasetToSession(
 
 ## Servicio de Sesiones
 
+> **Estado**: pseudo-código de referencia. La implementación actual está en
+> `src/renderer/src/lib/session-actions.ts` + handlers IPC `session:*`; el
+> servicio `src/services/session-manager.ts` se formaliza en la Fase 4.
+
 ```typescript
 // src/services/session-manager.ts
 

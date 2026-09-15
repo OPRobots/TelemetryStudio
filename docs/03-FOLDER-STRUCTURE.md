@@ -2,6 +2,9 @@
 
 ## Árbol de Directorios
 
+> Estado actual del repositorio. Los archivos marcados _(planificado)_ todavía
+> no existen y se añadirán en las fases correspondientes del roadmap.
+
 ```
 oprobots-telemetry-studio/
 ├── electron.vite.config.ts          # Configuración centralizada de electron-vite
@@ -13,157 +16,139 @@ oprobots-telemetry-studio/
 ├── .gitignore                       # Archivos ignorados por git
 │
 ├── pocs/                            # Pruebas de concepto (referencia)
-│   ├── 01-serial-widget/            # PoC 1: Serial → parse → EventBus → uPlot
+│   ├── 01-serial-widget/            # PoC 1: Serial → parse → uPlot
 │   ├── 02-video-sync/               # PoC 2: Video Sync (requestVideoFrameCallback)
-│   ├── 03-video-export/             # PoC 3: Video Export (canvas capture)
+│   ├── 03-video-export/             # PoC 3: Video Export (raw RGBA → FFmpeg)
 │   └── 04-packaging/                # PoC 4: Packaging multiplataforma
 │
+├── examples/                        # Pruebas manuales y utilidades
+│   ├── README.md                    # Cómo probar sin hardware (socat + simulador)
+│   └── serial-simulator.mjs         # Simulador de telemetría Serial
+│
+├── scripts/                         # Verificación automatizada (Electron)
+│   ├── smoke-test.mjs               # Smoke test del renderer
+│   ├── e2e-serial.mjs               # E2E: Serial → widgets
+│   ├── e2e-video.mjs                # E2E: vídeo + sincronización
+│   └── fetch-ffmpeg.mjs             # _(planificado)_ Descarga FFmpeg a resources/bin
+│
 ├── resources/                       # Assets estáticos empaquetados
-│   ├── icon.ico                     # Icono Windows
-│   ├── icon.icns                    # Icono macOS
-│   ├── icon.png                     # Icono Linux (512x512)
-│   ├── fonts/                       # Fuentes offline
-│   │   ├── JetBrainsMono-Regular.woff2
-│   │   ├── JetBrainsMono-Bold.woff2
-│   │   └── Inter-Regular.woff2
-│   └── icons/                       # SVG icons (Lucide-like)
-│       ├── play.svg
-│       ├── pause.svg
-│       ├── skip-forward.svg
-│       ├── skip-back.svg
-│       ├── export.svg
-│       └── settings.svg
+│   ├── udev/                        # _(planificado)_ Reglas udev para Linux
+│   │   └── 69-oprobots-serial.rules
+│   └── bin/                         # _(planificado)_ FFmpeg sidecar (no versionado)
 │
 ├── build/                           # Configuración de build
 │   ├── entitlements.mac.plist       # Permisos macOS para code signing
-│   └── notarize.js                  # Script de notarización macOS
+│   └── icon.png                     # _(planificado placeholder)_ Icono 512x512
 │
 ├── src/
 │   ├── main/                        # ═══ MAIN PROCESS (Node.js) ═══
 │   │   ├── index.ts                 # Entry point: app lifecycle, window creation
 │   │   ├── ipc-handlers.ts          # Registro de todos los ipcMain.handle
 │   │   ├── serial-service.ts        # Servicio SerialPort (apertura, streaming, cierre)
-│   │   ├── session-service.ts       # Servicio de sesiones (exportar/importar JSON+MP4)
-│   │   ├── file-service.ts          # Lectura de archivos del disco
-│   │   └── export-service.ts        # Escritura de vídeos exportados a disco
+│   │   └── export-service.ts        # _(planificado Fase 7)_ Escritura de vídeo exportado
 │   │
 │   ├── preload/                     # ═══ PRELOAD SCRIPT ═══
 │   │   └── index.ts                 # contextBridge: expone API segura al renderer
 │   │
-│   ├── workers/                     # ═══ WORKER THREADS ═══
-│   │   └── video-export.worker.ts   # Renderizado offscreen para exportación
+│   ├── workers/                     # ═══ WORKER THREADS ═══ (vacío; export corre en main)
 │   │
 │   ├── core/                        # ═══ CORE / DATA ENGINE ═══
 │   │   ├── types/
 │   │   │   ├── telemetry.ts         # TelemetryFrame, TelemetryDataset, FieldSchema
 │   │   │   ├── video.ts             # VideoFrameContext, PlaybackState, ExportConfig
-│   │   │   ├── layout.ts            # DashboardLayout, WidgetConfig, LayoutPreset
+│   │   │   ├── layout.ts            # DashboardLayout, WidgetConfig
 │   │   │   ├── session.ts           # SessionFile, SessionVideo, SessionSync
 │   │   │   ├── comparison.ts        # ComparisonConfig, WidgetCompatibilityResult
 │   │   │   └── events.ts            # EventMap, todos los tipos de eventos del bus
 │   │   ├── event-bus.ts             # EventBus genérico typed (Pub-Sub)
-│   │   ├── telemetry-store.ts       # Almacén de frames (multi-dataset: primario + comparación)
-│   │   ├── video-synchronizer.ts    # Motor de sincronización vídeo-telemetría (dual)
-│   │   ├── comparison-manager.ts    # Gestor de comparación side-by-side (validación widgets)
+│   │   ├── telemetry-store.ts       # Almacén de frames (primario + comparación)
+│   │   ├── video-synchronizer.ts    # Motor de sincronización vídeo-telemetría
+│   │   ├── comparison-manager.ts    # Gestor de comparación side-by-side
 │   │   ├── session-codec.ts         # Codec de sesiones (encode/decode/sessionToDataset)
 │   │   ├── lttb.ts                  # Downsampling LTTB (implementación inline)
 │   │   └── binary-search.ts         # Búsqueda binaria O(log N) por timestamp
 │   │
 │   ├── parsers/                     # ═══ PLUGINS DE PARSER ═══
-│   │   ├── parser-registry.ts       # Registro dinámico de parsers
 │   │   ├── interfaces.ts            # ITelemetryParser + metadatos del parser
+│   │   ├── parser-registry.ts       # Registro dinámico de parsers
 │   │   ├── json-session-parser.ts   # Parser de sesiones JSON (formato compacto)
-│   │   └── serial-uart-parser.ts    # Parser UART/Serial (implementa ITelemetryParser)
+│   │   └── serial-uart-parser.ts    # Parser UART/Serial (CSV, legacy, genérico)
 │   │
 │   ├── widgets/                     # ═══ PLUGINS DE WIDGET ═══
-│   │   ├── widget-registry.ts       # Registro dinámico de widgets
-│   │   ├── interfaces.ts            # ITelemetryWidget + metadatos del widget
-│   │   ├── time-series-chart/       # Widget de gráficas temporales
-│   │   │   ├── index.tsx            # Componente React
-│   │   │   ├── uplot-config.ts      # Configuración uPlot
-│   │   │   └── downsample.ts        # LTTB adaptado para viewport
-│   │   ├── digital-bitmask/         # Widget de matriz de LEDs (sensors IR)
-│   │   │   ├── index.tsx            # Componente React
-│   │   │   └── canvas-renderer.ts   # Renderizado Canvas 2D de LEDs
-│   │   ├── minimap-2d/              # Widget de minimapa de trayectoria
-│   │   │   ├── index.tsx            # Componente React
-│   │   │   └── canvas-renderer.ts   # Renderizado Canvas 2D del minimapa
-│   │   └── state-timeline/          # Widget de línea de tiempo de estados
-│   │       ├── index.tsx            # Componente React
-│   │       └── canvas-renderer.ts   # Renderizado Canvas 2D de estados
+│   │   ├── interfaces.ts            # WidgetDefinition, WidgetMetadata, WidgetProps
+│   │   ├── widget-registry.ts       # WidgetRegistry singleton (agnóstico)
+│   │   ├── register-widgets.ts      # Registra los 4 widgets estándar
+│   │   ├── time-series-chart/       # Gráfica temporal multi-serie (uPlot)
+│   │   │   └── index.tsx
+│   │   ├── digital-bitmask/         # Matriz de LEDs (Canvas 2D)
+│   │   │   └── index.tsx
+│   │   ├── minimap-2d/              # Minimapa de trayectoria (Canvas 2D)
+│   │   │   └── index.tsx
+│   │   └── state-timeline/          # Línea de tiempo de estados (Canvas 2D)
+│   │       └── index.tsx
 │   │
 │   ├── services/                    # ═══ SERVICIOS ═══
-│   │   ├── session-manager.ts       # Exportar/importar sesiones (JSON + vídeo)
-│   │   ├── video-exporter.ts        # Orquestador de exportación de vídeo
 │   │   ├── layout-manager.ts        # Guardar/cargar layouts en JSON
-│   │   └── file-dialogs.ts          # Diálogos de apertura/guardado de archivos
+│   │   ├── session-manager.ts       # _(planificado Fase 4)_ Exportar/importar sesiones
+│   │   └── video-exporter.ts        # _(planificado Fase 7)_ Orquestador de exportación
 │   │
 │   ├── renderer/                    # ═══ RENDERER PROCESS (React) ═══
-│   │   ├── App.tsx                  # Componente raíz
-│   │   ├── index.tsx                # ReactDOM.createRoot
-│   │   ├── components/
-│   │   │   ├── layout/
-│   │   │   │   ├── AppShell.tsx     # Layout principal (sidebar + workspace)
-│   │   │   │   ├── Sidebar.tsx      # Panel lateral (archivos, ajustes)
-│   │   │   │   ├── Toolbar.tsx      # Barra de herramientas (play/pause, speed)
-│   │   │   │   ├── StatusBar.tsx    # Barra de estado inferior
-│   │   │   │   └── SplitView.tsx    # Vista split para comparación (duplica panel verticalmente)
-│   │   │   ├── video/
-│   │   │   │   ├── VideoPlayer.tsx  # Contenedor del elemento video
-│   │   │   │   ├── PlaybackControls.tsx  # Controles de reproducción
-│   │   │   │   ├── TimelineSlider.tsx    # Slider de seek
-│   │   │   │   └── SpeedControl.tsx      # Selector de velocidad (0.1x - 2x)
-│   │   │   ├── widgets/
-│   │   │   │   ├── WidgetHost.tsx   # Contenedor dinámico de widgets
-│   │   │   │   ├── WidgetToolbar.tsx # Barra para añadir/quitar widgets
-│   │   │   │   └── WidgetWrapper.tsx # Wrapper con drag/resize
-│   │   │   └── dialogs/
-│   │   │       ├── FileImportDialog.tsx  # Diálogo de importación
-│   │   │       ├── ExportDialog.tsx      # Diálogo de exportación de vídeo
-│   │   │       ├── LayoutDialog.tsx      # Diálogo de guardado/carga de layouts
-│   │   │       └── SerialConnectDialog.tsx # Diálogo de conexión serial
-│   │   ├── hooks/
-│   │   │   ├── useEventBus.ts       # Hook para suscribirse al EventBus
-│   │   │   ├── useTelemetryStore.ts # Hook para acceder al TelemetryStore
-│   │   │   ├── useVideoSync.ts      # Hook para el VideoSynchronizer
-│   │   │   ├── useLayout.ts         # Hook para el LayoutManager
-│   │   │   └── useElectronAPI.ts    # Hook para acceder al preload bridge
-│   │   ├── stores/
-│   │   │   ├── app-store.ts         # Zustand: estado global de la app
-│   │   │   └── layout-store.ts      # Zustand: estado del layout
-│   │   └── styles/
-│   │       ├── globals.css          # Import de Tailwind + custom CSS
-│   │       └── widgets.css          # Estilos específicos de widgets
+│   │   ├── index.html
+│   │   └── src/
+│   │       ├── App.tsx              # Componente raíz (registra widgets + polyfill)
+│   │       ├── main.tsx             # ReactDOM.createRoot
+│   │       ├── global.d.ts          # Tipos de window.api (bridge de preload)
+│   │       ├── components/
+│   │       │   ├── layout/
+│   │       │   │   ├── AppShell.tsx     # Layout principal (header + sidebar + workspace)
+│   │       │   │   ├── Sidebar.tsx      # Fuentes de datos, sincronización, campos
+│   │       │   │   ├── Toolbar.tsx      # Slider temporal + controles de reproducción
+│   │       │   │   ├── StatusBar.tsx    # Barra de estado inferior
+│   │       │   │   └── SplitView.tsx    # _(planificado Fase 5)_ Vista split comparación
+│   │       │   ├── video/
+│   │       │   │   ├── VideoPlayer.tsx      # Contenedor del elemento video
+│   │       │   │   ├── PlaybackControls.tsx # Play/pause, step, velocidad
+│   │       │   │   └── TimelineSlider.tsx   # Slider de seek
+│   │       │   ├── widgets/
+│   │       │   │   ├── WidgetHost.tsx       # Contenedor dinámico de widgets
+│   │       │   │   ├── WidgetToolbar.tsx    # Añadir widgets
+│   │       │   │   ├── WidgetWrapper.tsx    # Marco con título y acciones
+│   │       │   │   └── WidgetConfigDialog.tsx # Configuración de campos/colores
+│   │       │   └── dialogs/
+│   │       │       ├── SerialConnectDialog.tsx # Conexión serial
+│   │       │       ├── LayoutDialog.tsx        # Guardar/cargar layouts
+│   │       │       ├── SaveSessionDialog.tsx   # Guardar sesión
+│   │       │       ├── SessionBrowserDialog.tsx # _(planificado Fase 4)_ Listar sesiones
+│   │       │       └── ExportDialog.tsx        # _(planificado Fase 7)_ Exportar vídeo
+│   │       ├── hooks/
+│   │       │   ├── useEventListener.ts  # Suscripción al EventBus
+│   │       │   └── useKeyboardShortcuts.ts # _(planificado Fase 9)_
+│   │       ├── lib/
+│   │       │   ├── auto-layout.ts       # Auto-configura widgets según el schema
+│   │       │   ├── serial-ingest.ts     # Ingesta Serial → TelemetryStore
+│   │       │   └── session-actions.ts   # Abrir/guardar sesión
+│   │       ├── stores/
+│   │       │   ├── app-store.ts         # Zustand: estado global
+│   │       │   ├── layout-store.ts      # Zustand: widgets del dashboard
+│   │       │   └── comparison-store.ts  # _(planificado Fase 5)_
+│   │       └── styles/
+│   │           └── globals.css          # Tailwind + variables de color
 │   │
-│   └── shared/                      # ═══ SHARED (Main + Renderer + Workers) ═══
-│       ├── constants.ts
-│       └── utils.ts
+│   └── shared/                      # ═══ SHARED ═══ (planificado)
 │
-├── tests/                           # ═══ TESTS ═══
+├── tests/                           # ═══ TESTS (Vitest) ═══
 │   ├── unit/
-│   │   ├── core/
-│   │   │   ├── event-bus.test.ts
-│   │   │   ├── telemetry-store.test.ts
-│   │   │   ├── comparison-manager.test.ts
-│   │   │   ├── lttb.test.ts
-│   │   │   └── binary-search.test.ts
-│   │   ├── parsers/
-│   │   │   ├── json-session-parser.test.ts
-│   │   │   └── serial-uart-parser.test.ts
-│   │   └── widgets/
-│   │       └── digital-bitmask.test.ts
+│   │   ├── core/                    # event-bus, telemetry-store, video-synchronizer,
+│   │   │                            # layout-manager, session-codec, comparison-manager,
+│   │   │                            # lttb, binary-search
+│   │   ├── parsers/                 # serial-uart-parser, json-session-parser, parser-registry
+│   │   ├── renderer/                # auto-layout
+│   │   └── widgets/                 # widget-registry
 │   ├── integration/
-│   │   ├── serial-echo.test.ts     # Test con SerialPortMock
-│   │   └── video-sync.test.ts      # Test de sincronización
-│   └── e2e/
-│       ├── app-launch.spec.ts      # Playwright: app abre correctamente
-│       └── file-import.spec.ts     # Playwright: importación de archivo
-│
-├── fixtures/                        # ═══ DATOS DE TEST ═══
-│   ├── sample-session/              # Sesión de ejemplo
-│   │   ├── session.json             # JSON de sesión compacto
-│   │   └── sample.mp4               # Vídeo de ejemplo
-│   └── sample.mp4                   # Vídeo suelto (10s, 30fps)
+│   │   └── serial-to-sync.test.ts   # Serial → Store → auto-layout → sync
+│   ├── e2e/                         # (vacío) los e2e viven en scripts/*.mjs
+│   └── fixtures/
+│       └── session.json
 │
 └── docs/                            # ═══ ESTA DOCUMENTACIÓN ═══
     ├── 00-PROJECT-OVERVIEW.md
@@ -191,9 +176,10 @@ oprobots-telemetry-studio/
 | Archivos de código | `kebab-case.ts` | `event-bus.ts` |
 | Clases e interfaces | `PascalCase` | `TelemetryStore`, `ITelemetryParser` |
 | Componentes React | `PascalCase.tsx` | `VideoPlayer.tsx` |
-| Hooks | `camelCase` con prefijo `use` | `useEventBus.ts` |
+| Hooks | `camelCase` con prefijo `use` | `useEventListener.ts` |
 | Worker threads | `*.worker.ts` | `video-export.worker.ts` |
-| Test files | `*.test.ts` o `*.spec.ts` | `lttb.test.ts` |
+| Test files | `*.test.ts` | `lttb.test.ts` |
+| Scripts e2e | `e2e-*.mjs` | `e2e-serial.mjs` |
 | Constantes | `UPPER_SNAKE_CASE` | `MAX_BAUD_RATE` |
 | CSS classes | `kebab-case` | `widget-host`, `timeline-slider` |
 
@@ -203,12 +189,11 @@ oprobots-telemetry-studio/
 shared/          ← No tiene dependencias internas
 core/            ← Depende de shared/
 parsers/         ← Depende de core/ (interfaces, types)
-widgets/         ← Depende de core/ (interfaces, types, event-bus)
+widgets/         ← Depende de core/ (types, lttb, telemetry-store)
 services/        ← Depende de core/ y parsers/
-workers/         ← Depende de core/ y shared/
-renderer/        ← Depende de core/, widgets/, services/, shared/
 main/            ← Depende de shared/ (NO de renderer/ ni widgets/)
 preload/         ← No tiene dependencias (solo electron API)
+renderer/        ← Depende de core/, widgets/, services/, shared/
 ```
 
 **Regla de dependencias**: Nunca importar desde `renderer/` hacia `main/` o `workers/`. La comunicación es exclusivamente via IPC.

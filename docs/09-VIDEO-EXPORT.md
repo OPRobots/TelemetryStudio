@@ -1,5 +1,10 @@
 # Exportación de Contenido para Redes Sociales
 
+> **Estado**: diseño de referencia. La implementación (planificada para la
+> Fase 7) usará **FFmpeg empaquetado como sidecar** con frames raw RGBA —
+> el enfoque validado en el PoC 3 — en lugar de WebCodecs + Mediabunny. Este
+> documento conserva el diseño original; la sección FFmpeg es la que se seguirá.
+
 ## Visión General
 
 Esta funcionalidad genera vídeos MP4/WebM con los gráficos de telemetría superpuestos sobre el vídeo base. Está diseñada para crear contenido para redes sociales del equipo OPRobots (Instagram, TikTok, YouTube Shorts, etc.), **no** es parte del flujo de análisis principal.

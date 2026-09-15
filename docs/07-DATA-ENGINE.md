@@ -186,7 +186,7 @@ class TelemetryStore {
     this.comparisonFrames = dataset.frames;
     this.comparisonSorted = true;
 
-    eventBus.emit('data:comparison-loaded', { dataset });
+    eventBus.emit('data:loaded', { dataset });
   }
 
   /**
@@ -647,6 +647,12 @@ export function framesToLTTBPoints(
 ```
 
 ## Servicio de Sesiones (Session Manager)
+
+> **Estado**: la lógica actual vive en `src/renderer/src/lib/session-actions.ts`
+> (usa `session-codec` + los handlers IPC `session:*`). El servicio formal
+> `src/services/session-manager.ts` que se muestra a continuación está
+> **planificado para la Fase 4** del roadmap; el pseudo-código refleja la API
+> objetivo.
 
 ```typescript
 // src/services/session-manager.ts

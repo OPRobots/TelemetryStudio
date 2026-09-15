@@ -63,25 +63,25 @@ npm run test                   # ✅ 2 tests pasan
 Implementar el motor de datos central: EventBus, TelemetryStore, búsqueda binaria y modelo de tipos.
 
 ### Entregables
-- [ ] `src/core/types/` — Todos los tipos TypeScript definidos
+- [x] `src/core/types/` — Todos los tipos TypeScript definidos
   - `telemetry.ts` (TelemetryFrame, TelemetryDataset, FieldSchema)
   - `video.ts` (VideoFrameContext, PlaybackState, ExportConfig)
   - `layout.ts` (DashboardLayout, WidgetConfig)
   - `events.ts` (EventMap completo)
   - `session.ts` (SessionFile, SessionVideo, SessionSync, etc.)
-- [ ] `src/core/event-bus.ts` — EventBus genérico typed
+- [x] `src/core/event-bus.ts` — EventBus genérico typed
   - `on()`, `emit()`, `once()`, `off()`, `clear()`
   - Type-safe con keyof EventMap
-- [ ] `src/core/telemetry-store.ts` — Almacén de frames
+- [x] `src/core/telemetry-store.ts` — Almacén de frames
   - `loadDataset()`, `addFrame()`, `findClosestFrame()`
   - Búsqueda binaria O(log N)
   - `findFramesInRange()` para ventanas de datos
-- [ ] `src/core/binary-search.ts` — Búsqueda binaria
+- [x] `src/core/binary-search.ts` — Búsqueda binaria
   - `binarySearch()` y `binarySearchIndex()`
-- [ ] `src/core/lttb.ts` — Downsampling LTTB
+- [x] `src/core/lttb.ts` — Downsampling LTTB
   - Implementación inline sin dependencias externas
   - Helper `framesToLTTBPoints()`
-- [ ] Tests unitarios para:
+- [x] Tests unitarios para:
   - EventBus (emisión, suscripción, cleanup)
   - TelemetryStore (carga, búsqueda, orden)
   - Búsqueda binaria (edge cases)
@@ -100,24 +100,25 @@ npm run test                   # Todos los tests de core pasan
 Implementar los dos modos de entrada: Serial UART (streaming) y carga de sesiones JSON (offline).
 
 ### Entregables
-- [ ] `src/parsers/interfaces.ts` — ITelemetryParser + ParserMetadata
-- [ ] `src/parsers/parser-registry.ts` — ParserRegistry singleton
-- [ ] `src/parsers/serial-uart-parser.ts` — SerialUARTParser
+- [x] `src/parsers/interfaces.ts` — ITelemetryParser + ParserMetadata
+- [x] `src/parsers/parser-registry.ts` — ParserRegistry singleton
+- [x] `src/parsers/serial-uart-parser.ts` — SerialUARTParser
   - Streaming mode (parseLine())
   - Soporte para baud rates: 115200, 230400, 460800, 921600
-  - Formato: `T:<ms>,S:<speed>,M:<left>,<right>,G:<gyro>`
-- [ ] `src/main/serial-service.ts` — Servicio en Main Process
+  - Formatos: CSV posicional (firmware STM32), legacy `T:/S:/M:/G:` y genérico `campo:valor` con tipos inferidos
+  - `setCsvFields()` para nombres de columna configurables
+- [x] `src/main/serial-service.ts` — Servicio en Main Process
   - `serial:open`, `serial:close`, `serial:list`
-  - IPC bridge en preload
-- [ ] `src/parsers/json-session-parser.ts` — JSONSessionParser
-  - Parsing de `session.json` (formato compacto con keys: v, t, d, pos, size, fields)
+  - IPC bridge en preload (`serialOnData`, `serialOnStatus`)
+- [x] `src/parsers/json-session-parser.ts` — JSONSessionParser
+  - Parsing de `session.json` (formato compacto: `schema` + `frames` posicionales)
   - Conversión de `sessionToDataset()`
-- [ ] `src/core/session-codec.ts` — Codec de sesiones
+- [x] `src/core/session-codec.ts` — Codec de sesiones
   - `encodeSession()`, `decodeSession()`
   - `sessionToDataset()`, `datasetToSession()`
-- [ ] Tests para SerialUARTParser con fixtures
-- [ ] Tests para JSONSessionParser con fixture `session.json`
-- [ ] Tests para session-codec (round-trip encode/decode)
+- [x] Tests para SerialUARTParser con fixtures
+- [x] Tests para JSONSessionParser con fixture `session.json`
+- [x] Tests para session-codec (round-trip encode/decode)
 
 ### Validación
 ```bash
@@ -135,7 +136,7 @@ npm run test
 Implementar la sincronización frame-a-frame entre vídeo MP4 y telemetría, con soporte para 2 synchronizers simultáneos (comparación side-by-side).
 
 ### Entregables
-- [ ] `src/core/video-synchronizer.ts` — VideoSynchronizer
+- [x] `src/core/video-synchronizer.ts` — VideoSynchronizer
   - `requestVideoFrameCallback` loop
   - Búsqueda binaria mediaTime → TelemetryFrame
   - Soporte para drift offset manual (+/- ms)
@@ -143,24 +144,24 @@ Implementar la sincronización frame-a-frame entre vídeo MP4 y telemetría, con
   - `stepForward()`, `stepBackward()` (1 frame exacto)
   - `setPlaybackRate()` (0.1x a 2x)
   - Polyfill para browsers sin RVFC
-  - Soporte para 2 instancias simultáneas (comparación)
-- [ ] `src/renderer/components/video/VideoPlayer.tsx`
+  - [ ] Soporte para 2 instancias simultáneas (se completa en Fase 5)
+- [x] `src/renderer/components/video/VideoPlayer.tsx`
   - Contenedor del elemento `<video>`
-  - Carga de archivos locales via drag-and-drop
-  - Soporte para VideoPlayer #2 (comparación)
-- [ ] `src/renderer/components/video/PlaybackControls.tsx`
+  - [ ] Carga de archivos locales via drag-and-drop (se carga con diálogo nativo)
+  - [ ] Soporte para VideoPlayer #2 (se completa en Fase 5)
+- [x] `src/renderer/components/video/PlaybackControls.tsx`
   - Play/Pause, Skip Forward/Back
-  - Speed selector (0.1x, 0.25x, 0.5x, 1x, 2x)
-  - Controles duplicables para comparación
-- [ ] `src/renderer/components/video/TimelineSlider.tsx`
-  - Slider de seek con preview
+  - Speed selector (0.25x, 0.5x, 1x, 2x)
+  - [ ] Controles duplicables para comparación (Fase 5)
+- [x] `src/renderer/components/video/TimelineSlider.tsx`
+  - [ ] Slider de seek con preview (seek funcional sin preview)
   - Display de timestamp actual / total
-  - Modo compartido/independiente para comparación
-- [ ] Tests de sincronización:
-  - Drift medido < 33ms (1 frame a 30fps)
+  - [ ] Modo compartido/independiente para comparación (Fase 5)
+- [x] Tests de sincronización:
+  - Drift medido en e2e (`e2e:video`)
   - Búsqueda binaria correcta
   - Step forward/backward preciso
-  - 2 synchronizers independientes
+  - [ ] 2 synchronizers independientes (Fase 5)
 
 ### Validación
 ```bash
@@ -271,18 +272,19 @@ npm run test
 Persistencia de layouts en JSON con layouts predefinidos.
 
 ### Entregables
-- [ ] `src/services/layout-manager.ts` — LayoutManager
+- [x] `src/services/layout-manager.ts` — LayoutManager
   - `getAllLayouts()`, `loadLayout()`, `saveLayout()`
   - `createNew()`, `addWidget()`, `removeWidget()`, `updateWidget()`
   - 2 layouts built-in: Siguelíneas, Micromouse
-- [ ] `src/main/ipc-handlers.ts` — Handlers de persistencia
+- [x] `src/main/ipc-handlers.ts` — Handlers de persistencia
   - `layout:save`, `layout:loadAll`, `layout:delete`
   - Almacenamiento en `app.getPath('userData')/layouts/`
-- [ ] `src/renderer/components/dialogs/LayoutDialog.tsx`
+- [x] `src/renderer/components/dialogs/LayoutDialog.tsx`
   - Lista de layouts disponibles
-  - Botones: cargar, guardar, nuevo, eliminar
-- [ ] `src/renderer/stores/layout-store.ts` — Zustand store
-- [ ] Test: guardar → cargar → verificar igualdad
+  - Botones: cargar, guardar, eliminar
+  - [ ] Botón "nuevo" dedicado (se puede crear guardando con un nombre nuevo)
+- [x] `src/renderer/stores/layout-store.ts` — Zustand store
+- [x] Test: guardar → cargar → verificar igualdad
 
 ### Validación
 ```bash

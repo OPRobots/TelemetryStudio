@@ -328,8 +328,10 @@ interface EventMap {
   'video:rate-change': { rate: number };
 
   // === Eventos de Sincronización ===
+  'sync:frame': { frame: TelemetryFrame; context: VideoFrameContext };
   'sync:anchor-set': { videoFrame: number; telemetryFrame: number };
   'sync:offset-change': { offset_ms: number };
+  'sync:rate-change': { rate: number };
 
   // === Eventos de UI ===
   'ui:widget-add': { widgetConfig: WidgetConfig };

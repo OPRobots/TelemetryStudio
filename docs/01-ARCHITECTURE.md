@@ -1,5 +1,10 @@
 # Arquitectura del Sistema
 
+> **Estado**: este documento describe la arquitectura **objetivo**. Algunos
+> componentes (SplitView, comparación side-by-side, exportación con Mediabunny)
+> están planificados y aún no implementados. Ver `docs/12-LIMITATIONS.md` y
+> `ROADMAP.md` para el estado real por fase.
+
 ## Diagrama de Componentes
 
 ```mermaid
