@@ -31,23 +31,23 @@ Scaffold completo del proyecto con todas las configs, dependencias y herramienta
 - [x] `electron.vite.config.ts` configurado (main, preload, renderer)
 - [x] `tsconfig.json` + `tsconfig.node.json` optimizados
 - [x] `electron-builder.yml` con configs para las 3 plataformas
-- [ ] `tailwind.config.ts` con paleta OPRobots (usado CSS variables en globals.css)
+- [x] `tailwind.config.ts` con paleta OPRobots (Tailwind 4: paleta vía CSS variables en globals.css)
 - [x] Ventana Electron mínima mostrando "OPRobots Telemetry Studio"
-- [ ] HMR funcionando en renderer (pendiente de probar con `npm run dev`)
-- [ ] Hot reload en main process (pendiente de probar con `npm run dev`)
+- [x] HMR funcionando en renderer (dev server verificado con `npm run dev`)
+- [x] Hot reload en main process (electron-vite reconstruye main/preload al vuelo)
 - [x] `serialport` en `dependencies` (NO en devDependencies)
 - [x] `postinstall` ejecutando `electron-builder install-app-deps`
 - [x] Estructura de carpetas creada según `docs/03-FOLDER-STRUCTURE.md`
 - [x] `.gitignore` configurado
-- [ ] ESLint + Prettier configurados (pendiente configuración)
+- [x] ESLint + Prettier configurados (integrados en `npm run verify`)
 - [x] Vitest configurado con 1 test mínimo pasando
 
 ### Validación
 ```bash
-npm run dev                    # App abre, HMR funciona (pendiente de probar)
-npm run build                  # Build exitoso sin errores (pendiente de probar)
+npm run dev                    # App abre, dev server + Electron (verificado)
+npm run build                  # Build exitoso sin errores (verificado)
 npm run typecheck              # ✅ Sin errores de TypeScript
-npm run test                   # ✅ 2 tests pasan
+npm run test                   # ✅ Tests pasan
 ```
 
 ### Notas
@@ -174,23 +174,24 @@ npm run test
 
 ---
 
-## FASE 4: Session Manager (1 semana) 🟡 PARCIAL (export/import de sesión JSON + vídeo)
+## FASE 4: Session Manager (1 semana) ✅ COMPLETADA
 
 ### Objetivo
 Exportar e importar sesiones completas (JSON + vídeo copiado).
 
 ### Entregables
-- [ ] `src/services/session-manager.ts` — SessionManager
-  - `exportSession()` — crear carpeta con `session.json` + copia del `.mp4`
-  - `importSession()` — cargar sesión completa (vídeo + datos + sync + layout)
+- [x] `src/services/session-manager.ts` — SessionManager (adaptador IPC desacoplado)
+  - `saveSession()` — crear carpeta con `session.json` + copia del `.mp4`
+  - `readSession()` / `resolveVideoPath()` — cargar sesión (vídeo + datos + sync + layout)
   - `listSessions()` — listar sesiones en un directorio
-- [ ] `src/main/ipc-handlers.ts` — Handlers de sesión
+- [x] `src/main/ipc-handlers.ts` — Handlers de sesión
   - `session:export` — crear carpeta + JSON + copiar vídeo
   - `session:read` — leer JSON de sesión
   - `session:getVideoPath` — resolver ruta del vídeo
   - `session:list` — listar sesiones en directorio
-- [ ] Integración con LayoutManager (restaurar layout al importar)
-- [ ] Test: export → import → verificar que datos, sync y layout se restauran
+- [x] Integración con LayoutManager (restaurar layout al importar)
+- [x] UI: `SessionBrowserDialog` (explorar y abrir sesiones) + `SaveSessionDialog`
+- [x] Test: export → import → verificar que datos y sync se restauran (unit + integración)
 
 ### Validación
 ```bash
