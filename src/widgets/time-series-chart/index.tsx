@@ -87,7 +87,7 @@ export function TimeSeriesChart({ config, dataFields, frame, context, frames }: 
         },
       ],
       cursor: {
-        drag: { x: true, y: false, setScale: false },
+        drag: { x: true, y: false, setScale: true },
         points: { size: 6 },
       },
       legend: { show: fields.length > 1 },

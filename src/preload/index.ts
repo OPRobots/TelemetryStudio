@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
 
 export interface SerialPortInfo {
@@ -22,6 +22,9 @@ export interface DialogResult {
 }
 
 const api = {
+  // === Utilidades ===
+  getPathForFile: (file: File): string => webUtils.getPathForFile(file),
+
   // === Dialogs ===
   dialogOpenVideo: (): Promise<DialogResult> => ipcRenderer.invoke('dialog:openVideo'),
   dialogOpenSession: (): Promise<DialogResult> => ipcRenderer.invoke('dialog:openSession'),

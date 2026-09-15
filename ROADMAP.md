@@ -147,7 +147,7 @@ Implementar la sincronización frame-a-frame entre vídeo MP4 y telemetría, con
   - [x] Soporte para 2 instancias simultáneas (comparación)
 - [x] `src/renderer/components/video/VideoPlayer.tsx`
   - Contenedor del elemento `<video>`
-  - [ ] Carga de archivos locales via drag-and-drop (se carga con diálogo nativo)
+  - [x] Carga de archivos locales via drag-and-drop (o diálogo nativo)
   - [x] Soporte para VideoPlayer #2 (comparación)
 - [x] `src/renderer/components/video/PlaybackControls.tsx`
   - Play/Pause, Skip Forward/Back
@@ -213,7 +213,7 @@ Implementar los 4 widgets estándar con registro dinámico, más el sistema de c
   - Integración con uPlot
   - LTTB downsampling por viewport
   - Múltiples series con colores
-  - [ ] Zoom/pan con uPlot cursor (cursor activo; zoom manual pendiente)
+  - [x] Zoom/pan con uPlot cursor (desactivar "autoFollow" en la config del widget)
 - [x] `src/widgets/digital-bitmask/` — Widget de LEDs IR
   - Canvas 2D renderer
   - Soporte para 8, 16, 32 bits

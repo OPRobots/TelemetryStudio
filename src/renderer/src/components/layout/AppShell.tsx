@@ -12,7 +12,7 @@ import { SaveSessionDialog } from '../dialogs/SaveSessionDialog';
 import { SessionBrowserDialog } from '../dialogs/SessionBrowserDialog';
 import { ComparisonDialog } from '../dialogs/ComparisonDialog';
 import { ExportDialog } from '../dialogs/ExportDialog';
-import { openVideoDialog, openSessionDialog } from '../../lib/session-actions';
+import { openVideoDialog, openSessionDialog, loadSession } from '../../lib/session-actions';
 import { useAppStore } from '../../stores/app-store';
 import { useComparisonStore } from '../../stores/comparison-store';
 
@@ -29,8 +29,29 @@ export function AppShell(): React.ReactElement {
   const comparisonActive = useComparisonStore((s) => s.active);
   const comparisonError = useComparisonStore((s) => s.errorMessage);
 
+  const handleDrop = (e: React.DragEvent): void => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    const path = window.api?.getPathForFile(file);
+    if (!path) return;
+
+    if (/\.(mp4|webm|mov|mkv)$/i.test(path)) {
+      useAppStore.getState().setVideo(path, path);
+    } else if (/\.json$/i.test(path)) {
+      void loadSession(path).catch((err) =>
+        useAppStore.getState().setError((err as Error).message)
+      );
+    }
+  };
+
   return (
-    <div className="flex h-screen flex-col" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div
+      className="flex h-screen flex-col"
+      style={{ backgroundColor: 'var(--bg-primary)' }}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={handleDrop}
+    >
       <header
         className="flex items-center justify-between px-4 py-2"
         style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--bg-border)' }}

@@ -19,6 +19,7 @@ export interface FileReadResult {
 }
 
 export interface TelemetryAPI {
+  getPathForFile: (file: File) => string;
   dialogOpenVideo: () => Promise<DialogResult>;
   dialogOpenSession: () => Promise<DialogResult>;
   dialogOpenDirectory: () => Promise<DialogResult>;
