@@ -113,11 +113,7 @@ export function VideoPlayer({
   return (
     <div
       className="flex h-full w-full items-center justify-center overflow-hidden"
-      style={{
-        backgroundColor: '#05070b',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--bg-border)',
-      }}
+      style={{ backgroundColor: '#05070b' }}
     >
       <video
         ref={videoRef}

@@ -1,12 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { comparisonManager } from '@core/comparison-manager';
-import { videoSynchronizer } from '@core/video-synchronizer';
+import { videoSynchronizer, type VideoSynchronizer } from '@core/video-synchronizer';
+import { DEFAULT_PANELS } from '@core/types/layout';
 import { comparisonSynchronizer } from '../../lib/comparison-sync';
 import { useAppStore } from '../../stores/app-store';
 import { useComparisonStore } from '../../stores/comparison-store';
+import { useLayoutStore } from '../../stores/layout-store';
 import { VideoPlayer } from '../video/VideoPlayer';
 import { PaneControls } from '../video/PaneControls';
 import { WidgetHost } from '../widgets/WidgetHost';
+import { Splitter } from './Splitter';
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
 
 function SharedControls(): React.ReactElement {
   const [time, setTime] = useState(0);
@@ -48,21 +55,20 @@ function SharedControls(): React.ReactElement {
   };
 
   return (
-    <div
-      className="flex items-center gap-2 px-2 py-1"
-      style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--bg-border)' }}
-    >
+    <div className="flex items-center gap-2.5" style={{ padding: '10px 14px' }}>
       <button className="toolbar-button" onClick={() => step(-1)}>
         ◀
       </button>
-      <button className="toolbar-button toolbar-button-primary min-w-[64px]" onClick={toggle}>
+      <button className="toolbar-button toolbar-button-primary min-w-[72px]" onClick={toggle}>
         {playing ? 'Pausa' : 'Play'}
       </button>
       <button className="toolbar-button" onClick={() => step(1)}>
         ▶
       </button>
-      <span className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
-        {time.toFixed(3)} / {Number.isFinite(duration) ? duration.toFixed(2) : '0.00'} s
+      <span className="mono ml-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+        {time.toFixed(3)}
+        <span style={{ color: 'var(--text-disabled)' }}> / </span>
+        {Number.isFinite(duration) ? duration.toFixed(2) : '0.00'} s
       </span>
       <input
         type="range"
@@ -71,8 +77,7 @@ function SharedControls(): React.ReactElement {
         step={0.001}
         value={time}
         onChange={(e) => seek(Number(e.target.value))}
-        className="flex-1"
-        style={{ accentColor: '#3b82f6' }}
+        className="ml-2 flex-1"
       />
     </div>
   );
@@ -80,31 +85,48 @@ function SharedControls(): React.ReactElement {
 
 interface PaneProps {
   label: string;
+  subtitle: string;
   src: string | null;
+  synchronizer: VideoSynchronizer;
   eventName: 'sync:frame' | 'comparison:frame';
   dataset: 'primary' | 'comparison';
   primary: boolean;
   showControls: boolean;
+  style?: React.CSSProperties;
 }
 
-function Pane({ label, src, eventName, dataset, primary, showControls }: PaneProps): React.ReactElement {
-  const sync = primary ? videoSynchronizer : comparisonSynchronizer;
+function Pane({
+  label,
+  subtitle,
+  src,
+  synchronizer,
+  eventName,
+  dataset,
+  primary,
+  showControls,
+  style,
+}: PaneProps): React.ReactElement {
   return (
-    <div
-      className="flex min-h-0 flex-col overflow-hidden"
-      style={{ border: '1px solid var(--bg-border)', borderRadius: 6 }}
-    >
+    <div className="card" style={style}>
+      <div className="card__header">
+        <span className="card__title">{label}</span>
+        <span className="card__subtitle">{subtitle}</span>
+      </div>
       <div
-        className="truncate px-2 py-1 text-xs"
-        style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
+        className="card__body"
+        style={{ flex: '0 0 auto', height: '44%', backgroundColor: '#05070b' }}
       >
-        {label}
+        <VideoPlayer synchronizer={synchronizer} src={src} primary={primary} />
       </div>
-      <div className="min-h-0" style={{ height: '42%' }}>
-        <VideoPlayer synchronizer={sync} src={src} primary={primary} />
-      </div>
-      {showControls && <PaneControls synchronizer={sync} />}
-      <div className="min-h-0 flex-1 overflow-hidden">
+      {showControls && (
+        <div className="card__footer">
+          <PaneControls synchronizer={synchronizer} />
+        </div>
+      )}
+      <div
+        className="card__body"
+        style={{ flex: '1 1 auto', minHeight: 0, padding: 12, borderTop: '1px solid var(--bg-border)' }}
+      >
         <WidgetHost eventName={eventName} dataset={dataset} primary={primary} />
       </div>
     </div>
@@ -123,19 +145,39 @@ export function SplitView(): React.ReactElement {
   const setSharedBar = useComparisonStore((s) => s.setSharedBar);
   const stopStore = useComparisonStore((s) => s.stop);
 
+  const panels = useLayoutStore((s) => s.panels);
+  const setPanels = useLayoutStore((s) => s.setPanels);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(600);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h) setContainerHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const paneAHeight = clamp(
+    Math.round(panels.comparisonRatio * containerHeight),
+    160,
+    Math.max(160, containerHeight - 220)
+  );
+
   const exit = (): void => {
     comparisonManager.stopComparison();
     stopStore();
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div
-        className="flex items-center justify-between px-3 py-1"
-        style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--bg-border)' }}
-      >
-        <span className="truncate text-xs" style={{ color: 'var(--text-primary)' }}>
-          Comparación — A (actual) vs B ({referenceName ?? 'sin nombre'})
+    <div ref={containerRef} className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+      <div className="flex items-center justify-between gap-3 px-1">
+        <span className="section-label" style={{ marginBottom: 0 }}>
+          Comparación · A (actual) vs B ({referenceName ?? 'sin nombre'})
         </span>
         <div className="flex items-center gap-3">
           <label className="dialog-checkbox">
@@ -149,32 +191,55 @@ export function SplitView(): React.ReactElement {
             />
             <span className="text-xs">Barra compartida</span>
           </label>
-          <button className="toolbar-button" onClick={exit}>
-            Salir de comparación
+          <button className="toolbar-button toolbar-button--compact" onClick={exit}>
+            Salir
           </button>
         </div>
       </div>
 
-      {sharedBar && <SharedControls />}
+      {sharedBar && (
+        <div className="card" style={{ flexShrink: 0 }}>
+          <div className="card__header">
+            <span className="card__title">Reproducción</span>
+          </div>
+          <SharedControls />
+        </div>
+      )}
 
-      <div className="grid min-h-0 flex-1 gap-1 p-1" style={{ gridTemplateRows: '1fr 1fr' }}>
-        <Pane
-          label="A — Sesión actual"
-          src={primarySrc}
-          eventName="sync:frame"
-          dataset="primary"
-          primary
-          showControls={!sharedBar}
-        />
-        <Pane
-          label={`B — ${referenceName ?? 'Referencia'}`}
-          src={referenceSrc}
-          eventName="comparison:frame"
-          dataset="comparison"
-          primary={false}
-          showControls={!sharedBar}
-        />
-      </div>
+      <Pane
+        label="Panel A"
+        subtitle="Sesión actual"
+        src={primarySrc}
+        synchronizer={videoSynchronizer}
+        eventName="sync:frame"
+        dataset="primary"
+        primary
+        showControls={!sharedBar}
+        style={{ height: paneAHeight, flexShrink: 0 }}
+      />
+
+      <Splitter
+        orientation="horizontal"
+        value={panels.comparisonRatio}
+        min={0.3}
+        max={0.7}
+        unit="ratio"
+        label="Alto del panel A"
+        onChange={(v) => setPanels({ comparisonRatio: v })}
+        onReset={() => setPanels({ comparisonRatio: DEFAULT_PANELS.comparisonRatio })}
+      />
+
+      <Pane
+        label="Panel B"
+        subtitle={referenceName ?? 'Referencia'}
+        src={referenceSrc}
+        synchronizer={comparisonSynchronizer}
+        eventName="comparison:frame"
+        dataset="comparison"
+        primary={false}
+        showControls={!sharedBar}
+        style={{ flex: '1 1 auto', minHeight: 0 }}
+      />
     </div>
   );
 }

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { comparisonManager } from '@core/comparison-manager';
 import { VideoPlayer } from '../video/VideoPlayer';
 import { Toolbar } from './Toolbar';
 import { Inspector } from './Inspector';
 import { StatusBar } from './StatusBar';
 import { SplitView } from './SplitView';
+import { Splitter } from './Splitter';
 import { WidgetHost } from '../widgets/WidgetHost';
 import { WidgetToolbar } from '../widgets/WidgetToolbar';
 import { SerialConnectDialog } from '../dialogs/SerialConnectDialog';
@@ -16,7 +17,13 @@ import { ExportDialog } from '../dialogs/ExportDialog';
 import { openVideoDialog, openSessionDialog, loadSession } from '../../lib/session-actions';
 import { serialIngest } from '../../lib/serial-ingest';
 import { useAppStore } from '../../stores/app-store';
+import { useLayoutStore } from '../../stores/layout-store';
 import { useComparisonStore } from '../../stores/comparison-store';
+import { DEFAULT_PANELS } from '@core/types/layout';
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
 
 export function AppShell(): React.ReactElement {
   const [serialOpen, setSerialOpen] = useState(false);
@@ -25,14 +32,35 @@ export function AppShell(): React.ReactElement {
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [inspectorOpen, setInspectorOpen] = useState(true);
   const [widgetMenuOpen, setWidgetMenuOpen] = useState(false);
 
   const videoSrc = useAppStore((s) => s.videoSrc);
+  const videoInfo = useAppStore((s) => s.videoInfo);
   const appError = useAppStore((s) => s.errorMessage);
   const setError = useAppStore((s) => s.setError);
+
+  const panels = useLayoutStore((s) => s.panels);
+  const setPanels = useLayoutStore((s) => s.setPanels);
+
   const comparisonActive = useComparisonStore((s) => s.active);
   const comparisonError = useComparisonStore((s) => s.errorMessage);
+
+  // Altura medida de la columna para convertir el ratio del vídeo a píxeles
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [sectionHeight, setSectionHeight] = useState(600);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h) setSectionHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [comparisonActive]);
+
+  const videoHeight = clamp(Math.round(panels.videoRatio * sectionHeight), 160, Math.max(160, sectionHeight - 220));
 
   const stopComparison = (): void => {
     comparisonManager.stopComparison();
@@ -70,9 +98,11 @@ export function AppShell(): React.ReactElement {
         case 'stop-comparison':
           stopComparison();
           break;
-        case 'toggle-inspector':
-          setInspectorOpen((v) => !v);
+        case 'toggle-inspector': {
+          const current = useLayoutStore.getState().panels.inspectorVisible;
+          useLayoutStore.getState().setPanels({ inspectorVisible: !current });
           break;
+        }
         case 'layouts':
           setLayoutsOpen(true);
           break;
@@ -136,41 +166,76 @@ export function AppShell(): React.ReactElement {
       )}
 
       <main className="flex min-h-0 flex-1 overflow-hidden">
-        {inspectorOpen && <Inspector />}
+        {panels.inspectorVisible && (
+          <>
+            <Inspector width={panels.inspectorWidth} />
+            <Splitter
+              orientation="vertical"
+              value={panels.inspectorWidth}
+              min={200}
+              max={480}
+              label="Ancho del inspector"
+              onChange={(v) => setPanels({ inspectorWidth: Math.round(v) })}
+              onReset={() => setPanels({ inspectorWidth: DEFAULT_PANELS.inspectorWidth })}
+            />
+          </>
+        )}
 
         {comparisonActive ? (
-          <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <div ref={sectionRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
             <SplitView />
-          </section>
+          </div>
         ) : (
-          <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <div className="min-h-0" style={{ height: '42%', padding: '16px 20px 0' }}>
-              {videoSrc ? (
-                <VideoPlayer />
-              ) : (
-                <button className="empty-drop" onClick={() => void openVideoDialog()}>
-                  <span className="empty-drop__title">Sin vídeo</span>
-                  <span className="empty-drop__hint">Pulsa para abrir o arrastra un .mp4</span>
-                </button>
+          <div
+            ref={sectionRef}
+            className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-3"
+          >
+            <div className="card" style={{ height: videoHeight, flexShrink: 0 }}>
+              <div className="card__header">
+                <span className="card__title">Vídeo</span>
+                <span className="card__subtitle">{videoInfo?.filename ?? 'sin cargar'}</span>
+              </div>
+              <div
+                className="card__body"
+                style={{ backgroundColor: '#05070b', padding: videoSrc ? 0 : 12 }}
+              >
+                {videoSrc ? (
+                  <VideoPlayer />
+                ) : (
+                  <button className="empty-drop" onClick={() => void openVideoDialog()}>
+                    <span className="empty-drop__title">Sin vídeo</span>
+                    <span className="empty-drop__hint">Pulsa para abrir o arrastra un .mp4</span>
+                  </button>
+                )}
+              </div>
+              {videoSrc && (
+                <div className="card__footer">
+                  <Toolbar />
+                </div>
               )}
             </div>
 
-            {videoSrc && <Toolbar />}
+            <Splitter
+              orientation="horizontal"
+              value={panels.videoRatio}
+              min={0.15}
+              max={0.8}
+              unit="ratio"
+              label="Alto del vídeo"
+              onChange={(v) => setPanels({ videoRatio: v })}
+              onReset={() => setPanels({ videoRatio: DEFAULT_PANELS.videoRatio })}
+            />
 
-            <div
-              className="flex items-center justify-between"
-              style={{ padding: '16px 20px 10px' }}
-            >
-              <span className="section-label" style={{ marginBottom: 0 }}>
-                Widgets
-              </span>
-              <WidgetToolbar open={widgetMenuOpen} onOpenChange={setWidgetMenuOpen} />
+            <div className="card" style={{ flex: '1 1 auto', minHeight: 0 }}>
+              <div className="card__header">
+                <span className="card__title">Widgets</span>
+                <WidgetToolbar open={widgetMenuOpen} onOpenChange={setWidgetMenuOpen} />
+              </div>
+              <div className="card__body" style={{ padding: 12 }}>
+                <WidgetHost onRequestAdd={() => setWidgetMenuOpen(true)} />
+              </div>
             </div>
-
-            <div className="min-h-0 flex-1" style={{ padding: '0 20px 20px' }}>
-              <WidgetHost onRequestAdd={() => setWidgetMenuOpen(true)} />
-            </div>
-          </section>
+          </div>
         )}
       </main>
 

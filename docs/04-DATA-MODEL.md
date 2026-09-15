@@ -203,8 +203,25 @@ interface DashboardLayout {
   /** Lista de widgets con sus posiciones y configuraciones */
   widgets: WidgetConfig[];
 
+  /** Tamaños y visibilidad de los paneles de la interfaz */
+  panels: LayoutPanels;
+
   /** Configuración global del dashboard */
   global: GlobalConfig;
+}
+
+/**
+ * Tamaños y visibilidad de los paneles (se guardan con el layout).
+ */
+interface LayoutPanels {
+  /** Ancho del inspector en píxeles (200–480) */
+  inspectorWidth: number;
+  /** Si el inspector está visible */
+  inspectorVisible: boolean;
+  /** Proporción de alto del vídeo respecto a la columna (0.15–0.8) */
+  videoRatio: number;
+  /** Proporción de alto del panel A en comparación (0.3–0.7) */
+  comparisonRatio: number;
 }
 
 /**

@@ -1,10 +1,12 @@
 import { create } from 'zustand';
-import type { DashboardLayout, WidgetConfig } from '@core/types/layout';
+import type { DashboardLayout, LayoutPanels, WidgetConfig } from '@core/types/layout';
+import { DEFAULT_PANELS } from '@core/types/layout';
 
 interface LayoutState {
   layoutName: string;
   layoutDescription: string;
   widgets: WidgetConfig[];
+  panels: LayoutPanels;
 
   setLayout: (layout: DashboardLayout) => void;
   addWidget: (widget: WidgetConfig) => void;
@@ -12,18 +14,21 @@ interface LayoutState {
   updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) => void;
   replaceWidgets: (widgets: WidgetConfig[]) => void;
   clearWidgets: () => void;
+  setPanels: (panels: Partial<LayoutPanels>) => void;
 }
 
 export const useLayoutStore = create<LayoutState>((set) => ({
   layoutName: 'Sin guardar',
   layoutDescription: '',
   widgets: [],
+  panels: { ...DEFAULT_PANELS },
 
   setLayout: (layout) =>
     set({
       layoutName: layout.name,
       layoutDescription: layout.description ?? '',
       widgets: layout.widgets.map((w) => ({ ...w })),
+      panels: { ...DEFAULT_PANELS, ...layout.panels },
     }),
 
   addWidget: (widget) => set((s) => ({ widgets: [...s.widgets, widget] })),
@@ -39,12 +44,15 @@ export const useLayoutStore = create<LayoutState>((set) => ({
   replaceWidgets: (widgets) => set({ widgets }),
 
   clearWidgets: () => set({ widgets: [] }),
+
+  setPanels: (panels) => set((s) => ({ panels: { ...s.panels, ...panels } })),
 }));
 
 export function toDashboardLayout(
   name: string,
   description: string,
-  widgets: WidgetConfig[]
+  widgets: WidgetConfig[],
+  panels: LayoutPanels = DEFAULT_PANELS
 ): DashboardLayout {
   const now = new Date().toISOString();
   return {
@@ -55,6 +63,7 @@ export function toDashboardLayout(
     modifiedAt: now,
     videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: false, overlays: [] },
     widgets: widgets.map((w) => ({ ...w })),
+    panels: { ...panels },
     global: {
       theme: 'dark',
       units: { speed: 'rpm', distance: 'm', angle: 'deg' },

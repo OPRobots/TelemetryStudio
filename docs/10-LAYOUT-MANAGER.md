@@ -84,6 +84,12 @@ El LayoutManager permite guardar y cargar esquemas de pantalla completos en JSON
       "zIndex": 2
     }
   ],
+  "panels": {
+    "inspectorWidth": 288,
+    "inspectorVisible": true,
+    "videoRatio": 0.42,
+    "comparisonRatio": 0.5
+  },
   "global": {
     "theme": "dark",
     "units": {

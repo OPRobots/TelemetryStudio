@@ -9,8 +9,32 @@ export interface DashboardLayout {
   modifiedAt: string;
   videoPanel: VideoPanelConfig;
   widgets: WidgetConfig[];
+  panels: LayoutPanels;
   global: GlobalConfig;
 }
+
+/**
+ * Tamaños y visibilidad de los paneles de la interfaz.
+ * Se guardan con el layout para restaurar la distribución del usuario.
+ */
+export interface LayoutPanels {
+  /** Ancho del inspector en píxeles (200–480). */
+  inspectorWidth: number;
+  /** Si el inspector está visible. */
+  inspectorVisible: boolean;
+  /** Proporción de alto del panel de vídeo respecto a la columna (0.15–0.8). */
+  videoRatio: number;
+  /** Proporción de alto del panel A en comparación (0.3–0.7). */
+  comparisonRatio: number;
+}
+
+/** Valores por defecto de los paneles. */
+export const DEFAULT_PANELS: LayoutPanels = {
+  inspectorWidth: 288,
+  inspectorVisible: true,
+  videoRatio: 0.42,
+  comparisonRatio: 0.5,
+};
 
 export interface VideoPanelConfig {
   x: number;

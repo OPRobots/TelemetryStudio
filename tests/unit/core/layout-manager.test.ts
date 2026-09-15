@@ -98,4 +98,19 @@ describe('LayoutManager', () => {
     expect(layout.description).toBe('desc');
     expect(layout.global.theme).toBe('dark');
   });
+
+  it('createEmptyLayout includes default panel sizes', () => {
+    const layout = createEmptyLayout('X');
+    expect(layout.panels.inspectorWidth).toBe(288);
+    expect(layout.panels.inspectorVisible).toBe(true);
+    expect(layout.panels.videoRatio).toBeCloseTo(0.42);
+    expect(layout.panels.comparisonRatio).toBeCloseTo(0.5);
+  });
+
+  it('built-in layouts include panel sizes', () => {
+    for (const layout of BUILT_IN_LAYOUTS) {
+      expect(layout.panels).toBeDefined();
+      expect(layout.panels.inspectorWidth).toBeGreaterThan(0);
+    }
+  });
 });

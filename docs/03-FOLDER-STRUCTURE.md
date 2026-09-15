@@ -108,6 +108,7 @@ oprobots-telemetry-studio/
 │   │       │   ├── layout/
 │   │       │   │   ├── AppShell.tsx     # Layout principal (menú, inspector, workspace)
 │   │       │   │   ├── Inspector.tsx    # Panel izquierdo: sincronización y campos
+│   │       │   │   ├── Splitter.tsx     # Divisores arrastrables entre paneles
 │   │       │   │   ├── Toolbar.tsx      # Slider temporal + controles de reproducción
 │   │       │   │   ├── StatusBar.tsx    # Barra de estado inferior (chips)
 │   │       │   │   └── SplitView.tsx    # Vista split de comparación

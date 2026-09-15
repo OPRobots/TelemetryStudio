@@ -1,4 +1,5 @@
 import type { DashboardLayout, WidgetConfig } from '@core/types/layout';
+import { DEFAULT_PANELS } from '@core/types/layout';
 import { eventBus } from '@core/event-bus';
 
 /**
@@ -53,6 +54,7 @@ export const BUILT_IN_LAYOUTS: DashboardLayout[] = [
         zIndex: 2,
       },
     ],
+    panels: { ...DEFAULT_PANELS },
     global: {
       theme: 'dark',
       units: { speed: 'rpm', distance: 'm', angle: 'deg' },
@@ -96,6 +98,7 @@ export const BUILT_IN_LAYOUTS: DashboardLayout[] = [
         zIndex: 1,
       },
     ],
+    panels: { ...DEFAULT_PANELS },
     global: {
       theme: 'dark',
       units: { speed: 'cm/s', distance: 'cm', angle: 'deg' },
@@ -246,6 +249,7 @@ export function createEmptyLayout(name: string, description?: string): Dashboard
     modifiedAt: now,
     videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: false, overlays: [] },
     widgets: [],
+    panels: { ...DEFAULT_PANELS },
     global: {
       theme: 'dark',
       units: { speed: 'rpm', distance: 'm', angle: 'deg' },

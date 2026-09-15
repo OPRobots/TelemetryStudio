@@ -10,7 +10,6 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { mkdirSync, writeFileSync, readFileSync } from 'fs';
-
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const root = join(currentDir, '..');
 const sessionsDir = join('/tmp', 'opencode', 'oprobots-sessions');
@@ -114,15 +113,23 @@ app.whenReady().then(async () => {
 
     const state = await win.webContents.executeJavaScript(`(() => {
       const text = document.body.innerText;
+      const dialog = document.querySelector('.dialog-panel');
       return {
         videos: document.querySelectorAll('video').length,
         widgetCards: document.querySelectorAll('.widget-card').length,
-        hasComparisonHeading: text.includes('Comparación'),
+        hasComparisonHeading: text.toLowerCase().includes('comparación'),
         hasSharedBar: text.includes('Barra compartida'),
+        dialogOpen: !!dialog,
+        dialogText: dialog ? dialog.innerText.slice(0, 160) : '',
       };
     })()`);
 
     console.log('E2E_COMPARISON ' + JSON.stringify({ openedA, openedDialog, ...state }));
+    if (process.env.SCREENSHOT) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const image = await win.webContents.capturePage();
+      writeFileSync('/tmp/opencode/oprobots-comparison.png', image.toPNG());
+    }
     if (errors.length > 0) console.log('E2E_COMPARISON_ERRORS ' + JSON.stringify(errors.slice(0, 10)));
 
     const ok =
