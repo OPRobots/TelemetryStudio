@@ -18,6 +18,10 @@ de competición con vídeo sincronizado**. 100 % offline y portable.
   gráfica, colores, tamaño y posición. Guarda y reutiliza layouts.
 - **Sesiones**: guarda una sesión (`session.json` + copia del vídeo) y reábrela
   después con todo restaurado (datos, sincronización y layout).
+- **Comparación**: analiza dos sesiones en paralelo (paneles apilados) con widgets
+  idénticos y barra de tiempo compartida o independiente.
+- **Exportación**: genera un `.mp4` con el vídeo y los widgets superpuestos para
+  compartir en redes (FFmpeg empaquetado).
 
 ## Requisitos
 

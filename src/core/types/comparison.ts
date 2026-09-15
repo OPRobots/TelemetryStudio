@@ -1,5 +1,4 @@
 import type { TelemetryDataset } from './telemetry';
-import type { SessionFile } from './session';
 
 /**
  * Configuración para el modo de comparación side-by-side.

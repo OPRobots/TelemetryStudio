@@ -25,7 +25,11 @@ export async function openSessionDialog(): Promise<void> {
   if (!api) return;
   const res = await api.dialogOpenSession();
   if (res.canceled || !res.filePath) return;
-  await loadSession(res.filePath);
+  try {
+    await loadSession(res.filePath);
+  } catch (err) {
+    useAppStore.getState().setError(`No se pudo abrir la sesión: ${(err as Error).message}`);
+  }
 }
 
 /**

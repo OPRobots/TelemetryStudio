@@ -104,7 +104,6 @@ export function TimeSeriesChart({ config, dataFields, frame, context, frames }: 
       uplotRef.current?.destroy();
       uplotRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fieldsKey, configKey]);
 
   // Actualizar datos en cada frame sincronizado

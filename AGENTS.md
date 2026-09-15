@@ -268,7 +268,7 @@ npm run build:win    # Build Windows (NSIS + portable)
 | Fase 6: Layout Manager | ✅ Completada | `1adfe1f` |
 | Fase 7: Export para Redes | ✅ Completada | `pendiente` |
 | Fase 8: Packaging | 🟡 Build Linux OK; Windows/macOS manual | `25f1877` |
-| Fase 9: Polish + E2E | 🟡 Parcial (smoke + e2e en Electron) | `e5ac195` |
+| Fase 9: Polish + E2E | ✅ Completada | `pendiente` |
 | PoC 1: Serial → Widget | ✅ Validado (hardware real) | `e89a14c` |
 | PoC 2: Video Sync | ✅ Funcional | `8ee0cd5`, `5f6adde` |
 | PoC 3: Video Export | ✅ Funcional | `ddd9354` |

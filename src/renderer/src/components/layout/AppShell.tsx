@@ -24,6 +24,8 @@ export function AppShell(): React.ReactElement {
   const [compareOpen, setCompareOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const videoSrc = useAppStore((s) => s.videoSrc);
+  const appError = useAppStore((s) => s.errorMessage);
+  const setError = useAppStore((s) => s.setError);
   const comparisonActive = useComparisonStore((s) => s.active);
   const comparisonError = useComparisonStore((s) => s.errorMessage);
 
@@ -54,10 +56,22 @@ export function AppShell(): React.ReactElement {
             Exportar
           </button>
           <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            v0.1.0
+            v1.0.0
           </span>
         </div>
       </header>
+
+      {appError && (
+        <div
+          className="flex items-center justify-between px-4 py-1 text-xs"
+          style={{ backgroundColor: '#F2051920', color: '#f87171', borderBottom: '1px solid #F20519' }}
+        >
+          <span className="truncate">{appError}</span>
+          <button className="icon-button" onClick={() => setError(null)} title="Descartar">
+            ✕
+          </button>
+        </div>
+      )}
 
       {comparisonError && (
         <div

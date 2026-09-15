@@ -39,6 +39,7 @@ interface AppState {
 
   // Mensajes
   statusMessage: string;
+  errorMessage: string | null;
 
   // Acciones
   setVideo: (path: string, src: string) => void;
@@ -57,6 +58,7 @@ interface AppState {
 
   setSyncOffset: (ms: number) => void;
   setStatusMessage: (message: string) => void;
+  setError: (message: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -82,6 +84,7 @@ export const useAppStore = create<AppState>((set) => ({
   syncOffsetMs: 0,
 
   statusMessage: 'Listo',
+  errorMessage: null,
 
   setVideo: (path, src) => set({ videoPath: path, videoSrc: src, statusMessage: `Vídeo: ${path}` }),
   setVideoInfo: (info) => set({ videoInfo: info }),
@@ -101,4 +104,5 @@ export const useAppStore = create<AppState>((set) => ({
 
   setSyncOffset: (ms) => set({ syncOffsetMs: ms }),
   setStatusMessage: (message) => set({ statusMessage: message }),
+  setError: (message) => set({ errorMessage: message }),
 }));

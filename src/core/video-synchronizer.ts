@@ -228,6 +228,10 @@ export class VideoSynchronizer {
     return this.declaredFps;
   }
 
+  get playbackRate(): number {
+    return this.video?.playbackRate ?? 1;
+  }
+
   get anchor(): { video_ms: number; telemetry_ms: number } | null {
     return this.anchorPoint;
   }

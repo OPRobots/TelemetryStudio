@@ -128,7 +128,7 @@ oprobots-telemetry-studio/
 │   │       │       └── ExportDialog.tsx        # Exportar vídeo con overlays
 │   │       ├── hooks/
 │   │       │   ├── useEventListener.ts  # Suscripción al EventBus
-│   │       │   └── useKeyboardShortcuts.ts # _(planificado Fase 9)_
+│   │       │   └── useKeyboardShortcuts.ts # Atajos globales de teclado
 │   │       ├── lib/
 │   │       │   ├── auto-layout.ts       # Auto-configura widgets según el schema
 │   │       │   ├── serial-ingest.ts     # Ingesta Serial → TelemetryStore

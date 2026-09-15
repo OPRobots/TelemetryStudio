@@ -1,7 +1,6 @@
 import { eventBus } from './event-bus';
 import { telemetryStore } from './telemetry-store';
 import type { SessionFile, SessionWidget } from './types/session';
-import type { TelemetryDataset } from './types/telemetry';
 import type { WidgetCompatibilityResult } from './types/comparison';
 import { sessionToDataset } from './session-codec';
 
