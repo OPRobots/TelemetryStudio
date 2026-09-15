@@ -35,8 +35,20 @@ const api = {
   // === Vídeo ===
   videoPrepare: (
     path: string
-  ): Promise<{ success: boolean; path: string; transcoded: boolean; error?: string }> =>
+  ): Promise<{ success: boolean; path: string; transcoded: boolean; cancelled?: boolean; error?: string }> =>
     ipcRenderer.invoke('video:prepare', path),
+  videoCancelPrepare: (): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('video:cancel-prepare'),
+  videoOnPrepareStatus: (
+    callback: (status: { state: 'start' | 'progress' | 'end'; percent?: number; filename?: string }) => void
+  ): (() => void) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      status: { state: 'start' | 'progress' | 'end'; percent?: number; filename?: string }
+    ): void => callback(status);
+    ipcRenderer.on('video:prepare-status', handler);
+    return () => ipcRenderer.removeListener('video:prepare-status', handler);
+  },
 
   // === Dialogs ===
   dialogOpenVideo: (): Promise<DialogResult> => ipcRenderer.invoke('dialog:openVideo'),

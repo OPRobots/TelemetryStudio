@@ -130,7 +130,8 @@ oprobots-telemetry-studio/
 │   │       │       ├── SaveSessionDialog.tsx   # Guardar sesión
 │   │       │       ├── SessionBrowserDialog.tsx # Listar y abrir sesiones
 │   │       │       ├── ComparisonDialog.tsx    # Activar comparación
-│   │       │       └── ExportDialog.tsx        # Exportar vídeo con overlays
+│   │       │       ├── ExportDialog.tsx        # Exportar vídeo con overlays
+│   │       │       └── PrepareVideoDialog.tsx   # Progreso de conversión + cancelar
 │   │       ├── hooks/
 │   │       │   ├── useEventListener.ts  # Suscripción al EventBus
 │   │       │   └── useKeyboardShortcuts.ts # Atajos globales de teclado

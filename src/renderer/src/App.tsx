@@ -25,9 +25,18 @@ function App(): React.ReactElement {
 
     window.addEventListener('error', onError);
     window.addEventListener('unhandledrejection', onRejection);
+
+    const unsubscribePrepare = window.api?.videoOnPrepareStatus((status) => {
+      const store = useAppStore.getState();
+      if (status.state === 'start') store.setVideoPrepare(true, 0, status.filename ?? null);
+      else if (status.state === 'progress') store.setVideoPrepare(true, status.percent ?? 0);
+      else store.setVideoPrepare(false);
+    });
+
     return () => {
       window.removeEventListener('error', onError);
       window.removeEventListener('unhandledrejection', onRejection);
+      unsubscribePrepare?.();
     };
   }, []);
 

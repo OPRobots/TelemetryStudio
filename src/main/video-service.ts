@@ -1,10 +1,13 @@
-import { app, ipcMain } from 'electron';
-import { spawn } from 'child_process';
-import { mkdir } from 'fs/promises';
+import { app, ipcMain, type WebContents } from 'electron';
+import { spawn, type ChildProcess } from 'child_process';
+import { mkdir, rm } from 'fs/promises';
 import { basename, extname, join } from 'path';
 import { isPlayableVideoCodec } from '../shared/video-codecs';
-import { buildTranscodeArgs } from '../shared/video-transcode';
+import { buildTranscodeArgs, parseFfmpegProgress, transcodePercent } from '../shared/video-transcode';
 import { resolveFfmpegPath, resolveFfprobePath } from './ffmpeg';
+
+let activeChild: ChildProcess | null = null;
+let cancelled = false;
 
 interface RunResult {
   code: number;
@@ -45,11 +48,61 @@ export async function probeVideoCodec(path: string): Promise<string | null> {
   }
 }
 
+/** Duración del vídeo en segundos (0 si no se puede leer). */
+export async function probeVideoDuration(path: string): Promise<number> {
+  try {
+    const result = await run(resolveFfprobePath(), [
+      '-v',
+      'error',
+      '-show_entries',
+      'format=duration',
+      '-of',
+      'csv=p=0',
+      path,
+    ]);
+    if (result.code !== 0) return 0;
+    return Number(result.stdout.trim()) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function runTranscode(
+  args: string[],
+  durationSec: number,
+  onProgress: (percent: number) => void
+): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(resolveFfmpegPath(), args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    activeChild = child;
+
+    let buffered = '';
+    child.stdout.on('data', (chunk) => {
+      buffered += chunk.toString();
+      const lines = buffered.split('\n');
+      buffered = lines.pop() ?? '';
+      for (const line of lines) {
+        const outTimeUs = parseFfmpegProgress(line);
+        if (outTimeUs !== null) onProgress(transcodePercent(outTimeUs, durationSec));
+      }
+    });
+
+    child.on('error', reject);
+    child.on('close', (code) => {
+      activeChild = null;
+      resolve(code ?? -1);
+    });
+  });
+}
+
 /**
  * Comprueba si un vídeo es reproducible en Chromium. Si no (p. ej. HEVC/H.265),
- * lo transcodea a H.264 con FFmpeg (sidecar o del PATH) y devuelve la nueva ruta.
+ * lo transcodea a H.264 con FFmpeg y reporta progreso por `video:prepare-status`.
  */
-export async function prepareVideo(path: string): Promise<{ path: string; transcoded: boolean }> {
+export async function prepareVideo(
+  path: string,
+  sender?: WebContents
+): Promise<{ path: string; transcoded: boolean; cancelled?: boolean }> {
   const codec = await probeVideoCodec(path);
   if (isPlayableVideoCodec(codec)) {
     return { path, transcoded: false };
@@ -59,21 +112,55 @@ export async function prepareVideo(path: string): Promise<{ path: string; transc
   await mkdir(dir, { recursive: true });
   const output = join(dir, `${basename(path, extname(path))}.h264.mp4`);
 
-  const result = await run(resolveFfmpegPath(), buildTranscodeArgs({ inputPath: path, outputPath: output }));
+  const duration = await probeVideoDuration(path);
+  cancelled = false;
+  sender?.send('video:prepare-status', { state: 'start', filename: basename(path) });
+  sender?.send('video:prepare-status', { state: 'progress', percent: 0 });
 
-  if (result.code !== 0) {
-    throw new Error(`FFmpeg no pudo convertir el vídeo (código ${result.code})`);
+  const args = [
+    '-progress',
+    'pipe:1',
+    '-nostats',
+    ...buildTranscodeArgs({ inputPath: path, outputPath: output }),
+  ];
+
+  const code = await runTranscode(args, duration, (percent) => {
+    if (sender && !sender.isDestroyed()) {
+      sender.send('video:prepare-status', { state: 'progress', percent });
+    }
+  });
+
+  if (cancelled) {
+    await rm(output, { force: true }).catch(() => undefined);
+    return { path, transcoded: false, cancelled: true };
+  }
+  if (code !== 0) {
+    throw new Error(`FFmpeg no pudo convertir el vídeo (código ${code})`);
   }
   return { path: output, transcoded: true };
 }
 
 export function registerVideoHandlers(): void {
-  ipcMain.handle('video:prepare', async (_event, path: string) => {
+  ipcMain.handle('video:prepare', async (event, path: string) => {
+    const sender = event.sender;
     try {
-      const prepared = await prepareVideo(path);
+      const prepared = await prepareVideo(path, sender);
       return { success: true, ...prepared };
     } catch (err) {
       return { success: false, path, transcoded: false, error: (err as Error).message };
+    } finally {
+      if (!sender.isDestroyed()) {
+        sender.send('video:prepare-status', { state: 'end' });
+      }
     }
+  });
+
+  ipcMain.handle('video:cancel-prepare', () => {
+    cancelled = true;
+    if (activeChild) {
+      activeChild.kill('SIGKILL');
+      activeChild = null;
+    }
+    return { success: true };
   });
 }

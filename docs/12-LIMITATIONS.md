@@ -237,7 +237,9 @@ móvil en ese códec cargaban metadata (`duration`) pero con `videoWidth=0` y si
 imagen. Al cargar un vídeo, `src/main/video-service.ts` lo detecta con `ffprobe`
 y, si el códec no es reproducible (`isPlayableVideoCodec`), lo **transcodea a
 H.264** (`buildTranscodeArgs`) antes de reproducirlo. La autorrotación de FFmpeg
-corrige además los vídeos verticales (rotación en metadata).
+corrige además los vídeos verticales (rotación en metadata). Mientras convierte se
+muestra un **diálogo con barra de progreso y opción de cancelar**
+(`PrepareVideoDialog`), con el progreso reportado por FFmpeg (`-progress`).
 
 ---
 

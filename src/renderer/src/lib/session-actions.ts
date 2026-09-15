@@ -16,25 +16,38 @@ function basename(path: string): string {
 /**
  * Prepara un vídeo para su reproducción. Si su códec no está soportado por
  * Chromium (p. ej. HEVC/H.265), lo transcodea a H.264 con FFmpeg.
+ * Devuelve la ruta reproducible o `null` si se canceló o falló.
  */
-async function prepareVideoPath(path: string): Promise<string> {
+async function prepareVideoPath(path: string): Promise<string | null> {
   const api = window.api;
   if (!api?.videoPrepare) return path;
   useAppStore.getState().setStatusMessage('Preparando vídeo…');
   try {
     const res = await api.videoPrepare(path);
+    if (!res.success) {
+      useAppStore.getState().setError(res.error ?? 'No se pudo preparar el vídeo');
+      useAppStore.getState().setStatusMessage('');
+      return null;
+    }
+    if (res.cancelled) {
+      useAppStore.getState().setStatusMessage('Conversión cancelada');
+      return null;
+    }
     useAppStore.getState().setStatusMessage(res.transcoded ? 'Vídeo convertido a H.264' : '');
     return res.path || path;
-  } catch {
+  } catch (err) {
+    useAppStore.getState().setError((err as Error).message);
     useAppStore.getState().setStatusMessage('');
-    return path;
+    return null;
+  } finally {
+    useAppStore.getState().setVideoPrepare(false);
   }
 }
 
 /** Carga un vídeo (transcodificando si es necesario) en el reproductor. */
 export async function loadVideoFile(path: string): Promise<void> {
   const playable = await prepareVideoPath(path);
-  useAppStore.getState().setVideo(playable, playable);
+  if (playable) useAppStore.getState().setVideo(playable, playable);
 }
 
 export async function openVideoDialog(): Promise<void> {

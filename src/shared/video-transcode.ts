@@ -38,3 +38,21 @@ export function buildTranscodeArgs({
     outputPath,
   ];
 }
+
+/**
+ * Porcentaje (0-99) de progreso de una conversión a partir del tiempo de salida
+ * reportado por FFmpeg (`out_time_us`, microsegundos) y la duración total (s).
+ */
+export function transcodePercent(outTimeUs: number, durationSec: number): number {
+  if (!durationSec || durationSec <= 0 || !Number.isFinite(outTimeUs)) return 0;
+  return Math.min(99, Math.max(0, Math.round((outTimeUs / 1_000_000 / durationSec) * 100)));
+}
+
+/**
+ * Extrae el tiempo de salida (`out_time_us`) de una línea de `-progress`.
+ * Devuelve `null` si la línea no lo contiene.
+ */
+export function parseFfmpegProgress(line: string): number | null {
+  const match = /out_time_us=(\d+)/.exec(line);
+  return match ? Number(match[1]) : null;
+}

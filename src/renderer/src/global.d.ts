@@ -23,7 +23,17 @@ export interface TelemetryAPI {
   menuOnAction: (callback: (action: string) => void) => () => void;
   videoPrepare: (
     path: string
-  ) => Promise<{ success: boolean; path: string; transcoded: boolean; error?: string }>;
+  ) => Promise<{
+    success: boolean;
+    path: string;
+    transcoded: boolean;
+    cancelled?: boolean;
+    error?: string;
+  }>;
+  videoCancelPrepare: () => Promise<{ success: boolean }>;
+  videoOnPrepareStatus: (
+    callback: (status: { state: 'start' | 'progress' | 'end'; percent?: number; filename?: string }) => void
+  ) => () => void;
   dialogOpenVideo: () => Promise<DialogResult>;
   dialogOpenSession: () => Promise<DialogResult>;
   dialogOpenDirectory: () => Promise<DialogResult>;

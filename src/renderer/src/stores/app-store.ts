@@ -47,6 +47,11 @@ interface AppState {
   statusMessage: string;
   errorMessage: string | null;
 
+  // Preparación de vídeo (transcode)
+  videoPrepareActive: boolean;
+  videoPreparePercent: number;
+  videoPrepareFilename: string | null;
+
   // Acciones
   setVideo: (path: string, src: string) => void;
   setVideoInfo: (info: VideoInfo) => void;
@@ -66,6 +71,7 @@ interface AppState {
   setSyncAnchor: (anchor: SyncAnchor | null) => void;
   setStatusMessage: (message: string) => void;
   setError: (message: string | null) => void;
+  setVideoPrepare: (active: boolean, percent?: number, filename?: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -93,6 +99,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   statusMessage: 'Listo',
   errorMessage: null,
+  videoPrepareActive: false,
+  videoPreparePercent: 0,
+  videoPrepareFilename: null,
 
   setVideo: (path, src) => set({ videoPath: path, videoSrc: src, statusMessage: '' }),
   setVideoInfo: (info) => set({ videoInfo: info }),
@@ -114,4 +123,10 @@ export const useAppStore = create<AppState>((set) => ({
   setSyncAnchor: (anchor) => set({ syncAnchor: anchor }),
   setStatusMessage: (message) => set({ statusMessage: message }),
   setError: (message) => set({ errorMessage: message }),
+  setVideoPrepare: (active, percent = 0, filename = null) =>
+    set({
+      videoPrepareActive: active,
+      videoPreparePercent: active ? percent : 0,
+      videoPrepareFilename: active ? filename : null,
+    }),
 }));

@@ -14,6 +14,7 @@ import { SaveSessionDialog } from '../dialogs/SaveSessionDialog';
 import { SessionBrowserDialog } from '../dialogs/SessionBrowserDialog';
 import { ComparisonDialog } from '../dialogs/ComparisonDialog';
 import { ExportDialog } from '../dialogs/ExportDialog';
+import { PrepareVideoDialog } from '../dialogs/PrepareVideoDialog';
 import { openVideoDialog, openSessionDialog, loadSession, loadVideoFile } from '../../lib/session-actions';
 import { serialIngest } from '../../lib/serial-ingest';
 import { useAppStore } from '../../stores/app-store';
@@ -258,6 +259,7 @@ export function AppShell(): React.ReactElement {
       {sessionsOpen && <SessionBrowserDialog onClose={() => setSessionsOpen(false)} />}
       {compareOpen && <ComparisonDialog onClose={() => setCompareOpen(false)} />}
       {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} />}
+      <PrepareVideoDialog />
     </div>
   );
 }
