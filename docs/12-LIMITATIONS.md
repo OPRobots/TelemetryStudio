@@ -182,12 +182,17 @@ mac:
 
 ## Estado Funcional (implementación actual)
 
-### F-01 — Flujo principal implementado, pendiente validación con hardware
+### F-01 — Flujo principal verificado con simulador, pendiente hardware real
 
-**Estado**: La app integra vídeo + Serial + widgets + sincronización + layouts.
-El pipeline Serial fue validado previamente en PoC 1 con hardware STM32 real.
-La integración completa dentro de la app debe validarse manualmente con el robot
-y el vídeo reales.
+**Estado**: El flujo completo (vídeo + Serial + widgets + sincronización + layouts)
+está cubierto por tests automáticos en Electron (`npm run e2e`):
+- `e2e:serial` conecta un Serial simulado, verifica el descubrimiento de campos,
+  la auto-configuración de widgets y que la gráfica dibuja datos.
+- `e2e:video` abre un vídeo, lo seekea y comprueba que la telemetría se sincroniza
+  por timestamp (1.0 s de vídeo → 1000 ms de telemetría con offset 0).
+
+El pipeline Serial con hardware STM32 real fue validado en PoC 1. La validación con
+el robot físico y un vídeo de producción queda pendiente por parte del usuario.
 
 **Cómo probar sin hardware**: ver `examples/README.md` (simulador `socat` +
 `examples/serial-simulator.mjs`).

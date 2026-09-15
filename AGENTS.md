@@ -154,9 +154,8 @@ feat(widgets): Añade widget TimeSeriesChart con integración uPlot
 
 ### Antes de Cada Commit
 ```bash
-npm run test       # Todos los tests pasan
-npm run typecheck  # Sin errores de TypeScript
-npm run lint       # Sin errores de ESLint (cuando esté configurado)
+npm run verify  # typecheck + tests + build + smoke + e2e (gate completo)
+npm run lint    # Sin errores de ESLint (cuando esté configurado)
 ```
 
 ### Qué Testear
@@ -236,6 +235,9 @@ npm run build        # Build de producción
 npm run typecheck    # Verificar tipos TypeScript
 npm run test         # Ejecutar tests (Vitest)
 npm run test:watch   # Tests en watch mode
+npm run smoke        # Smoke test del renderer en Electron (requiere build)
+npm run e2e          # E2E: Serial→widgets y Vídeo→sync (requiere build)
+npm run verify       # Gate completo: typecheck + tests + build + smoke + e2e
 npm run lint         # ESLint (pendiente configurar)
 npm run poc:1        # PoC 1: Serial → Widget
 npm run poc:2        # PoC 2: Video Sync
@@ -266,7 +268,7 @@ npm run build:win    # Build Windows (NSIS + portable)
 | Fase 6: Layout Manager | ✅ Completada | `1adfe1f` |
 | Fase 7: Export para Redes | ⏳ Pendiente | — |
 | Fase 8: Packaging | 🟡 PoC 4 validado | `25f1877` |
-| Fase 9: Polish + E2E | ⏳ Pendiente | — |
+| Fase 9: Polish + E2E | 🟡 Parcial (smoke + e2e en Electron) | `pendiente` |
 | PoC 1: Serial → Widget | ✅ Validado (hardware real) | `e89a14c` |
 | PoC 2: Video Sync | ✅ Funcional | `8ee0cd5`, `5f6adde` |
 | PoC 3: Video Export | ✅ Funcional | `ddd9354` |

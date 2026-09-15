@@ -1,0 +1,138 @@
+/**
+ * E2E del flujo Vídeo + Serial + sincronización en Electron.
+ *
+ * Verifica:
+ *   1. Abrir un vídeo y leer su metadata (duración)  [requisito 1]
+ *   2. Reproducir/seek y sincronizar con la telemetría por timestamp [requisito 5]
+ *
+ * Uso: npm run e2e:video
+ */
+import { app, BrowserWindow, ipcMain } from 'electron';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const currentDir = dirname(fileURLToPath(import.meta.url));
+const root = join(currentDir, '..');
+const mockVideo = join(root, 'pocs/02-video-sync/examples/mock_video.mp4');
+
+const errors = [];
+let sendTimer = null;
+
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-gpu');
+
+function makeLine(t) {
+  const s = t / 1000;
+  return (
+    `${Math.round(t)},${(Math.sin(s) * 9.8).toFixed(2)},${(Math.cos(s) * 9.8).toFixed(2)},9.80,` +
+    `${(Math.sin(s) * 180).toFixed(2)},0.00,0.00,${(100 - t * 0.001).toFixed(2)}`
+  );
+}
+
+function registerMocks(win) {
+  ipcMain.handle('serial:list', () => [
+    { path: '/dev/ttyMOCK', manufacturer: 'Simulador', vendorId: '0000' },
+  ]);
+  ipcMain.handle('serial:open', () => {
+    if (sendTimer) clearInterval(sendTimer);
+    let t = 0;
+    sendTimer = setInterval(() => {
+      if (!win.isDestroyed()) win.webContents.send('serial:data', makeLine(t));
+      t += 20;
+    }, 20);
+    return { success: true };
+  });
+  ipcMain.handle('serial:close', () => {
+    if (sendTimer) clearInterval(sendTimer);
+    sendTimer = null;
+    return { success: true };
+  });
+  ipcMain.handle('dialog:openVideo', () => ({ canceled: false, filePath: mockVideo }));
+}
+
+app.whenReady().then(async () => {
+  const win = new BrowserWindow({
+    show: false,
+    width: 1400,
+    height: 900,
+    webPreferences: {
+      preload: join(root, 'out/preload/index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+      webSecurity: false,
+    },
+  });
+
+  win.webContents.on('console-message', (...args) => {
+    const level = args[1] && typeof args[1] === 'object' ? args[1].level : args[1];
+    const message = args[1] && typeof args[1] === 'object' ? args[1].message : args[2];
+    if (level === 3 || level === 'error') errors.push(String(message));
+  });
+
+  registerMocks(win);
+
+  const clickByText = (text) => `(() => {
+    const btn = Array.from(document.querySelectorAll('button')).find((b) => b.textContent.trim() === ${JSON.stringify(text)});
+    if (btn) { btn.click(); return true; }
+    return false;
+  })()`;
+
+  try {
+    await win.loadFile(join(root, 'out/renderer/index.html'));
+    await new Promise((r) => setTimeout(r, 1000));
+
+    // Conectar Serial
+    await win.webContents.executeJavaScript(clickByText('Conectar Serial'));
+    await new Promise((r) => setTimeout(r, 400));
+    await win.webContents.executeJavaScript(clickByText('Conectar'));
+    await new Promise((r) => setTimeout(r, 800));
+
+    // Abrir vídeo (diálogo mockeado)
+    await win.webContents.executeJavaScript(clickByText('Abrir vídeo'));
+    await new Promise((r) => setTimeout(r, 2500));
+
+    const videoInfo = await win.webContents.executeJavaScript(`(() => {
+      const v = document.querySelector('video');
+      return {
+        hasVideo: !!v,
+        duration: v ? v.duration : 0,
+        readyState: v ? v.readyState : 0,
+      };
+    })()`);
+
+    // Seek a 1.0s y esperar el evento seeked nativo
+    await win.webContents.executeJavaScript(`(() => {
+      const v = document.querySelector('video');
+      if (v) { v.currentTime = 1.0; }
+    })()`);
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const syncState = await win.webContents.executeJavaScript(`(() => {
+      const text = document.body.innerText;
+      const m = text.match(/t telemetría:\\s*([\\d.]+)\\s*ms/);
+      const footer = document.querySelector('footer');
+      return {
+        telemetryTimeMs: m ? Number(m[1]) : -1,
+        footerText: footer ? footer.innerText : '',
+      };
+    })()`);
+
+    console.log('E2E_VIDEO_RESULT ' + JSON.stringify({ ...videoInfo, ...syncState }));
+    if (errors.length > 0) console.log('E2E_VIDEO_ERRORS ' + JSON.stringify(errors.slice(0, 20)));
+
+    const durationOk = videoInfo.duration > 0;
+    const syncedOk = syncState.telemetryTimeMs >= 900 && syncState.telemetryTimeMs <= 1200;
+    const footerOk = syncState.footerText.includes('Vídeo:');
+
+    const ok = durationOk && syncedOk && footerOk && errors.length === 0;
+    console.log(ok ? 'E2E_VIDEO_OK' : 'E2E_VIDEO_FAIL');
+
+    if (sendTimer) clearInterval(sendTimer);
+    app.exit(ok ? 0 : 1);
+  } catch (err) {
+    console.error('E2E_VIDEO_EXCEPTION', err);
+    if (sendTimer) clearInterval(sendTimer);
+    app.exit(1);
+  }
+});
