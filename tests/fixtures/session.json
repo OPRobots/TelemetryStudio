@@ -1,0 +1,46 @@
+{
+  "v": 1,
+  "name": "Test Session",
+  "created": "2026-01-15T10:30:00Z",
+  "video": {
+    "file": "test_run.mp4",
+    "fps": 30,
+    "duration_ms": 10000,
+    "width": 1920,
+    "height": 1080
+  },
+  "sync": {
+    "offset_ms": 50,
+    "anchor": [1.5, 1500],
+    "rate": 1.0
+  },
+  "telemetry": {
+    "fps": 30,
+    "num_frames": 5,
+    "duration_ms": 40,
+    "fields": ["speed_rpm", "motor_left", "motor_right", "gyro_z"],
+    "schema": [
+      ["speed_rpm", "number", "RPM", 0, 10000],
+      ["motor_left", "number", "PWM", -1000, 1000],
+      ["motor_right", "number", "PWM", -1000, 1000],
+      ["gyro_z", "number", "°/s"]
+    ],
+    "frames": [
+      [0, 1200, 512, -510, 15],
+      [10, 1250, 530, -525, 18],
+      [20, 1300, 545, -540, 12],
+      [30, 1350, 560, -555, -5],
+      [40, 1400, 580, -570, 8]
+    ]
+  },
+  "layout": {
+    "widgets": [
+      {
+        "t": "TimeSeriesChart",
+        "pos": [0, 0],
+        "size": [10, 6],
+        "fields": ["speed_rpm", "motor_left", "motor_right"]
+      }
+    ]
+  }
+}
