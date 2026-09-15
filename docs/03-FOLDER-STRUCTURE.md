@@ -45,7 +45,7 @@ oprobots-telemetry-studio/
 │   │   ├── index.ts                 # Entry point: app lifecycle, window creation
 │   │   ├── ipc-handlers.ts          # Registro de todos los ipcMain.handle
 │   │   ├── serial-service.ts        # Servicio SerialPort (apertura, streaming, cierre)
-│   │   └── export-service.ts        # _(planificado Fase 7)_ Escritura de vídeo exportado
+│   │   └── export-service.ts        # Exportación de vídeo con FFmpeg (raw RGBA)
 │   │
 │   ├── preload/                     # ═══ PRELOAD SCRIPT ═══
 │   │   └── index.ts                 # contextBridge: expone API segura al renderer
@@ -90,7 +90,7 @@ oprobots-telemetry-studio/
 │   ├── services/                    # ═══ SERVICIOS ═══
 │   │   ├── layout-manager.ts        # Guardar/cargar layouts en JSON
 │   │   ├── session-manager.ts       # Exportar/importar sesiones (adaptador IPC)
-│   │   └── video-exporter.ts        # _(planificado Fase 7)_ Orquestador de exportación
+│   │   └── video-exporter.ts        # Orquestador de exportación (composición canvas)
 │   │
 │   ├── renderer/                    # ═══ RENDERER PROCESS (React) ═══
 │   │   ├── index.html
@@ -121,7 +121,7 @@ oprobots-telemetry-studio/
 │   │       │       ├── SaveSessionDialog.tsx   # Guardar sesión
 │   │       │       ├── SessionBrowserDialog.tsx # Listar y abrir sesiones
 │   │       │       ├── ComparisonDialog.tsx    # Activar comparación
-│   │       │       └── ExportDialog.tsx        # _(planificado Fase 7)_ Exportar vídeo
+│   │       │       └── ExportDialog.tsx        # Exportar vídeo con overlays
 │   │       ├── hooks/
 │   │       │   ├── useEventListener.ts  # Suscripción al EventBus
 │   │       │   └── useKeyboardShortcuts.ts # _(planificado Fase 9)_
@@ -137,7 +137,8 @@ oprobots-telemetry-studio/
 │   │       └── styles/
 │   │           └── globals.css          # Tailwind + variables de color
 │   │
-│   └── shared/                      # ═══ SHARED ═══ (planificado)
+│   └── shared/                      # ═══ SHARED (Main + Renderer) ═══
+│       └── export-args.ts           # Construcción de argumentos de FFmpeg (puro)
 │
 ├── tests/                           # ═══ TESTS (Vitest) ═══
 │   ├── unit/

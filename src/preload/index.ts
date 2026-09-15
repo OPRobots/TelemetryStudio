@@ -70,6 +70,17 @@ const api = {
   layoutSave: (layout: unknown): Promise<void> => ipcRenderer.invoke('layout:save', layout),
   layoutLoadAll: (): Promise<unknown[]> => ipcRenderer.invoke('layout:loadAll'),
   layoutDelete: (name: string): Promise<void> => ipcRenderer.invoke('layout:delete', name),
+
+  // === Export ===
+  exportStart: (config: unknown): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('export:start', config),
+  exportWriteFrame: (buffer: ArrayBuffer): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('export:writeFrame', buffer),
+  exportFinalize: (): Promise<{ success: boolean; outputPath?: string; error?: string }> =>
+    ipcRenderer.invoke('export:finalize'),
+  exportAbort: (): Promise<{ success: boolean }> => ipcRenderer.invoke('export:abort'),
+  exportSave: (): Promise<{ canceled: boolean; savedPath?: string; error?: string }> =>
+    ipcRenderer.invoke('export:save'),
 };
 
 if (process.contextIsolated) {

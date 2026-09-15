@@ -1,9 +1,10 @@
 # Exportación de Contenido para Redes Sociales
 
-> **Estado**: diseño de referencia. La implementación (planificada para la
-> Fase 7) usará **FFmpeg empaquetado como sidecar** con frames raw RGBA —
-> el enfoque validado en el PoC 3 — en lugar de WebCodecs + Mediabunny. Este
-> documento conserva el diseño original; la sección FFmpeg es la que se seguirá.
+> **Estado**: implementado (Fase 7). `src/services/video-exporter.ts` compone el
+> vídeo base + widgets + overlay en un canvas y envía frames raw RGBA a
+> `src/main/export-service.ts`, que ejecuta **FFmpeg** (sidecar empaquetado o
+> del PATH). El diseño con WebCodecs + Mediabunny de este documento no se siguió;
+> se conserva como referencia. La sección "Alternativa: FFmpeg" es el enfoque real.
 
 ## Visión General
 

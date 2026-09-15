@@ -78,7 +78,7 @@ export function WidgetHost({
             };
 
             return (
-              <div key={widget.id} style={style} className="min-h-0 min-w-0">
+              <div key={widget.id} style={style} className="min-h-0 min-w-0" data-widget-id={widget.id}>
                 <WidgetWrapper
                   title={widget.label}
                   type={widget.type}

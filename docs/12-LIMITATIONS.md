@@ -204,11 +204,13 @@ sean idénticos y `SplitView` muestra dos paneles apilados, cada uno con su víd
 su `VideoSynchronizer` (`comparison:frame`, dataset de comparación) y sus widgets.
 Incluye toggle de barra compartida/independiente y e2e (`e2e:comparison`).
 
-### F-03 — Exportación de vídeo no integrada en la app de producción
+### F-03 — Exportación de vídeo implementada (FFmpeg sidecar)
 
-**Estado**: PoC 3 validó el pipeline (OffscreenCanvas → RGBA → FFmpeg libx264),
-pero `src/services/video-exporter.ts` y los handlers de export aún no existen.
-Fase 7 pendiente.
+**Estado**: implementada en la Fase 7. `src/services/video-exporter.ts` compone
+vídeo + widgets + overlay en un canvas y envía frames raw RGBA a
+`src/main/export-service.ts`, que ejecuta FFmpeg (sidecar empaquetado o del
+PATH). Tests: argumentos (unit), MP4 real con ffprobe (integración) y
+composición del renderer (e2e).
 
 ### F-04 — Editor de layout basado en formularios, no drag & resize
 

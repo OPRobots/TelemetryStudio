@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import { registerIpcHandlers } from './ipc-handlers';
+import { registerExportHandlers } from './export-service';
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -22,6 +23,7 @@ function createWindow(): void {
   });
 
   registerIpcHandlers(mainWindow);
+  registerExportHandlers(mainWindow);
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show();

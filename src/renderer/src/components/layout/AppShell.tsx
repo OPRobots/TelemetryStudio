@@ -11,6 +11,7 @@ import { LayoutDialog } from '../dialogs/LayoutDialog';
 import { SaveSessionDialog } from '../dialogs/SaveSessionDialog';
 import { SessionBrowserDialog } from '../dialogs/SessionBrowserDialog';
 import { ComparisonDialog } from '../dialogs/ComparisonDialog';
+import { ExportDialog } from '../dialogs/ExportDialog';
 import { openVideoDialog, openSessionDialog } from '../../lib/session-actions';
 import { useAppStore } from '../../stores/app-store';
 import { useComparisonStore } from '../../stores/comparison-store';
@@ -21,6 +22,7 @@ export function AppShell(): React.ReactElement {
   const [saveOpen, setSaveOpen] = useState(false);
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const videoSrc = useAppStore((s) => s.videoSrc);
   const comparisonActive = useComparisonStore((s) => s.active);
   const comparisonError = useComparisonStore((s) => s.errorMessage);
@@ -43,6 +45,13 @@ export function AppShell(): React.ReactElement {
           </button>
           <button className="toolbar-button" onClick={() => setSerialOpen(true)}>
             Serial
+          </button>
+          <button
+            className="toolbar-button"
+            onClick={() => setExportOpen(true)}
+            disabled={!videoSrc || comparisonActive}
+          >
+            Exportar
           </button>
           <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
             v0.1.0
@@ -119,6 +128,7 @@ export function AppShell(): React.ReactElement {
       {saveOpen && <SaveSessionDialog onClose={() => setSaveOpen(false)} />}
       {sessionsOpen && <SessionBrowserDialog onClose={() => setSessionsOpen(false)} />}
       {compareOpen && <ComparisonDialog onClose={() => setCompareOpen(false)} />}
+      {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} />}
     </div>
   );
 }

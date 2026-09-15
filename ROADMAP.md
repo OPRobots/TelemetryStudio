@@ -295,29 +295,32 @@ npm run test
 
 ---
 
-## FASE 7: Exportación para Redes Sociales (2 semanas)
+## FASE 7: Exportación para Redes Sociales (2 semanas) ✅ COMPLETADA
 
 ### Objetivo
 Pipeline de exportación de vídeo con gráficos superpuestos para crear contenido para redes sociales (Instagram, TikTok, YouTube Shorts).
 
 ### Semana 1: Core Export
-- [ ] `src/services/video-exporter.ts` — Orquestador
-  - `export()`, `cancel()`, progress reporting
+- [x] `src/services/video-exporter.ts` — Orquestador (renderer)
+  - Composición en canvas (vídeo base + widgets + overlay)
+  - Progress reporting
   - Soporte para `sessionLabel` en overlays
-- [ ] `src/main/export-service.ts` — Servicio en Main Process
-  - `export:init`, `export:writeFrame`, `export:finalize`
-- [ ] Integración con Mediabunny (reemplazo de mp4-muxer)
-- [ ] Preload bridge para exportación
+- [x] `src/main/export-service.ts` — Servicio en Main Process
+  - `export:start`, `export:writeFrame`, `export:finalize`, `export:save`, `export:abort`
+  - Backpressure con callback de escritura de stdin
+- [x] `src/shared/export-args.ts` — Construcción de argumentos FFmpeg (pura)
+- [x] Preload bridge para exportación
 
-### Semana 2: UI + FFmpeg Fallback
-- [ ] `src/renderer/components/dialogs/ExportDialog.tsx`
-  - Configuración: formato, codec, resolución, bitrate
+### Semana 2: UI + FFmpeg
+- [x] `src/renderer/src/components/dialogs/ExportDialog.tsx`
+  - Configuración: resolución, fps, rango de frames
   - Selección de widgets a incluir
   - Campo para nombre de sesión (overlay)
   - Barra de progreso
-- [ ] FFmpeg child process fallback (para alpha channel)
-- [ ] `src/workers/video-export.worker.ts`
-- [ ] Test de exportación: 60s → WebM reproducible
+- [x] Exportación con **FFmpeg** empaquetado como sidecar (raw RGBA por stdin)
+  - Se eligió FFmpeg directo en lugar de WebCodecs/Mediabunny (más robusto, validado en PoC 3)
+- [x] Test unitario de argumentos + test de integración con FFmpeg real (MP4 + ffprobe)
+- [x] E2E de exportación (composición del renderer + envío de frames)
 
 ### Validación
 ```bash

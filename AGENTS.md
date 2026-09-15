@@ -266,7 +266,7 @@ npm run build:win    # Build Windows (NSIS + portable)
 | Fase 4: Session Manager | 🟡 Parcial (export/import de sesión) | `1adfe1f` |
 | Fase 5: Widgets + Comparación | ✅ Completada | `pendiente` |
 | Fase 6: Layout Manager | ✅ Completada | `1adfe1f` |
-| Fase 7: Export para Redes | ⏳ Pendiente | — |
+| Fase 7: Export para Redes | ✅ Completada | `pendiente` |
 | Fase 8: Packaging | 🟡 PoC 4 validado | `25f1877` |
 | Fase 9: Polish + E2E | 🟡 Parcial (smoke + e2e en Electron) | `e5ac195` |
 | PoC 1: Serial → Widget | ✅ Validado (hardware real) | `e89a14c` |

@@ -44,6 +44,11 @@ export interface TelemetryAPI {
   layoutSave: (layout: DashboardLayout) => Promise<void>;
   layoutLoadAll: () => Promise<DashboardLayout[]>;
   layoutDelete: (name: string) => Promise<void>;
+  exportStart: (config: unknown) => Promise<{ success: boolean; error?: string }>;
+  exportWriteFrame: (buffer: ArrayBuffer) => Promise<{ success: boolean; error?: string }>;
+  exportFinalize: () => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+  exportAbort: () => Promise<{ success: boolean }>;
+  exportSave: () => Promise<{ canceled: boolean; savedPath?: string; error?: string }>;
 }
 
 declare global {
