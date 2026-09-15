@@ -1,5 +1,14 @@
 # Sistema de Widgets
 
+> **Estado de implementación**: los widgets están implementados como componentes
+> React (no clases) que reciben `frame`/`context` por props desde `WidgetHost`.
+> Cada widget exporta una `WidgetDefinition` (`{ metadata, component }`) y se
+> registra en `src/widgets/widget-registry.ts` vía `register-widgets.ts`.
+> `WidgetHost` se suscribe al evento `sync:frame` del EventBus y pasa el frame
+> sincronizado a todos los widgets del layout. Los 4 widgets son:
+> `TimeSeriesChart` (uPlot multi-serie con LTTB), `DigitalBitmask`,
+> `Minimap2D` y `StateTimeline`.
+
 ## Visión General
 
 Los widgets son componentes visuales que se renderizan en canvas y se redibujan automáticamente con cada frame de telemetría sincronizado. Cada widget declara qué campos de datos necesita y se suscribe al EventBus.

@@ -1,44 +1,48 @@
-import type { SessionFile, SessionFrame, SessionTelemetry } from './types/session';
-import type { TelemetryDataset, TelemetryFrame } from './types/telemetry';
+import type {
+  SessionFile,
+  SessionFieldSchema,
+  SessionTelemetry,
+  SessionWidget,
+  SessionFrameValue,
+  SessionVideo,
+  SessionSync,
+} from './types/session';
+import type { TelemetryDataset, TelemetryFrame, FieldSchema, TelemetryValue } from './types/telemetry';
 
 /**
- * Decodifica un JSON de sesión en un SessionFile.
+ * Decodifica un JSON de sesión con validación básica.
  */
 export function decodeSession(json: string): SessionFile {
-  const data = JSON.parse(json);
+  const raw = JSON.parse(json) as Partial<SessionFile> & { v?: number };
 
-  if (data.v !== 1) {
-    throw new Error(`Unsupported session version: ${data.v}`);
+  if (raw.v !== 1) {
+    throw new Error(`Unsupported session version: ${raw.v}`);
+  }
+  if (!raw.telemetry || !Array.isArray(raw.telemetry.frames) || !Array.isArray(raw.telemetry.schema)) {
+    throw new Error('Missing telemetry data');
   }
 
   return {
     v: 1,
-    name: data.name ?? 'Untitled',
-    created: data.created ?? new Date().toISOString(),
+    name: raw.name ?? 'Untitled',
+    created: raw.created ?? new Date().toISOString(),
     video: {
-      file: data.video?.file ?? '',
-      fps: data.video?.fps ?? 30,
-      duration_ms: data.video?.duration_ms ?? 0,
-      width: data.video?.width ?? 0,
-      height: data.video?.height ?? 0,
+      file: raw.video?.file ?? '',
+      fps: raw.video?.fps ?? 30,
+      duration_s: raw.video?.duration_s ?? 0,
+      resolution: raw.video?.resolution ?? [0, 0],
     },
     sync: {
-      offset_ms: data.sync?.offset_ms ?? 0,
-      anchor: data.sync?.anchor ?? null,
-      rate: data.sync?.rate ?? 1.0,
+      offset_ms: raw.sync?.offset_ms ?? 0,
+      anchor: raw.sync?.anchor ?? null,
+      rate: raw.sync?.rate ?? 1.0,
     },
     telemetry: {
-      fps: data.telemetry?.fps ?? 30,
-      num_frames: data.telemetry?.num_frames ?? 0,
-      duration_ms: data.telemetry?.duration_ms ?? 0,
-      fields: data.telemetry?.fields ?? [],
-      frames: (data.telemetry?.frames ?? []).map((f: SessionFrame) => ({
-        t: f.t ?? 0,
-        d: f.d ?? {},
-      })),
+      schema: raw.telemetry.schema,
+      frames: raw.telemetry.frames,
     },
     layout: {
-      widgets: (data.layout?.widgets ?? []).map((w: SessionWidget) => ({
+      widgets: (raw.layout?.widgets ?? []).map((w) => ({
         t: w.t ?? 'unknown',
         pos: w.pos ?? [0, 0],
         size: w.size ?? [1, 1],
@@ -50,20 +54,72 @@ export function decodeSession(json: string): SessionFile {
 }
 
 /**
- * Codifica un SessionFile a JSON string.
+ * Codifica un SessionFile a JSON minificado.
  */
 export function encodeSession(session: SessionFile): string {
   return JSON.stringify(session);
 }
 
 /**
+ * Convierte el schema compacto de sesión a `FieldSchema[]`.
+ */
+export function decodeFieldSchema(schema: SessionFieldSchema[]): FieldSchema[] {
+  return schema.map((s) => {
+    const [name, type] = s;
+    const base: FieldSchema = { name, type: type as FieldSchema['type'] };
+    if (type === 'number') {
+      if (typeof s[2] === 'string') base.unit = s[2];
+      if (typeof s[3] === 'number') base.min = s[3];
+      if (typeof s[4] === 'number') base.max = s[4];
+    } else if (type === 'bitmask') {
+      base.bitmaskWidth = s[2] as number;
+    } else if (type === 'array') {
+      base.arrayLength = s[2] as number;
+    } else if (type === 'boolean') {
+      base.recommendedWidget = 'timeline';
+    }
+    return base;
+  });
+}
+
+/**
+ * Convierte `FieldSchema[]` al schema compacto de sesión.
+ */
+export function encodeFieldSchema(schema: FieldSchema[]): SessionFieldSchema[] {
+  return schema.map((s) => {
+    if (s.type === 'number') {
+      if (s.unit && s.min != null && s.max != null) return [s.name, 'number', s.unit, s.min, s.max];
+      if (s.unit) return [s.name, 'number', s.unit];
+      return [s.name, 'number'];
+    }
+    if (s.type === 'bitmask') return [s.name, 'bitmask', s.bitmaskWidth ?? 8];
+    if (s.type === 'boolean') return [s.name, 'boolean'];
+    if (s.type === 'array') return [s.name, 'array', s.arrayLength ?? 0];
+    return [s.name, 'number'];
+  });
+}
+
+function toFrameValue(value: TelemetryValue): SessionFrameValue {
+  if (value == null) return null;
+  if (typeof value === 'number' || typeof value === 'boolean') return value;
+  if (Array.isArray(value)) return value;
+  if (ArrayBuffer.isView(value)) return Array.from(value as unknown as ArrayLike<number>);
+  return null;
+}
+
+/**
  * Convierte un SessionFile a un TelemetryDataset.
  */
 export function sessionToDataset(session: SessionFile): TelemetryDataset {
-  const frames: TelemetryFrame[] = session.telemetry.frames.map((f) => ({
-    timestamp_ms: f.t,
-    data: { ...f.d },
-  }));
+  const fieldSchemas = decodeFieldSchema(session.telemetry.schema);
+  const frames: TelemetryFrame[] = session.telemetry.frames.map((row) => {
+    const [timestamp_ms, ...values] = row;
+    const data: Record<string, TelemetryValue> = {};
+    fieldSchemas.forEach((schema, i) => {
+      data[schema.name] = (values[i] ?? null) as TelemetryValue;
+    });
+    return { timestamp_ms: Number(timestamp_ms) || 0, data };
+  });
 
   frames.sort((a, b) => a.timestamp_ms - b.timestamp_ms);
 
@@ -75,15 +131,11 @@ export function sessionToDataset(session: SessionFile): TelemetryDataset {
     id: `session-${session.name.replace(/\s+/g, '-').toLowerCase()}`,
     name: session.name,
     frames,
-    schema: session.telemetry.fields.map((name) => ({
-      name,
-      type: 'number' as const,
-    })),
+    schema: fieldSchemas,
     startTime_ms,
     endTime_ms,
     duration_ms,
-    avgSampleRate_hz:
-      duration_ms > 0 ? (frames.length / duration_ms) * 1000 : 0,
+    avgSampleRate_hz: duration_ms > 0 ? (frames.length / duration_ms) * 1000 : 0,
     frameCount: frames.length,
     source: {
       type: 'session',
@@ -94,25 +146,38 @@ export function sessionToDataset(session: SessionFile): TelemetryDataset {
 }
 
 /**
- * Convierte un TelemetryDataset de vuelta a formato SessionTelemetry.
+ * Convierte un TelemetryDataset al bloque de telemetría compacto de sesión.
  */
-export function datasetToSessionTelemetry(
-  dataset: TelemetryDataset
-): SessionTelemetry {
-  const frames: SessionFrame[] = dataset.frames.map((f) => ({
-    t: f.timestamp_ms,
-    d: f.data as SessionFrame['d'],
-  }));
+export function datasetToSessionTelemetry(dataset: TelemetryDataset): SessionTelemetry {
+  const schema = encodeFieldSchema(dataset.schema);
+  const fieldNames = dataset.schema.map((s) => s.name);
 
+  const frames: SessionFrameValue[][] = dataset.frames.map((f) => [
+    f.timestamp_ms,
+    ...fieldNames.map((name) => toFrameValue(f.data[name])),
+  ]);
+
+  return { schema, frames };
+}
+
+/**
+ * Construye un SessionFile completo a partir de los datos actuales.
+ */
+export function datasetToSession(
+  dataset: TelemetryDataset,
+  video: SessionVideo,
+  sync: SessionSync,
+  widgets: SessionWidget[]
+): SessionFile {
   return {
-    fps: Math.round(dataset.avgSampleRate_hz),
-    num_frames: dataset.frameCount,
-    duration_ms: dataset.duration_ms,
-    fields: dataset.schema.map((s) => s.name),
-    frames,
+    v: 1,
+    name: dataset.name,
+    created: new Date().toISOString(),
+    video,
+    sync,
+    telemetry: datasetToSessionTelemetry(dataset),
+    layout: { widgets },
   };
 }
 
-// Re-export SessionWidget for convenience
-import type { SessionWidget } from './types/session';
 export type { SessionWidget };

@@ -1,40 +1,75 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
 
+export interface SerialPortInfo {
+  path: string;
+  manufacturer?: string;
+  vendorId?: string;
+  serialNumber?: string;
+}
+
+export interface VideoInfo {
+  filename: string;
+  duration_s: number;
+  fps: number;
+  width: number;
+  height: number;
+}
+
+export interface DialogResult {
+  canceled: boolean;
+  filePath?: string;
+}
+
 const api = {
-  // Serial
-  serialList: () => ipcRenderer.invoke('serial:list'),
-  serialOpen: (path: string, baudRate: number) => ipcRenderer.invoke('serial:open', path, baudRate),
-  serialClose: () => ipcRenderer.invoke('serial:close'),
-  serialOnData: (callback: (data: string) => void) => {
-    const handler = (_event: Electron.IpcRendererEvent, data: string): void => callback(data);
+  // === Dialogs ===
+  dialogOpenVideo: (): Promise<DialogResult> => ipcRenderer.invoke('dialog:openVideo'),
+  dialogOpenSession: (): Promise<DialogResult> => ipcRenderer.invoke('dialog:openSession'),
+  dialogOpenDirectory: (): Promise<DialogResult> => ipcRenderer.invoke('dialog:openDirectory'),
+
+  // === File ===
+  readFile: (path: string): Promise<{ success: boolean; content?: string; error?: string }> =>
+    ipcRenderer.invoke('file:read', path),
+
+  // === Serial ===
+  serialList: (): Promise<SerialPortInfo[]> => ipcRenderer.invoke('serial:list'),
+  serialOpen: (path: string, baudRate: number): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('serial:open', path, baudRate),
+  serialClose: (): Promise<{ success: boolean }> => ipcRenderer.invoke('serial:close'),
+  serialOnData: (callback: (line: string) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, line: string): void => callback(line);
     ipcRenderer.on('serial:data', handler);
     return () => ipcRenderer.removeListener('serial:data', handler);
   },
-  serialOnComplete: (callback: () => void) => {
-    const handler = (): void => callback();
-    ipcRenderer.on('serial:complete', handler);
-    return () => ipcRenderer.removeListener('serial:complete', handler);
+  serialOnStatus: (
+    callback: (status: { connected: boolean; error?: string }) => void
+  ): (() => void) => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      status: { connected: boolean; error?: string }
+    ): void => callback(status);
+    ipcRenderer.on('serial:status', handler);
+    return () => ipcRenderer.removeListener('serial:status', handler);
   },
 
-  // Video
-  videoLoad: (path: string) => ipcRenderer.invoke('video:load', path),
-  videoGetInfo: (path: string) => ipcRenderer.invoke('video:getInfo', path),
-
-  // Sessions
-  sessionExport: (name: string, outputDir: string, jsonContent: string, videoPath: string) =>
-    ipcRenderer.invoke('session:export', name, outputDir, jsonContent, videoPath),
-  sessionRead: (jsonPath: string) => ipcRenderer.invoke('session:read', jsonPath),
-  sessionGetVideoPath: (jsonPath: string, videoFile: string) =>
+  // === Sessions ===
+  sessionRead: (jsonPath: string): Promise<string> => ipcRenderer.invoke('session:read', jsonPath),
+  sessionGetVideoPath: (jsonPath: string, videoFile: string): Promise<string> =>
     ipcRenderer.invoke('session:getVideoPath', jsonPath, videoFile),
-  sessionList: (directory: string) => ipcRenderer.invoke('session:list', directory),
+  sessionExport: (
+    name: string,
+    outputDir: string,
+    jsonContent: string,
+    videoPath: string
+  ): Promise<string> =>
+    ipcRenderer.invoke('session:export', name, outputDir, jsonContent, videoPath),
+  sessionList: (directory: string): Promise<Array<{ name: string; path: string; createdAt: string }>> =>
+    ipcRenderer.invoke('session:list', directory),
 
-  // Export
-  exportInit: (config: unknown) => ipcRenderer.invoke('export:init', config),
-  exportWriteFrame: (index: number, imageData: ImageData) =>
-    ipcRenderer.invoke('export:writeFrame', index, imageData),
-  exportFinalize: () => ipcRenderer.invoke('export:finalize'),
-  exportAbort: () => ipcRenderer.invoke('export:abort'),
+  // === Layouts ===
+  layoutSave: (layout: unknown): Promise<void> => ipcRenderer.invoke('layout:save', layout),
+  layoutLoadAll: (): Promise<unknown[]> => ipcRenderer.invoke('layout:loadAll'),
+  layoutDelete: (name: string): Promise<void> => ipcRenderer.invoke('layout:delete', name),
 };
 
 if (process.contextIsolated) {
@@ -45,8 +80,10 @@ if (process.contextIsolated) {
     console.error(error);
   }
 } else {
-  // @ts-ignore
+  // @ts-ignore (define in dts)
   window.electron = electronAPI;
-  // @ts-ignore
+  // @ts-ignore (define in dts)
   window.api = api;
 }
+
+export type TelemetryAPI = typeof api;

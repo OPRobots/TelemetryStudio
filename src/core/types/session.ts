@@ -2,6 +2,22 @@
 export const SESSION_VERSION = 1;
 
 /**
+ * Schema de campo en formato compacto (array de tuplas).
+ *
+ * - "number":   [nombre, "number", unidad?, min?, max?]
+ * - "bitmask":  [nombre, "bitmask", bits]
+ * - "boolean":  [nombre, "boolean"]
+ * - "array":    [nombre, "array", longitud]
+ */
+export type SessionFieldSchema =
+  | [string, 'number']
+  | [string, 'number', string]
+  | [string, 'number', string, number, number]
+  | [string, 'bitmask', number]
+  | [string, 'boolean']
+  | [string, 'array', number];
+
+/**
  * Archivo de sesión completo.
  */
 export interface SessionFile {
@@ -17,9 +33,8 @@ export interface SessionFile {
 export interface SessionVideo {
   file: string;
   fps: number;
-  duration_ms: number;
-  width: number;
-  height: number;
+  duration_s: number;
+  resolution: [number, number];
 }
 
 export interface SessionSync {
@@ -29,17 +44,14 @@ export interface SessionSync {
 }
 
 export interface SessionTelemetry {
-  fps: number;
-  num_frames: number;
-  duration_ms: number;
-  fields: string[];
-  frames: SessionFrame[];
+  schema: SessionFieldSchema[];
+  /**
+   * Frames en formato compacto: [timestamp_ms, valor_1, valor_2, ...]
+   */
+  frames: SessionFrameValue[][];
 }
 
-export interface SessionFrame {
-  t: number;
-  d: Record<string, number | boolean | number[] | null>;
-}
+export type SessionFrameValue = number | boolean | number[] | null;
 
 export interface SessionLayout {
   widgets: SessionWidget[];

@@ -1,5 +1,12 @@
 # Sincronización Vídeo-Telemetría
 
+> **Estado de implementación**: implementado en `src/core/video-synchronizer.ts`.
+> El sincronizador emite cada frame por el EventBus como `sync:frame` con payload
+> `{ frame, context }`, en lugar de un callback directo. Los widgets se suscriben a
+> ese evento. El timestamp de telemetría proviene del primer campo de cada línea
+> Serial (ver `docs/05-PLUGIN-SYSTEM.md`). El mapeo es:
+> `telemetry_ms = mediaTime_ms + offset_ms − anchor.video_ms + anchor.telemetry_ms`.
+
 ## El Problema del Drift
 
 La cámara MP4 y el microcontrolador del robot **no comparten reloj**. El vídeo se graba a ~30fps con su propio timestamp, mientras que la telemetría se registra con el reloj del STM32. Existe un desfase inicial ($\Delta t$) que varía en cada grabación.

@@ -4,6 +4,9 @@ import {
   encodeSession,
   sessionToDataset,
   datasetToSessionTelemetry,
+  datasetToSession,
+  decodeFieldSchema,
+  encodeFieldSchema,
 } from '@core/session-codec';
 import type { SessionFile } from '@core/types/session';
 
@@ -14,9 +17,8 @@ const SAMPLE_SESSION: SessionFile = {
   video: {
     file: 'test.mp4',
     fps: 30,
-    duration_ms: 10000,
-    width: 1920,
-    height: 1080,
+    duration_s: 10,
+    resolution: [1920, 1080],
   },
   sync: {
     offset_ms: 100,
@@ -24,14 +26,15 @@ const SAMPLE_SESSION: SessionFile = {
     rate: 1.0,
   },
   telemetry: {
-    fps: 30,
-    num_frames: 3,
-    duration_ms: 20,
-    fields: ['speed', 'motor_left', 'gyro'],
+    schema: [
+      ['speed', 'number', 'RPM', 0, 10000],
+      ['motor_left', 'number', 'PWM', -1000, 1000],
+      ['gyro', 'number', '°/s'],
+    ],
     frames: [
-      { t: 0, d: { speed: 1000, motor_left: 500, gyro: 10 } },
-      { t: 10, d: { speed: 1100, motor_left: 520, gyro: 15 } },
-      { t: 20, d: { speed: 1200, motor_left: 540, gyro: 12 } },
+      [0, 1000, 500, 10],
+      [10, 1100, 520, 15],
+      [20, 1200, 540, 12],
     ],
   },
   layout: {
@@ -55,13 +58,12 @@ describe('session-codec round-trip', () => {
     expect(decoded.v).toBe(1);
     expect(decoded.name).toBe('Round Trip Test');
     expect(decoded.video.file).toBe('test.mp4');
+    expect(decoded.video.resolution).toEqual([1920, 1080]);
     expect(decoded.sync.offset_ms).toBe(100);
     expect(decoded.sync.anchor).toEqual([2.5, 2500]);
     expect(decoded.telemetry.frames).toHaveLength(3);
-    expect(decoded.telemetry.frames[0].d.speed).toBe(1000);
-    expect(decoded.telemetry.frames[2].d.gyro).toBe(12);
-    expect(decoded.layout.widgets).toHaveLength(1);
-    expect(decoded.layout.widgets[0].t).toBe('TimeSeriesChart');
+    expect(decoded.telemetry.frames[0]).toEqual([0, 1000, 500, 10]);
+    expect(decoded.layout.widgets[0]?.t).toBe('TimeSeriesChart');
   });
 
   it('should convert session to dataset', () => {
@@ -69,22 +71,52 @@ describe('session-codec round-trip', () => {
 
     expect(dataset.name).toBe('Round Trip Test');
     expect(dataset.frameCount).toBe(3);
-    expect(dataset.frames[0].timestamp_ms).toBe(0);
-    expect(dataset.frames[2].timestamp_ms).toBe(20);
-    expect(dataset.frames[0].data.speed).toBe(1000);
+    expect(dataset.frames[0]?.timestamp_ms).toBe(0);
+    expect(dataset.frames[2]?.timestamp_ms).toBe(20);
+    expect(dataset.frames[0]?.data.speed).toBe(1000);
+    expect(dataset.frames[2]?.data.gyro).toBe(12);
     expect(dataset.schema).toHaveLength(3);
-    expect(dataset.schema[0].name).toBe('speed');
-    expect(dataset.schema[1].name).toBe('motor_left');
+    expect(dataset.schema[0]?.name).toBe('speed');
+    expect(dataset.schema[0]?.unit).toBe('RPM');
+    expect(dataset.schema[0]?.min).toBe(0);
+    expect(dataset.schema[0]?.max).toBe(10000);
   });
 
-  it('should convert dataset frames back to session telemetry', () => {
+  it('should convert dataset frames back to compact session telemetry', () => {
     const dataset = sessionToDataset(SAMPLE_SESSION);
     const telemetry = datasetToSessionTelemetry(dataset);
 
     expect(telemetry.frames).toHaveLength(3);
-    expect(telemetry.frames[0].t).toBe(0);
-    expect(telemetry.frames[2].t).toBe(20);
-    expect(telemetry.fields).toEqual(['speed', 'motor_left', 'gyro']);
+    expect(telemetry.frames[0]).toEqual([0, 1000, 500, 10]);
+    expect(telemetry.schema[0]).toEqual(['speed', 'number', 'RPM', 0, 10000]);
+  });
+
+  it('should build a full session from a dataset', () => {
+    const dataset = sessionToDataset(SAMPLE_SESSION);
+    const rebuilt = datasetToSession(
+      dataset,
+      { file: 'out.mp4', fps: 30, duration_s: 5, resolution: [1280, 720] },
+      { offset_ms: 0, anchor: null, rate: 1 },
+      [{ t: 'TimeSeriesChart', pos: [0, 0], size: [4, 2], fields: ['speed'] }]
+    );
+
+    expect(rebuilt.v).toBe(1);
+    expect(rebuilt.video.file).toBe('out.mp4');
+    expect(rebuilt.telemetry.frames).toHaveLength(3);
+    expect(rebuilt.layout.widgets).toHaveLength(1);
+  });
+
+  it('should round-trip field schemas', () => {
+    const schema = [
+      { name: 'a', type: 'number' as const },
+      { name: 'b', type: 'bitmask' as const, bitmaskWidth: 16 },
+      { name: 'c', type: 'boolean' as const },
+    ];
+    const encoded = encodeFieldSchema(schema);
+    const decoded = decodeFieldSchema(encoded);
+
+    expect(decoded[1]?.bitmaskWidth).toBe(16);
+    expect(decoded[2]?.type).toBe('boolean');
   });
 
   it('should reject invalid JSON', () => {

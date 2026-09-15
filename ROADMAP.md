@@ -129,7 +129,7 @@ npm run test
 
 ---
 
-## FASE 3: Video Sync — Dual Synchronizer (2 semanas)
+## FASE 3: Video Sync — Dual Synchronizer (2 semanas) ✅ COMPLETADA
 
 ### Objetivo
 Implementar la sincronización frame-a-frame entre vídeo MP4 y telemetría, con soporte para 2 synchronizers simultáneos (comparación side-by-side).
@@ -173,7 +173,7 @@ npm run test
 
 ---
 
-## FASE 4: Session Manager (1 semana)
+## FASE 4: Session Manager (1 semana) 🟡 PARCIAL (export/import de sesión JSON + vídeo)
 
 ### Objetivo
 Exportar e importar sesiones completas (JSON + vídeo copiado).
@@ -200,7 +200,7 @@ npm run test
 
 ---
 
-## FASE 5: Widgets + Comparación Side-by-Side (3 semanas)
+## FASE 5: Widgets + Comparación Side-by-Side (3 semanas) 🟡 PARCIAL (4 widgets; comparación pendiente)
 
 ### Objetivo
 Implementar los 4 widgets estándar con registro dinámico, más el sistema de comparación side-by-side.
@@ -265,7 +265,7 @@ npm run test
 
 ---
 
-## FASE 6: Layout Manager (1 semana)
+## FASE 6: Layout Manager (1 semana) ✅ COMPLETADA
 
 ### Objetivo
 Persistencia de layouts en JSON con layouts predefinidos.

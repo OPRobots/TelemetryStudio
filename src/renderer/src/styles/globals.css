@@ -43,3 +43,187 @@ body {
   width: 100vw;
   height: 100vh;
 }
+
+/* === Botones === */
+.toolbar-button {
+  padding: 5px 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: var(--blue-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 150ms ease;
+}
+.toolbar-button:hover {
+  background-color: var(--blue-hover);
+}
+.toolbar-button:disabled {
+  background-color: #334155;
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.toolbar-button-primary {
+  background-color: var(--blue-active);
+}
+.toolbar-button-primary:hover {
+  background-color: var(--blue-hover);
+}
+.icon-button {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 12px;
+}
+.icon-button:hover {
+  background-color: var(--bg-border);
+  color: var(--text-primary);
+}
+
+/* === Sidebar === */
+.sidebar-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+.sidebar-button {
+  padding: 7px 10px;
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  background-color: var(--bg-panel, #111827);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  transition: background-color 150ms ease;
+}
+.sidebar-button:hover {
+  background-color: var(--blue-primary);
+}
+.sidebar-button:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background-color: var(--bg-border);
+  color: var(--text-secondary);
+}
+
+/* === Widgets === */
+.widget-card {
+  border-radius: 8px;
+}
+.widget-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 220px;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--bg-border);
+  background-color: var(--bg-elevated);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.widget-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+.widget-menu-item:hover {
+  background-color: var(--blue-primary);
+}
+
+/* === Diálogos === */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+.dialog-panel {
+  width: 520px;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow: auto;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid var(--bg-border);
+  background-color: var(--bg-secondary);
+}
+.dialog-label {
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.dialog-input {
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--bg-border);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.dialog-input:focus {
+  outline: none;
+  border-color: var(--blue-active);
+}
+.dialog-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  cursor: pointer;
+}
+.dialog-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  max-height: 160px;
+  overflow: auto;
+  padding: 6px;
+  border-radius: 6px;
+  background-color: var(--bg-primary);
+}
+.dialog-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.dialog-row > div {
+  flex: 1;
+}
+
+/* === Timeline === */
+.timeline-slider {
+  height: 4px;
+  cursor: pointer;
+}
+

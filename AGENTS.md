@@ -260,6 +260,13 @@ npm run build:win    # Build Windows (NSIS + portable)
 | Fase 0: Setup | ✅ Completada | `792cf03` |
 | Fase 1: Core Data Engine | ✅ Completada | `c1de566` |
 | Fase 2: Serial UART + JSON Parser | ✅ Completada | `f5c1510` |
+| Fase 3: Video Sync | ✅ Completada | `pendiente` |
+| Fase 4: Session Manager | 🟡 Parcial (export/import de sesión) | `pendiente` |
+| Fase 5: Widgets + Comparación | 🟡 Parcial (4 widgets, sin comparación) | `pendiente` |
+| Fase 6: Layout Manager | ✅ Completada | `pendiente` |
+| Fase 7: Export para Redes | ⏳ Pendiente | — |
+| Fase 8: Packaging | 🟡 PoC 4 validado | `25f1877` |
+| Fase 9: Polish + E2E | ⏳ Pendiente | — |
 | PoC 1: Serial → Widget | ✅ Validado (hardware real) | `e89a14c` |
 | PoC 2: Video Sync | ✅ Funcional | `8ee0cd5`, `5f6adde` |
 | PoC 3: Video Export | ✅ Funcional | `ddd9354` |

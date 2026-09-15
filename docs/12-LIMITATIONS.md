@@ -180,6 +180,47 @@ mac:
 
 ---
 
+## Estado Funcional (implementación actual)
+
+### F-01 — Flujo principal implementado, pendiente validación con hardware
+
+**Estado**: La app integra vídeo + Serial + widgets + sincronización + layouts.
+El pipeline Serial fue validado previamente en PoC 1 con hardware STM32 real.
+La integración completa dentro de la app debe validarse manualmente con el robot
+y el vídeo reales.
+
+**Cómo probar sin hardware**: ver `examples/README.md` (simulador `socat` +
+`examples/serial-simulator.mjs`).
+
+### F-02 — Comparación side-by-side no implementada en la UI
+
+**Estado**: `ComparisonManager` existe y tiene tests, pero no hay `SplitView` ni
+segundo reproductor en la interfaz. Fase 5 (semana 3) pendiente.
+
+### F-03 — Exportación de vídeo no integrada en la app de producción
+
+**Estado**: PoC 3 validó el pipeline (OffscreenCanvas → RGBA → FFmpeg libx264),
+pero `src/services/video-exporter.ts` y los handlers de export aún no existen.
+Fase 7 pendiente.
+
+### F-04 — Editor de layout basado en formularios, no drag & resize
+
+**Estado**: Los widgets se colocan con coordenadas numéricas (columna/fila/ancho/alto)
+en el diálogo de configuración. No hay arrastre ni redimensionado con el ratón.
+
+### F-05 — WidgetHost re-renderiza en cada frame
+
+**Estado**: `WidgetHost` guarda el frame actual en estado de React, provocando un
+re-render por frame. Con pocos widgets es fluido; si el número crece, conviene
+migrar a actualizaciones imperativas por ref.
+
+### F-06 — Empaquetado de la app de producción pendiente
+
+**Estado**: PoC 4 validó el empaquetado (Linux OK, macOS probado por el usuario).
+La app de producción aún no ha sido empaquetada/probada en las 3 plataformas.
+
+---
+
 ## Resumen de Acciones
 
 | Prioridad | Issue | Acción |

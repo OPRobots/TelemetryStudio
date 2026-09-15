@@ -1,5 +1,21 @@
 # Sistema de Plugins
 
+> **Estado de implementación**: los parsers reales viven en `src/parsers/`.
+> `SerialUARTParser` acepta TRES formatos de línea (todos con el timestamp en la
+> primera posición), lo que permite adaptarse tanto al firmware STM32 de referencia
+> como a robots que envíen campos con nombre:
+>
+> | Formato | Ejemplo |
+> |---|---|
+> | CSV posicional | `1000,1.20,2.30,9.80,10.0,-5.0,0.0,99.5` |
+> | Legacy con letras | `T:1234,S:1500,M:512,-510,G:15` |
+> | Genérico con claves | `T:1234,speed_rpm:1500,battery:85.5,armed:true` |
+>
+> En CSV posicional, los nombres de columna se configuran con
+> `setCsvFields()` (por defecto `accX…battery`, ver `DEFAULT_CSV_FIELDS`).
+> El tipo de cada campo (`number`/`boolean`) se infiere del valor y se expone vía
+> `getDiscoveredSchema()`, lo que alimenta la auto-configuración de widgets.
+
 El sistema de plugins permite extender la aplicación sin modificar el código core. Existen dos tipos de plugins: **Parsers** (entrada de datos) y **Widgets** (visualización).
 
 ---

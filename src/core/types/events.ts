@@ -23,8 +23,10 @@ export interface EventMap {
   'video:rate-change': { rate: number };
 
   // === Sync ===
+  'sync:frame': { frame: TelemetryFrame; context: VideoFrameContext };
   'sync:anchor-set': { videoFrame: number; telemetryFrame: number };
   'sync:offset-change': { offset_ms: number };
+  'sync:rate-change': { rate: number };
 
   // === UI ===
   'ui:widget-add': { widgetConfig: WidgetConfig };

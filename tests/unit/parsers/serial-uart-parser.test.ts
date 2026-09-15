@@ -77,12 +77,74 @@ describe('SerialUARTParser', () => {
   });
 
   it('should return discovered schema', () => {
+    parser.parseLine('T:0,S:1200,M:512,-510,G:15');
     const schema = parser.getDiscoveredSchema();
     expect(schema).toHaveLength(4);
     expect(schema[0].name).toBe('speed_rpm');
     expect(schema[1].name).toBe('motor_left');
     expect(schema[2].name).toBe('motor_right');
     expect(schema[3].name).toBe('gyro_z');
+  });
+
+  it('should parse generic key:value format and discover fields', () => {
+    const frame = parser.parseLine('T:100,speed_rpm:1500,battery:85.5,armed:true');
+    expect(frame).not.toBeNull();
+    expect(frame!.timestamp_ms).toBe(100);
+    expect(frame!.data.speed_rpm).toBe(1500);
+    expect(frame!.data.battery).toBe(85.5);
+    expect(frame!.data.armed).toBe(true);
+
+    const schema = parser.getDiscoveredSchema();
+    expect(schema.map((s) => s.name)).toEqual(['speed_rpm', 'battery', 'armed']);
+    expect(schema[1].type).toBe('number');
+    expect(schema[2].type).toBe('boolean');
+  });
+
+  it('should infer bitmask values from hex notation', () => {
+    const frame = parser.parseLine('T:0,ir_sensors:0xAAAA');
+    expect(frame).not.toBeNull();
+    expect(frame!.data.ir_sensors).toBe(0xaaaa);
+  });
+
+  it('should ignore malformed tokens but keep valid ones', () => {
+    const frame = parser.parseLine('T:0,speed:100,garbage=,battery:50');
+    expect(frame).not.toBeNull();
+    expect(frame!.data.speed).toBe(100);
+    expect(frame!.data.battery).toBe(50);
+  });
+
+  it('should parse the STM32 bare CSV format using default fields', () => {
+    const frame = parser.parseLine('1000,1.20,2.30,9.80,10.0,-5.0,0.0,99.5');
+    expect(frame).not.toBeNull();
+    expect(frame!.timestamp_ms).toBe(1000);
+    expect(frame!.data.accX).toBeCloseTo(1.2);
+    expect(frame!.data.accY).toBeCloseTo(2.3);
+    expect(frame!.data.accZ).toBeCloseTo(9.8);
+    expect(frame!.data.battery).toBeCloseTo(99.5);
+
+    const schema = parser.getDiscoveredSchema();
+    expect(schema.map((s) => s.name)).toEqual([
+      'accX',
+      'accY',
+      'accZ',
+      'gyroX',
+      'gyroY',
+      'gyroZ',
+      'battery',
+    ]);
+  });
+
+  it('should allow custom CSV field names', () => {
+    parser.setCsvFields(['speed', 'angle']);
+    const frame = parser.parseLine('50,1234,90');
+    expect(frame).not.toBeNull();
+    expect(frame!.timestamp_ms).toBe(50);
+    expect(frame!.data.speed).toBe(1234);
+    expect(frame!.data.angle).toBe(90);
+  });
+
+  it('should reject bare CSV without a valid timestamp', () => {
+    expect(parser.parseLine('abc,1,2')).toBeNull();
   });
 
   it('should not support file parsing', () => {

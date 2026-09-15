@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
+import { registerIpcHandlers } from './ipc-handlers';
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -16,8 +17,11 @@ function createWindow(): void {
       sandbox: false,
       nodeIntegration: false,
       contextIsolation: true,
+      webSecurity: false,
     },
   });
+
+  registerIpcHandlers(mainWindow);
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show();

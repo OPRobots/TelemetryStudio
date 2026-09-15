@@ -66,7 +66,7 @@ export class JSONSessionParser implements ITelemetryParser {
     onProgress?.(50);
 
     const telemetryFrames: TelemetryFrame[] = rawFrames.map((frame) => {
-      const arr = frame as number[];
+      const arr = frame as Array<number | boolean | number[] | null>;
       const [timestamp_ms, ...values] = arr;
       const data: Record<string, number | boolean | number[] | null> = {};
 
@@ -74,7 +74,7 @@ export class JSONSessionParser implements ITelemetryParser {
         data[name] = values[i] ?? null;
       });
 
-      return { timestamp_ms: timestamp_ms ?? 0, data };
+      return { timestamp_ms: typeof timestamp_ms === 'number' ? timestamp_ms : 0, data };
     });
 
     telemetryFrames.sort((a, b) => a.timestamp_ms - b.timestamp_ms);
