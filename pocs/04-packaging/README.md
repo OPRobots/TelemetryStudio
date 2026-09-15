@@ -2,30 +2,37 @@
 
 App Electron mínima que lista puertos serie. Objetivo: validar que `serialport` (módulo nativo C++) se empaqueta correctamente.
 
+## IMPORTANTE
+
+**Todos los comandos se ejecutan desde la raíz del proyecto** (`OPRobots-TelemetryPlayer/`), NO desde esta carpeta.
+
+Si copias el proyecto a otro ordenador, copia la **carpeta completa del proyecto**, no solo esta carpeta.
+
 ## Build Instructions
 
 ### Linux
 ```bash
-npm ci
+cd OPRobots-TelemetryPlayer
+npm install
 npm run build:linux
-# Ejecutar (el wrapper maneja FUSE automáticamente):
-./pocs/04-packaging/run-oprobots.sh
-# O directamente si FUSE está instalado:
-./dist/*.AppImage
+# Ejecutar:
+./release/*.AppImage
 ```
 
 ### macOS
 ```bash
-npm ci
+cd OPRobots-TelemetryPlayer
+npm install
 npm run build:mac
-# Abrir el .dmg generado en dist/
+# Abrir el .dmg generado en release/
 ```
 
 ### Windows
 ```bash
-npm ci
+cd OPRobots-TelemetryPlayer
+npm install
 npm run build:win
-# Ejecutar el .exe (NSIS installer o portable) en dist/
+# Ejecutar el .exe (NSIS installer o portable) en release/
 ```
 
 ### Requisitos
@@ -33,17 +40,10 @@ npm run build:win
 - `serialport` se compila automáticamente para la plataforma destino
 - No se necesitan herramientas adicionales (electron-builder descarga todo)
 
-### Linux: sin FUSE
-Si FUSE no está instalado, usar el wrapper `run-oprobots.sh` que auto-extrae el AppImage:
-```bash
-./pocs/04-packaging/run-oprobots.sh
-```
-O instalar FUSE: `sudo pacman -S fuse2`
-
 ### Linux: serial sin root
 En Linux, para acceder a puertos serie sin permisos de administrador:
 ```bash
-sudo cp examples/udev/69-oprobots-serial.rules /etc/udev/rules.d/
+sudo cp pocs/04-packaging/examples/udev/69-oprobots-serial.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 sudo usermod -a -G dialout $USER
