@@ -1,0 +1,69 @@
+name: Build
+
+# Nota: este workflow está preparado para cuando el repositorio esté en GitHub.
+# Mientras no exista repo remoto, los builds de Windows/macOS se hacen a mano
+# (ver docs/11-PACKAGING.md).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm run test
+
+      - name: FFmpeg (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg || brew install ffmpeg || true
+
+      - name: FFmpeg (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install ffmpeg -y || true
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke + E2E (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: xvfb-run -a npm run smoke && xvfb-run -a npm run e2e
+
+      - name: Descargar FFmpeg sidecar
+        run: node scripts/fetch-ffmpeg.mjs
+        continue-on-error: true
+
+      - name: Empaquetar
+        run: npx electron-builder --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Subir artefactos
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: dist/**
+          if-no-files-found: ignore

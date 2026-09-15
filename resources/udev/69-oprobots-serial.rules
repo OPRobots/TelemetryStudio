@@ -1,0 +1,19 @@
+# OPRobots Telemetry Studio — reglas udev para acceso a puertos serie USB
+#
+# Instalación (Linux):
+#   sudo cp resources/udev/69-oprobots-serial.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#
+# Alternativa: añadir el usuario al grupo dialout
+#   sudo usermod -a -G dialout $USER  (cerrar sesión y volver a entrar)
+
+# Puertos USB-Serial genéricos accesibles por el grupo dialout
+KERNEL=="ttyUSB[0-9]*", MODE="0660", GROUP="dialout"
+KERNEL=="ttyACM[0-9]*", MODE="0660", GROUP="dialout"
+
+# Chipsets habituales en robótica (por idVendor)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", MODE="0660", GROUP="dialout"  # STMicroelectronics (ST-Link VCP)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", MODE="0660", GROUP="dialout"  # SiLabs CP210x
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", MODE="0660", GROUP="dialout"  # FTDI FT232
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", MODE="0660", GROUP="dialout"  # QinHeng CH340/CH343
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", MODE="0660", GROUP="dialout"  # Arduino

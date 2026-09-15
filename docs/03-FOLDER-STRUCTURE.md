@@ -29,16 +29,20 @@ oprobots-telemetry-studio/
 │   ├── smoke-test.mjs               # Smoke test del renderer
 │   ├── e2e-serial.mjs               # E2E: Serial → widgets
 │   ├── e2e-video.mjs                # E2E: vídeo + sincronización
-│   └── fetch-ffmpeg.mjs             # _(planificado)_ Descarga FFmpeg a resources/bin
+│   ├── e2e-comparison.mjs           # E2E: comparación side-by-side
+│   ├── e2e-export.mjs               # E2E: composición de exportación
+│   ├── run-electron.mjs             # Lanzador de Electron (filtra ruido ambiental)
+│   ├── fonts.conf                   # Config mínima de fontconfig para dev
+│   └── fetch-ffmpeg.mjs             # Descarga FFmpeg a resources/bin (sidecar)
 │
 ├── resources/                       # Assets estáticos empaquetados
-│   ├── udev/                        # _(planificado)_ Reglas udev para Linux
+│   ├── udev/                        # Reglas udev para Linux
 │   │   └── 69-oprobots-serial.rules
-│   └── bin/                         # _(planificado)_ FFmpeg sidecar (no versionado)
+│   └── bin/                         # FFmpeg sidecar (no versionado)
 │
 ├── build/                           # Configuración de build
 │   ├── entitlements.mac.plist       # Permisos macOS para code signing
-│   └── icon.png                     # _(planificado placeholder)_ Icono 512x512
+│   └── icon.png                     # Icono placeholder 512x512
 │
 ├── src/
 │   ├── main/                        # ═══ MAIN PROCESS (Node.js) ═══

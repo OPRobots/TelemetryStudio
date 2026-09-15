@@ -9,6 +9,16 @@ files:
   - "!electron.vite.config.*"
   - "!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}"
   - "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
+extraResources:
+  - from: resources/bin
+    to: bin
+    filter:
+      - "**/*"
+      - "!.gitkeep"
+  - from: resources/udev
+    to: udev
+    filter:
+      - "**/*"
 asarUnpack:
   - "node_modules/@serialport/**"
   - "node_modules/serialport/**"

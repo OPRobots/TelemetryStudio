@@ -11,3 +11,14 @@ Thumbs.db
 *~
 .env
 .env.local
+
+# FFmpeg sidecar (se descarga con scripts/fetch-ffmpeg.mjs)
+resources/bin/*
+!resources/bin/.gitkeep
+
+# Artefactos de empaquetado
+release/
+*.AppImage
+*.deb
+*.zip
+

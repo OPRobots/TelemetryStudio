@@ -332,22 +332,22 @@ npm run test
 
 ---
 
-## FASE 8: Packaging + CI/CD (1 semana)
+## FASE 8: Packaging + CI/CD (1 semana) 🟡 PARCIAL (Linux OK; Windows/macOS manual; CI preparado sin repo)
 
 ### Objetivo
 Empaquetado multiplataforma funcional con pipeline de CI/CD.
 
 ### Entregables
-- [ ] `electron-builder.yml` completo y probado
-- [ ] Builds exitosos en las 3 plataformas:
-  - Windows: `.exe` (NSIS) + portable
-  - macOS: `.dmg` (universal binary)
-  - Linux: `.AppImage` + `.deb`
-- [ ] `resources/udev/69-oprobots-serial.rules` para Linux
-- [ ] `build/entitlements.mac.plist` para macOS
-- [ ] GitHub Actions CI/CD (`.github/workflows/build.yml`)
-- [ ] PoC 4 validado: serial funciona en las 3 plataformas empaquetadas
-- [ ] Tamaño de paquete < 200 MB en cada plataforma
+- [x] `electron-builder.yml` completo (extraResources de FFmpeg y udev)
+- [x] Build Linux: `AppImage` + `.deb` (PoC 4) y `--dir` verificado en la app de producción
+- [ ] Windows: `.exe` (NSIS) + portable — requiere build manual en Windows
+- [ ] macOS: `.dmg` (universal) — build manual (PoC 4 validó DMG)
+- [x] `resources/udev/69-oprobots-serial.rules` para Linux
+- [x] `build/entitlements.mac.plist` para macOS
+- [x] `build/icon.png` (placeholder) y `scripts/fetch-ffmpeg.mjs` (sidecar FFmpeg)
+- [x] GitHub Actions CI/CD (`.github/workflows/build.yml`) preparado — inactivo hasta tener repo remoto
+- [ ] PoC 4 validado: serial en las 3 plataformas empaquetadas (Linux OK; Windows pendiente)
+- [x] Tamaño de paquete < 200 MB (AppImage ~109 MB, deb ~75 MB)
 
 ### Validación
 ```bash
