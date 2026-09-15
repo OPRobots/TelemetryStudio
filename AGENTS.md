@@ -258,7 +258,7 @@ npm run build:win    # Build Windows (NSIS + portable)
 | Fase | Estado | Commits |
 |---|---|---|
 | Fase 0: Setup | ✅ Completada | `792cf03` |
-| Fase 1: Core Data Engine | ⏳ Pendiente | — |
+| Fase 1: Core Data Engine | ✅ Completada | `pendiente` |
 | PoC 1: Serial → Widget | ✅ Validado (hardware real) | `e89a14c` |
 | PoC 2: Video Sync | ✅ Funcional | `8ee0cd5`, `5f6adde` |
 | PoC 3: Video Export | ✅ Funcional | `ddd9354` |
