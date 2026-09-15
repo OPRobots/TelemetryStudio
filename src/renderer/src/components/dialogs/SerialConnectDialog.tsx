@@ -18,7 +18,7 @@ export function SerialConnectDialog({ onClose }: SerialConnectDialogProps): Reac
 
   const [selectedPort, setSelectedPort] = useState<string>('');
   const [baudRate, setBaudRate] = useState<number>(115200);
-  const [csvFieldsText, setCsvFieldsText] = useState<string>(DEFAULT_CSV_FIELDS.join(', '));
+  const [csvFieldsText, setCsvFieldsText] = useState<string>('');
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -102,11 +102,12 @@ export function SerialConnectDialog({ onClose }: SerialConnectDialogProps): Reac
             <input
               className="dialog-input"
               value={csvFieldsText}
+              placeholder={DEFAULT_CSV_FIELDS.join(', ')}
               onChange={(e) => setCsvFieldsText(e.target.value)}
             />
             <p className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-              Para datos posicionales `timestamp,campo1,campo2,...`. También se aceptan formatos
-              con claves `T:ms,campo:valor`.
+              Para datos posicionales `timestamp,campo1,campo2,...`. Si lo dejas vacío se usan los
+              nombres de ejemplo. También se aceptan formatos con claves `T:ms,campo:valor`.
             </p>
           </>
         )}
