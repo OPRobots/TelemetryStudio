@@ -89,7 +89,7 @@ oprobots-telemetry-studio/
 │   │
 │   ├── services/                    # ═══ SERVICIOS ═══
 │   │   ├── layout-manager.ts        # Guardar/cargar layouts en JSON
-│   │   ├── session-manager.ts       # _(planificado Fase 4)_ Exportar/importar sesiones
+│   │   ├── session-manager.ts       # Exportar/importar sesiones (adaptador IPC)
 │   │   └── video-exporter.ts        # _(planificado Fase 7)_ Orquestador de exportación
 │   │
 │   ├── renderer/                    # ═══ RENDERER PROCESS (React) ═══
@@ -104,10 +104,11 @@ oprobots-telemetry-studio/
 │   │       │   │   ├── Sidebar.tsx      # Fuentes de datos, sincronización, campos
 │   │       │   │   ├── Toolbar.tsx      # Slider temporal + controles de reproducción
 │   │       │   │   ├── StatusBar.tsx    # Barra de estado inferior
-│   │       │   │   └── SplitView.tsx    # _(planificado Fase 5)_ Vista split comparación
+│   │       │   │   └── SplitView.tsx    # Vista split de comparación
 │   │       │   ├── video/
 │   │       │   │   ├── VideoPlayer.tsx      # Contenedor del elemento video
 │   │       │   │   ├── PlaybackControls.tsx # Play/pause, step, velocidad
+│   │       │   │   ├── PaneControls.tsx     # Controles de un sincronizador concreto
 │   │       │   │   └── TimelineSlider.tsx   # Slider de seek
 │   │       │   ├── widgets/
 │   │       │   │   ├── WidgetHost.tsx       # Contenedor dinámico de widgets
@@ -118,7 +119,8 @@ oprobots-telemetry-studio/
 │   │       │       ├── SerialConnectDialog.tsx # Conexión serial
 │   │       │       ├── LayoutDialog.tsx        # Guardar/cargar layouts
 │   │       │       ├── SaveSessionDialog.tsx   # Guardar sesión
-│   │       │       ├── SessionBrowserDialog.tsx # _(planificado Fase 4)_ Listar sesiones
+│   │       │       ├── SessionBrowserDialog.tsx # Listar y abrir sesiones
+│   │       │       ├── ComparisonDialog.tsx    # Activar comparación
 │   │       │       └── ExportDialog.tsx        # _(planificado Fase 7)_ Exportar vídeo
 │   │       ├── hooks/
 │   │       │   ├── useEventListener.ts  # Suscripción al EventBus
@@ -126,11 +128,12 @@ oprobots-telemetry-studio/
 │   │       ├── lib/
 │   │       │   ├── auto-layout.ts       # Auto-configura widgets según el schema
 │   │       │   ├── serial-ingest.ts     # Ingesta Serial → TelemetryStore
-│   │       │   └── session-actions.ts   # Abrir/guardar sesión
+│   │       │   ├── session-actions.ts   # Abrir/guardar sesión
+│   │       │   └── comparison-sync.ts   # Sincronizador del panel de comparación
 │   │       ├── stores/
 │   │       │   ├── app-store.ts         # Zustand: estado global
 │   │       │   ├── layout-store.ts      # Zustand: widgets del dashboard
-│   │       │   └── comparison-store.ts  # _(planificado Fase 5)_
+│   │       │   └── comparison-store.ts  # Zustand: estado de comparación
 │   │       └── styles/
 │   │           └── globals.css          # Tailwind + variables de color
 │   │

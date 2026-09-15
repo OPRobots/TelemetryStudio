@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../stores/app-store';
-import { videoSynchronizer } from '@core/video-synchronizer';
+import { videoSynchronizer, type VideoSynchronizer } from '@core/video-synchronizer';
 
 /**
  * Convierte una ruta local en una URL `file://` válida.
@@ -14,47 +14,72 @@ export function toFileUrl(path: string): string {
 }
 
 interface VideoPlayerProps {
+  /** Sincronizador a usar (por defecto el primario). */
+  synchronizer?: VideoSynchronizer;
+  /** Fuente del vídeo. Si es undefined usa la del store primario. */
+  src?: string | null;
+  /** Si es el panel primario, actualiza el estado global y detecta FPS. */
+  primary?: boolean;
   onFpsDetected?: (fps: number) => void;
 }
 
-export function VideoPlayer({ onFpsDetected }: VideoPlayerProps): React.ReactElement {
+export function VideoPlayer({
+  synchronizer,
+  src,
+  primary = true,
+  onFpsDetected,
+}: VideoPlayerProps): React.ReactElement {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const src = useAppStore((s) => s.videoSrc);
+  const storeSrc = useAppStore((s) => s.videoSrc);
   const videoPath = useAppStore((s) => s.videoPath);
   const setVideoInfo = useAppStore((s) => s.setVideoInfo);
   const setVideoElementState = useAppStore((s) => s.setVideoElementState);
   const setPlaybackRate = useAppStore((s) => s.setPlaybackRate);
+
+  const sync = synchronizer ?? videoSynchronizer;
+  const effectiveSrc = src !== undefined ? src : storeSrc;
 
   // Adjuntar el sincronizador al elemento de vídeo
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    videoSynchronizer.attach(video);
+    sync.attach(video);
 
     const onLoadedMetadata = (): void => {
       const filename = videoPath ? videoPath.split(/[\\/]/).pop() ?? '' : '';
-      setVideoInfo({
-        filename,
-        duration_s: video.duration || 0,
-        fps: 30,
-        width: video.videoWidth,
-        height: video.videoHeight,
-      });
-      setVideoElementState({ duration: video.duration || 0 });
+      if (primary) {
+        setVideoInfo({
+          filename,
+          duration_s: video.duration || 0,
+          fps: 30,
+          width: video.videoWidth,
+          height: video.videoHeight,
+        });
+        setVideoElementState({ duration: video.duration || 0 });
+      }
       detectFps(video, (fps) => {
-        videoSynchronizer.setDeclaredFps(fps);
+        sync.setDeclaredFps(fps);
         onFpsDetected?.(fps);
       });
     };
 
-    const onPlay = (): void => setVideoElementState({ isPlaying: true });
-    const onPause = (): void => setVideoElementState({ isPlaying: false });
-    const onEnded = (): void => setVideoElementState({ isPlaying: false });
-    const onTimeUpdate = (): void =>
-      setVideoElementState({ currentTime: video.currentTime });
-    const onRateChange = (): void => setPlaybackRate(video.playbackRate);
-    const onSeeked = (): void => videoSynchronizer.refresh();
+    const onPlay = (): void => {
+      if (primary) setVideoElementState({ isPlaying: true });
+    };
+    const onPause = (): void => {
+      if (primary) setVideoElementState({ isPlaying: false });
+    };
+    const onEnded = (): void => {
+      if (primary) setVideoElementState({ isPlaying: false });
+    };
+    const onTimeUpdate = (): void => {
+      if (primary) setVideoElementState({ currentTime: video.currentTime });
+    };
+    const onRateChange = (): void => {
+      if (primary) setPlaybackRate(video.playbackRate);
+    };
+    const onSeeked = (): void => sync.refresh();
 
     video.addEventListener('loadedmetadata', onLoadedMetadata);
     video.addEventListener('play', onPlay);
@@ -75,21 +100,21 @@ export function VideoPlayer({ onFpsDetected }: VideoPlayerProps): React.ReactEle
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('ratechange', onRateChange);
       video.removeEventListener('seeked', onSeeked);
-      videoSynchronizer.detach();
+      sync.detach();
     };
-  }, [setVideoInfo, setVideoElementState, setPlaybackRate, onFpsDetected, videoPath]);
+  }, [sync, setVideoInfo, setVideoElementState, setPlaybackRate, onFpsDetected, videoPath, primary]);
 
   // Recargar cuando cambia el vídeo
   useEffect(() => {
     const video = videoRef.current;
-    if (video && src) video.load();
-  }, [src]);
+    if (video && effectiveSrc) video.load();
+  }, [effectiveSrc]);
 
   return (
     <div className="flex h-full w-full items-center justify-center" style={{ backgroundColor: '#000' }}>
       <video
         ref={videoRef}
-        src={src ? toFileUrl(src) : undefined}
+        src={effectiveSrc ? toFileUrl(effectiveSrc) : undefined}
         controls={false}
         className="max-h-full max-w-full"
         style={{ backgroundColor: '#000' }}

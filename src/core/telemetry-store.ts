@@ -1,5 +1,5 @@
 import { eventBus } from './event-bus';
-import { binarySearch } from './binary-search';
+import { binarySearch, findFramesInRange as framesInRange } from './binary-search';
 import type { TelemetryFrame, TelemetryDataset } from './types/telemetry';
 
 /**
@@ -53,9 +53,7 @@ export class TelemetryStore {
       this.primarySorted = true;
     }
 
-    const startIdx = this.lowerBound(this.primaryFrames, start_ms);
-    const endIdx = this.upperBound(this.primaryFrames, end_ms);
-    return this.primaryFrames.slice(startIdx, endIdx);
+    return framesInRange(this.primaryFrames, start_ms, end_ms);
   }
 
   getFrameAt(index: number): TelemetryFrame | null {
@@ -114,36 +112,6 @@ export class TelemetryStore {
     this.primaryDataset = null;
     this.comparisonFrames = [];
     this.comparisonDataset = null;
-  }
-
-  // === Helpers ===
-
-  private lowerBound(frames: TelemetryFrame[], target_ms: number): number {
-    let low = 0;
-    let high = frames.length;
-    while (low < high) {
-      const mid = (low + high) >>> 1;
-      if (frames[mid].timestamp_ms < target_ms) {
-        low = mid + 1;
-      } else {
-        high = mid;
-      }
-    }
-    return low;
-  }
-
-  private upperBound(frames: TelemetryFrame[], target_ms: number): number {
-    let low = 0;
-    let high = frames.length;
-    while (low < high) {
-      const mid = (low + high) >>> 1;
-      if (frames[mid].timestamp_ms <= target_ms) {
-        low = mid + 1;
-      } else {
-        high = mid;
-      }
-    }
-    return low;
   }
 }
 

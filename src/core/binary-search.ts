@@ -66,3 +66,40 @@ export function binarySearchIndex(
 
   return diffLow <= diffHigh ? low : high;
 }
+
+/**
+ * Devuelve los frames cuyo timestamp está en [start_ms, end_ms].
+ * Asume `frames` ordenado por timestamp.
+ */
+export function findFramesInRange(
+  frames: TelemetryFrame[],
+  start_ms: number,
+  end_ms: number
+): TelemetryFrame[] {
+  if (frames.length === 0 || end_ms < start_ms) return [];
+  const startIdx = lowerBound(frames, start_ms);
+  const endIdx = upperBound(frames, end_ms);
+  return frames.slice(startIdx, endIdx);
+}
+
+function lowerBound(frames: TelemetryFrame[], target_ms: number): number {
+  let low = 0;
+  let high = frames.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (frames[mid].timestamp_ms < target_ms) low = mid + 1;
+    else high = mid;
+  }
+  return low;
+}
+
+function upperBound(frames: TelemetryFrame[], target_ms: number): number {
+  let low = 0;
+  let high = frames.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (frames[mid].timestamp_ms <= target_ms) low = mid + 1;
+    else high = mid;
+  }
+  return low;
+}

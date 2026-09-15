@@ -62,4 +62,22 @@ describe('VideoSynchronizer', () => {
   it('installRvfcPolyfill is safe without HTMLVideoElement', () => {
     expect(() => installRvfcPolyfill()).not.toThrow();
   });
+
+  it('keeps state independent across synchronizer instances', () => {
+    const primary = new VideoSynchronizer();
+    const comparison = new VideoSynchronizer({
+      frameEvent: 'comparison:frame',
+      dataset: 'comparison',
+    });
+
+    primary.setDriftOffset(100);
+    comparison.setDriftOffset(200);
+    primary.setAnchorPoint(0, 0);
+    comparison.setAnchorPoint(0, 5000);
+
+    expect(primary.mapTime(1000)).toBe(1100);
+    expect(comparison.mapTime(1000)).toBe(6200);
+    expect(primary.driftOffset).toBe(100);
+    expect(comparison.driftOffset).toBe(200);
+  });
 });

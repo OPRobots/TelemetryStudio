@@ -144,24 +144,24 @@ Implementar la sincronización frame-a-frame entre vídeo MP4 y telemetría, con
   - `stepForward()`, `stepBackward()` (1 frame exacto)
   - `setPlaybackRate()` (0.1x a 2x)
   - Polyfill para browsers sin RVFC
-  - [ ] Soporte para 2 instancias simultáneas (se completa en Fase 5)
+  - [x] Soporte para 2 instancias simultáneas (comparación)
 - [x] `src/renderer/components/video/VideoPlayer.tsx`
   - Contenedor del elemento `<video>`
   - [ ] Carga de archivos locales via drag-and-drop (se carga con diálogo nativo)
-  - [ ] Soporte para VideoPlayer #2 (se completa en Fase 5)
+  - [x] Soporte para VideoPlayer #2 (comparación)
 - [x] `src/renderer/components/video/PlaybackControls.tsx`
   - Play/Pause, Skip Forward/Back
   - Speed selector (0.25x, 0.5x, 1x, 2x)
-  - [ ] Controles duplicables para comparación (Fase 5)
+  - [x] Controles duplicables para comparación (PaneControls)
 - [x] `src/renderer/components/video/TimelineSlider.tsx`
   - [ ] Slider de seek con preview (seek funcional sin preview)
   - Display de timestamp actual / total
-  - [ ] Modo compartido/independiente para comparación (Fase 5)
+  - [x] Modo compartido/independiente para comparación
 - [x] Tests de sincronización:
   - Drift medido en e2e (`e2e:video`)
   - Búsqueda binaria correcta
   - Step forward/backward preciso
-  - [ ] 2 synchronizers independientes (Fase 5)
+  - [x] 2 synchronizers independientes
 
 ### Validación
 ```bash
@@ -201,57 +201,57 @@ npm run test
 
 ---
 
-## FASE 5: Widgets + Comparación Side-by-Side (3 semanas) 🟡 PARCIAL (4 widgets; comparación pendiente)
+## FASE 5: Widgets + Comparación Side-by-Side (3 semanas) ✅ COMPLETADA
 
 ### Objetivo
 Implementar los 4 widgets estándar con registro dinámico, más el sistema de comparación side-by-side.
 
 ### Semana 1: TimeSeriesChart + DigitalBitmask
-- [ ] `src/widgets/interfaces.ts` — ITelemetryWidget + WidgetMetadata
-- [ ] `src/widgets/widget-registry.ts` — WidgetRegistry singleton
-- [ ] `src/widgets/time-series-chart/` — Widget de gráficas
+- [x] `src/widgets/interfaces.ts` — WidgetDefinition + WidgetMetadata + WidgetProps
+- [x] `src/widgets/widget-registry.ts` — WidgetRegistry singleton (agnóstico, `register-widgets.ts` registra los estándar)
+- [x] `src/widgets/time-series-chart/` — Widget de gráficas
   - Integración con uPlot
   - LTTB downsampling por viewport
   - Múltiples series con colores
-  - Zoom/pan con uPlot cursor
-- [ ] `src/widgets/digital-bitmask/` — Widget de LEDs IR
+  - [ ] Zoom/pan con uPlot cursor (cursor activo; zoom manual pendiente)
+- [x] `src/widgets/digital-bitmask/` — Widget de LEDs IR
   - Canvas 2D renderer
   - Soporte para 8, 16, 32 bits
   - Glow effect en LEDs activos
   - Hex display del bitmask
 
 ### Semana 2: Minimap2D + StateTimeline
-- [ ] `src/widgets/minap-2d/` — Widget de minimapa
+- [x] `src/widgets/minimap-2d/` — Widget de minimapa
   - Canvas 2D con trayectoria X,Y
   - Triángulo rotado para heading
   - Grid de fondo
-  - Scroll y zoom
-- [ ] `src/widgets/state-timeline/` — Widget de estados
+  - [ ] Scroll/zoom manual (auto-centrado en el robot)
+- [x] `src/widgets/state-timeline/` — Widget de estados
   - Barra de tiempo con colores por estado
   - Estado actual grande
   - Línea de posición actual
   - Labels de transiciones
 
 ### Semana 3: Comparación Side-by-Side
-- [ ] `src/core/comparison-manager.ts` — ComparisonManager
+- [x] `src/core/comparison-manager.ts` — ComparisonManager
   - `startComparison()` — activa modo comparación con validación de widgets
   - `stopComparison()` — desactiva y limpia
   - `setSyncBarMode()` — toggle barra compartida/independiente
   - `validateWidgetCompatibility()` — valida widgets idénticos entre sesiones
-- [ ] `src/renderer/components/layout/SplitView.tsx`
+- [x] `src/renderer/src/components/layout/SplitView.tsx`
   - Alterna entre vista single y split
-  - En split: duplica el panel completo verticalmente
+  - En split: apila los paneles verticalmente
   - Cada mitad tiene su propio VideoPlayer + WidgetHost
-- [ ] Integración con VideoSynchronizer #2
-  - Segundo synchronizer para vídeo B
+- [x] Integración con VideoSynchronizer #2
+  - Segundo synchronizer (`comparison:frame`, dataset de comparación)
   - Barra vertical compartida o independiente (toggle)
-- [ ] Validación de widgets:
+- [x] Validación de widgets:
   - Si sesiones tienen widgets diferentes → error con lista de diferencias
   - Comparar: tipo, campos, posición, tamaño, configuración
-- [ ] Tests de comparación:
+- [x] Tests de comparación:
   - Widgets idénticos → comparación activada
   - Widgets diferentes → error con diferencias listadas
-  - Barra compartida/independiente funciona correctamente
+  - Estado aislado entre synchronizers
 
 ### Validación
 ```bash

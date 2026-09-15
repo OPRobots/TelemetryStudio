@@ -62,11 +62,22 @@ export function installRvfcPolyfill(): void {
 }
 
 /**
+ * Opciones del sincronizador.
+ * Permite instanciar un segundo sincronizador para la comparación.
+ */
+export interface VideoSynchronizerOptions {
+  /** Evento del EventBus en el que se emite cada frame. */
+  frameEvent?: 'sync:frame' | 'comparison:frame';
+  /** Dataset de telemetría del que se leen los frames. */
+  dataset?: 'primary' | 'comparison';
+}
+
+/**
  * Motor de sincronización vídeo-telemetría.
  *
  * Mapea el `mediaTime` (PTS) de cada frame de vídeo a un timestamp de
  * telemetría usando offset de drift + anchor point, y emite el frame
- * más cercano por el EventBus en `sync:frame`.
+ * más cercano por el EventBus (`sync:frame` o `comparison:frame`).
  */
 export class VideoSynchronizer {
   private video: HTMLVideoElement | null = null;
@@ -76,6 +87,14 @@ export class VideoSynchronizer {
   private driftOffset_ms = 0;
   private anchorPoint: { video_ms: number; telemetry_ms: number } | null = null;
   private declaredFps = 30;
+
+  private readonly frameEvent: 'sync:frame' | 'comparison:frame';
+  private readonly datasetSource: 'primary' | 'comparison';
+
+  constructor(options: VideoSynchronizerOptions = {}) {
+    this.frameEvent = options.frameEvent ?? 'sync:frame';
+    this.datasetSource = options.dataset ?? 'primary';
+  }
 
   private lastMediaTime_ms = 0;
   private totalDriftMs = 0;
@@ -193,6 +212,22 @@ export class VideoSynchronizer {
     return this.driftOffset_ms;
   }
 
+  get currentTime(): number {
+    return this.video?.currentTime ?? 0;
+  }
+
+  get duration(): number {
+    return this.video?.duration ?? 0;
+  }
+
+  get isPlaying(): boolean {
+    return this.video ? !this.video.paused : false;
+  }
+
+  get fps(): number {
+    return this.declaredFps;
+  }
+
   get anchor(): { video_ms: number; telemetry_ms: number } | null {
     return this.anchorPoint;
   }
@@ -248,11 +283,15 @@ export class VideoSynchronizer {
     this.lastMediaTime_ms = mediaTime_ms;
     const targetTime_ms = this.mapTime(mediaTime_ms);
 
-    const frame: TelemetryFrame =
-      telemetryStore.findClosestFrame(targetTime_ms) ?? {
-        timestamp_ms: targetTime_ms,
-        data: {},
-      };
+    const found =
+      this.datasetSource === 'comparison'
+        ? telemetryStore.findClosestFrameComparison(targetTime_ms)
+        : telemetryStore.findClosestFrame(targetTime_ms);
+
+    const frame: TelemetryFrame = found ?? {
+      timestamp_ms: targetTime_ms,
+      data: {},
+    };
 
     const driftMs = Math.abs(targetTime_ms - frame.timestamp_ms);
     this.totalDriftMs += driftMs;
@@ -272,7 +311,7 @@ export class VideoSynchronizer {
       viewTimestamp_ms: targetTime_ms,
     };
 
-    eventBus.emit('sync:frame', { frame, context });
+    eventBus.emit(this.frameEvent, { frame, context });
   }
 
   private installPolyfillIfNeeded(): void {

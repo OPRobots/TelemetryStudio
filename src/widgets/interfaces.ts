@@ -50,6 +50,8 @@ export interface WidgetProps {
   dataFields: string[];
   frame: TelemetryFrame | null;
   context: VideoFrameContext | null;
+  /** Dataset completo del panel (primario o comparación). */
+  frames: TelemetryFrame[];
 }
 
 /**

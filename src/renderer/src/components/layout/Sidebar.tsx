@@ -9,9 +9,10 @@ interface SidebarProps {
   onSaveSession: () => void;
   onOpenLayouts: () => void;
   onOpenSessions: () => void;
+  onCompare: () => void;
 }
 
-export function Sidebar({ onOpenSerial, onSaveSession, onOpenLayouts, onOpenSessions }: SidebarProps): React.ReactElement {
+export function Sidebar({ onOpenSerial, onSaveSession, onOpenLayouts, onOpenSessions, onCompare }: SidebarProps): React.ReactElement {
   const schema = useAppStore((s) => s.schema);
   const dataset = useAppStore((s) => s.dataset);
   const syncOffsetMs = useAppStore((s) => s.syncOffsetMs);
@@ -49,6 +50,9 @@ export function Sidebar({ onOpenSerial, onSaveSession, onOpenLayouts, onOpenSess
           </button>
           <button className="sidebar-button" onClick={onOpenSessions}>
             Explorar sesiones
+          </button>
+          <button className="sidebar-button" onClick={onCompare} disabled={!dataset}>
+            Comparar con otra sesión
           </button>
           <button className="sidebar-button" onClick={onSaveSession} disabled={!dataset}>
             Guardar sesión

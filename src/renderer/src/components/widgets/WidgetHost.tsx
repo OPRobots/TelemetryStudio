@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { widgetRegistry } from '@widgets/widget-registry';
+import { telemetryStore } from '@core/telemetry-store';
 import type { TelemetryFrame } from '@core/types/telemetry';
 import type { VideoFrameContext } from '@core/types/video';
 import { useEventListener } from '../../hooks/useEventListener';
@@ -8,22 +9,37 @@ import { useAppStore } from '../../stores/app-store';
 import { WidgetWrapper } from './WidgetWrapper';
 import { WidgetConfigDialog } from './WidgetConfigDialog';
 
-export function WidgetHost(): React.ReactElement {
+interface WidgetHostProps {
+  /** Evento de sincronización del que se leen los frames. */
+  eventName?: 'sync:frame' | 'comparison:frame';
+  /** Dataset de telemetría a visualizar. */
+  dataset?: 'primary' | 'comparison';
+  /** Si el panel es el primario (recibe también frames de streaming). */
+  primary?: boolean;
+}
+
+export function WidgetHost({
+  eventName = 'sync:frame',
+  dataset = 'primary',
+  primary = true,
+}: WidgetHostProps): React.ReactElement {
   const widgets = useLayoutStore((s) => s.widgets);
   const removeWidget = useLayoutStore((s) => s.removeWidget);
   const [frame, setFrame] = useState<TelemetryFrame | null>(null);
   const [context, setContext] = useState<VideoFrameContext | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  useEventListener('sync:frame', ({ frame: f, context: c }) => {
+  useEventListener(eventName, ({ frame: f, context: c }) => {
     setFrame(f);
     setContext(c);
   });
 
   useEventListener('data:streaming-frame', ({ frame: f }) => {
-    // Si hay vídeo cargado, el sincronizador manda; evita jitter entre fuentes
-    if (!useAppStore.getState().videoSrc) setFrame(f);
+    const hasVideo = primary && !useAppStore.getState().videoSrc;
+    if (hasVideo) setFrame(f);
   });
+
+  const frames = dataset === 'comparison' ? telemetryStore.getComparisonFrames() : telemetryStore.getAllFrames();
 
   const editingWidget = useMemo(
     () => widgets.find((w) => w.id === editingId) ?? null,
@@ -66,8 +82,8 @@ export function WidgetHost(): React.ReactElement {
                 <WidgetWrapper
                   title={widget.label}
                   type={widget.type}
-                  onConfigure={() => setEditingId(widget.id)}
-                  onRemove={() => removeWidget(widget.id)}
+                  onConfigure={primary ? () => setEditingId(widget.id) : undefined}
+                  onRemove={primary ? () => removeWidget(widget.id) : undefined}
                 >
                   {definition ? (
                     <definition.component
@@ -76,6 +92,7 @@ export function WidgetHost(): React.ReactElement {
                       dataFields={widget.dataFields}
                       frame={frame}
                       context={context}
+                      frames={frames}
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-xs" style={{ color: '#f87171' }}>

@@ -197,10 +197,12 @@ el robot físico y un vídeo de producción queda pendiente por parte del usuari
 **Cómo probar sin hardware**: ver `examples/README.md` (simulador `socat` +
 `examples/serial-simulator.mjs`).
 
-### F-02 — Comparación side-by-side no implementada en la UI
+### F-02 — Comparación side-by-side implementada
 
-**Estado**: `ComparisonManager` existe y tiene tests, pero no hay `SplitView` ni
-segundo reproductor en la interfaz. Fase 5 (semana 3) pendiente.
+**Estado**: implementada en la Fase 5. `ComparisonManager` valida que los widgets
+sean idénticos y `SplitView` muestra dos paneles apilados, cada uno con su vídeo,
+su `VideoSynchronizer` (`comparison:frame`, dataset de comparación) y sus widgets.
+Incluye toggle de barra compartida/independiente y e2e (`e2e:comparison`).
 
 ### F-03 — Exportación de vídeo no integrada en la app de producción
 

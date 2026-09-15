@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { telemetryStore } from '@core/telemetry-store';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 
 interface MinimapConfig {
@@ -30,7 +29,7 @@ const DEFAULT_CONFIG: MinimapConfig = {
 /**
  * Minimapa 2D de trayectoria (X, Y, heading).
  */
-export function Minimap2D({ config, dataFields, frame }: WidgetProps): React.ReactElement {
+export function Minimap2D({ config, dataFields, frame, frames }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<MinimapConfig>) };
   const fieldX = cfg.fieldX || dataFields[0] || 'position_x';
@@ -92,7 +91,7 @@ export function Minimap2D({ config, dataFields, frame }: WidgetProps): React.Rea
     }
 
     // Trayectoria reciente
-    const allFrames = telemetryStore.getAllFrames();
+    const allFrames = frames;
     if (allFrames.length > 1 && frame) {
       const cutoff = frame.timestamp_ms - cfg.trailSeconds * 1000;
       const trail = allFrames.filter((f) => f.timestamp_ms >= cutoff && f.timestamp_ms <= frame.timestamp_ms);
@@ -163,7 +162,7 @@ export function Minimap2D({ config, dataFields, frame }: WidgetProps): React.Rea
       8,
       8
     );
-  }, [frame, fieldX, fieldY, fieldTheta, cfg.scale, cfg.trailColor, cfg.robotColor, cfg.robotLength, cfg.robotWidth, cfg.showGrid, cfg.gridSize, cfg.trailSeconds]);
+  }, [frame, frames, fieldX, fieldY, fieldTheta, cfg.scale, cfg.trailColor, cfg.robotColor, cfg.robotLength, cfg.robotWidth, cfg.showGrid, cfg.gridSize, cfg.trailSeconds]);
 
   return <canvas ref={canvasRef} className="h-full w-full" />;
 }

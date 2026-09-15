@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
-import { telemetryStore } from '@core/telemetry-store';
+import { findFramesInRange } from '@core/binary-search';
 import { downsampleLTTB, framesToLTTBPoints } from '@core/lttb';
 import type { WidgetProps } from '../interfaces';
 import type { WidgetDefinition } from '../interfaces';
@@ -45,7 +45,7 @@ const DEFAULT_CONFIG: Required<TimeSeriesConfig> = {
  * Gráfica temporal multi-serie (uPlot).
  * Permite graficar varios campos de telemetría en una sola gráfica.
  */
-export function TimeSeriesChart({ config, dataFields, frame, context }: WidgetProps): React.ReactElement {
+export function TimeSeriesChart({ config, dataFields, frame, context, frames }: WidgetProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const uplotRef = useRef<uPlot | null>(null);
   const fieldsKey = dataFields.join('|');
@@ -114,7 +114,7 @@ export function TimeSeriesChart({ config, dataFields, frame, context }: WidgetPr
 
     const cfg = { ...DEFAULT_CONFIG, ...(config as TimeSeriesConfig) };
     const fields = dataFields.length > 0 ? dataFields : [];
-    const allFrames = telemetryStore.getAllFrames();
+    const allFrames = frames;
     if (allFrames.length === 0 || fields.length === 0) {
       u.setData([new Float64Array(0)]);
       return;
@@ -125,7 +125,7 @@ export function TimeSeriesChart({ config, dataFields, frame, context }: WidgetPr
     let windowFrames = allFrames;
     if (cfg.autoFollow) {
       const half = (cfg.windowSeconds * 1000) / 2;
-      windowFrames = telemetryStore.findFramesInRange(currentMs - half, currentMs + half);
+      windowFrames = findFramesInRange(allFrames, currentMs - half, currentMs + half);
       if (windowFrames.length < 2) {
         // Fallback: ventana mínima alrededor del inicio
         windowFrames = allFrames.slice(0, Math.min(allFrames.length, 60));
@@ -162,7 +162,7 @@ export function TimeSeriesChart({ config, dataFields, frame, context }: WidgetPr
       }
       u.setCursor({ left: u.valToPos(xValues[idx]!, 'x'), top: 0 }, false);
     }
-  }, [frame, context, fieldsKey, configKey, dataFields, config]);
+  }, [frame, context, fieldsKey, configKey, dataFields, config, frames]);
 
   // Redimensionar con el contenedor
   useEffect(() => {

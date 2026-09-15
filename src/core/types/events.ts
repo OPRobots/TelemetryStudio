@@ -24,6 +24,7 @@ export interface EventMap {
 
   // === Sync ===
   'sync:frame': { frame: TelemetryFrame; context: VideoFrameContext };
+  'comparison:frame': { frame: TelemetryFrame; context: VideoFrameContext };
   'sync:anchor-set': { videoFrame: number; telemetryFrame: number };
   'sync:offset-change': { offset_ms: number };
   'sync:rate-change': { rate: number };

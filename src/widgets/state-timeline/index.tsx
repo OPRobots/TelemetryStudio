@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { telemetryStore } from '@core/telemetry-store';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 
 interface StateEntry {
@@ -37,7 +36,7 @@ function colorForValue(value: number, map: Record<string, StateEntry>): StateEnt
 /**
  * Línea de tiempo de estados con indicador del estado actual.
  */
-export function StateTimeline({ config, dataFields, frame, context }: WidgetProps): React.ReactElement {
+export function StateTimeline({ config, dataFields, frame, context, frames }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<StateTimelineConfig>) } as StateTimelineConfig;
   const stateMap = cfg.stateMap && Object.keys(cfg.stateMap).length > 0 ? cfg.stateMap : DEFAULT_STATE_MAP;
@@ -85,10 +84,9 @@ export function StateTimeline({ config, dataFields, frame, context }: WidgetProp
     ctx.shadowBlur = 0;
 
     // Timeline inferior
-    const total = telemetryStore.frameCount;
-    if (total <= 1) return;
+    const allFrames = frames;
+    if (allFrames.length <= 1) return;
 
-    const allFrames = telemetryStore.getAllFrames();
     const timelineY = height * 0.58;
     const timelineHeight = Math.min(cfg.barHeight, height * 0.3);
     const offsetX = 8;
@@ -150,7 +148,7 @@ export function StateTimeline({ config, dataFields, frame, context }: WidgetProp
         }
       }
     }
-  }, [frame, context, field, configKey, stateMap, cfg.barHeight, cfg.showLabels]);
+  }, [frame, context, frames, field, configKey, stateMap, cfg.barHeight, cfg.showLabels]);
 
   return <canvas ref={canvasRef} className="h-full w-full" />;
 }
