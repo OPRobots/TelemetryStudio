@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAppStore } from '../../stores/app-store';
 import { videoSynchronizer } from '@core/video-synchronizer';
 
@@ -6,12 +6,14 @@ export function TimelineSlider(): React.ReactElement {
   const currentTime = useAppStore((s) => s.currentTime);
   const duration = useAppStore((s) => s.duration);
   const anchor = useAppStore((s) => s.syncAnchor);
-  const [scrubbing, setScrubbing] = useState(false);
-  const [scrubValue, setScrubValue] = useState(0);
+
+  const draggingRef = useRef(false);
+  const [dragValue, setDragValue] = useState(0);
 
   const min = anchor ? anchor.video_ms / 1000 : 0;
   const max = duration > 0 ? duration : 1;
-  const value = scrubbing ? scrubValue : Math.min(Math.max(currentTime, min), max);
+  // Mientras se arrastra, manda el valor del usuario; si no, la posición real
+  const value = draggingRef.current ? dragValue : Math.min(Math.max(currentTime, min), max);
 
   return (
     <input
@@ -20,15 +22,22 @@ export function TimelineSlider(): React.ReactElement {
       max={max}
       step={0.001}
       value={value}
-      onMouseDown={() => setScrubbing(true)}
+      onPointerDown={(e) => {
+        draggingRef.current = true;
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
       onChange={(e) => {
         const t = Number(e.target.value);
-        setScrubValue(t);
-        if (!scrubbing) videoSynchronizer.seekTo(t);
+        draggingRef.current = true;
+        setDragValue(t);
+        videoSynchronizer.seekTo(t);
       }}
-      onMouseUp={(e) => {
-        videoSynchronizer.seekTo(Number((e.target as HTMLInputElement).value));
-        setScrubbing(false);
+      onPointerUp={(e) => {
+        draggingRef.current = false;
+        videoSynchronizer.seekTo(Number(e.currentTarget.value));
+      }}
+      onPointerCancel={() => {
+        draggingRef.current = false;
       }}
       className="timeline-slider"
     />
