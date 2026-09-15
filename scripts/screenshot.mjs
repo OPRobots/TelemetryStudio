@@ -86,6 +86,22 @@ app.whenReady().then(async () => {
 
     const image = await win.webContents.capturePage();
     writeFileSync(out, image.toPNG());
+
+    const meta = await win.webContents.executeJavaScript(`(() => {
+      const rect = (el) => el ? { x: Math.round(el.getBoundingClientRect().x), w: Math.round(el.getBoundingClientRect().width) } : null;
+      const card = document.querySelector('.widget-card');
+      const header = card ? card.firstElementChild : null;
+      const title = header ? header.querySelector('span') : null;
+      const widgetsCard = document.querySelectorAll('.card')[document.querySelectorAll('.card').length - 1];
+      return {
+        widgetsCard: rect(widgetsCard),
+        widgetCard: rect(card),
+        headerPadding: header ? getComputedStyle(header).padding : null,
+        title: rect(title),
+        widgetsHeaderPadding: widgetsCard && widgetsCard.firstElementChild ? getComputedStyle(widgetsCard.firstElementChild).padding : null,
+      };
+    })()`);
+    console.log('SCREENSHOT_META ' + JSON.stringify(meta));
     console.log('SCREENSHOT_OK ' + out);
     if (sendTimer) clearInterval(sendTimer);
     app.exit(0);

@@ -42,7 +42,9 @@ export function WidgetWrapper({
           )}
         </div>
       </div>
-      <div className="min-h-0 flex-1">{children}</div>
+      <div className="min-h-0 flex-1" style={{ padding: 8 }}>
+        {children}
+      </div>
     </div>
   );
 }

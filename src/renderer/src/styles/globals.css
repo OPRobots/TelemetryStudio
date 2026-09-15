@@ -47,11 +47,9 @@
   color-scheme: dark;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* El reset base lo aporta el preflight de Tailwind (dentro de @layer).
+   NO añadir aquí un `* { margin/padding: 0 }` sin capa: anularía las
+   utilidades de padding/margin (las capas pierden ante CSS sin capa). */
 
 html,
 body {
