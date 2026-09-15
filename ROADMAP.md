@@ -94,7 +94,7 @@ npm run test                   # Todos los tests de core pasan
 
 ---
 
-## FASE 2: Serial UART + JSON Session Parser (2 semanas) ✅ COMPLETADA
+## FASE 2: Serial UART + JSON Session Parser (2 semanas) ✅ COMPLETADA — Commit `f5c1510`
 
 ### Objetivo
 Implementar los dos modos de entrada: Serial UART (streaming) y carga de sesiones JSON (offline).
