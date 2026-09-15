@@ -32,6 +32,7 @@ function makeLine(t) {
 }
 
 function registerMockSerial(win) {
+  ipcMain.handle('layout:loadAll', () => []);
   ipcMain.handle('serial:list', () => [
     { path: '/dev/ttyMOCK', manufacturer: 'Simulador', vendorId: '0000' },
   ]);

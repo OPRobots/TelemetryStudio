@@ -7,7 +7,7 @@
  *
  * Uso: npm run smoke
  */
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -21,6 +21,9 @@ app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-gpu');
 
 app.whenReady().then(async () => {
+  // Stubs mínimos para el IPC que el renderer invoca al arrancar.
+  ipcMain.handle('layout:loadAll', () => []);
+
   const win = new BrowserWindow({
     show: false,
     width: 1400,
