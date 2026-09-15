@@ -21,6 +21,7 @@ interface AppState {
   videoPath: string | null;
   videoSrc: string | null;
   videoInfo: VideoInfo | null;
+  videoFps: number | null;
   isPlaying: boolean;
   duration: number;
   currentTime: number;
@@ -55,6 +56,7 @@ interface AppState {
   // Acciones
   setVideo: (path: string, src: string) => void;
   setVideoInfo: (info: VideoInfo) => void;
+  setVideoFps: (fps: number | null) => void;
   setVideoElementState: (state: { isPlaying?: boolean; duration?: number; currentTime?: number }) => void;
   setPlaybackRate: (rate: number) => void;
 
@@ -78,6 +80,7 @@ export const useAppStore = create<AppState>((set) => ({
   videoPath: null,
   videoSrc: null,
   videoInfo: null,
+  videoFps: null,
   isPlaying: false,
   duration: 0,
   currentTime: 0,
@@ -105,6 +108,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   setVideo: (path, src) => set({ videoPath: path, videoSrc: src, statusMessage: '' }),
   setVideoInfo: (info) => set({ videoInfo: info }),
+  setVideoFps: (fps) => set({ videoFps: fps }),
   setVideoElementState: (state) => set(state),
   setPlaybackRate: (rate) => set({ playbackRate: rate }),
 

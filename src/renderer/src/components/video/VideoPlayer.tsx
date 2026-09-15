@@ -20,6 +20,8 @@ interface VideoPlayerProps {
   src?: string | null;
   /** Si es el panel primario, actualiza el estado global y detecta FPS. */
   primary?: boolean;
+  /** FPS real del vídeo (de ffprobe). Si falta, se detecta por rvfc. */
+  fps?: number | null;
   onFpsDetected?: (fps: number) => void;
 }
 
@@ -27,6 +29,7 @@ export function VideoPlayer({
   synchronizer,
   src,
   primary = true,
+  fps = null,
   onFpsDetected,
 }: VideoPlayerProps): React.ReactElement {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,16 +55,22 @@ export function VideoPlayer({
         setVideoInfo({
           filename,
           duration_s: video.duration || 0,
-          fps: 30,
+          fps: fps && fps > 0 ? fps : 30,
           width: video.videoWidth,
           height: video.videoHeight,
         });
         setVideoElementState({ duration: video.duration || 0 });
       }
-      detectFps(video, (fps) => {
+      if (fps && fps > 0) {
+        // FPS real proporcionado por ffprobe
         sync.setDeclaredFps(fps);
         onFpsDetected?.(fps);
-      });
+      } else {
+        detectFps(video, (detected) => {
+          sync.setDeclaredFps(detected);
+          onFpsDetected?.(detected);
+        });
+      }
     };
 
     const onPlay = (): void => {
@@ -112,7 +121,7 @@ export function VideoPlayer({
       video.removeEventListener('error', onError);
       sync.detach();
     };
-  }, [sync, setVideoInfo, setVideoElementState, setPlaybackRate, onFpsDetected, videoPath, primary]);
+  }, [sync, setVideoInfo, setVideoElementState, setPlaybackRate, onFpsDetected, videoPath, primary, fps]);
 
   // Recargar cuando cambia el vídeo
   useEffect(() => {
@@ -137,25 +146,35 @@ export function VideoPlayer({
 }
 
 /**
- * Detecta el FPS real del vídeo midiendo el delta de `mediaTime`.
+ * Detección de FPS de respaldo (si ffprobe no lo dio). Mide el delta de
+ * `mediaTime` solo entre frames consecutivos presentados durante la
+ * reproducción, ignorando seeks/scrubs para no corromper la estimación.
  */
 function detectFps(video: HTMLVideoElement, onDetected: (fps: number) => void): void {
   const samples: number[] = [];
   let lastMediaTime = -1;
+  let lastPresentedFrames = -1;
 
-  const sample = (_now: number, metadata: { mediaTime: number }): void => {
-    if (lastMediaTime >= 0) {
+  const sample = (
+    _now: number,
+    metadata: { mediaTime: number; presentedFrames: number }
+  ): void => {
+    const consecutive =
+      lastPresentedFrames < 0 || metadata.presentedFrames === lastPresentedFrames + 1;
+
+    if (!video.paused && lastMediaTime >= 0 && consecutive) {
       const delta = metadata.mediaTime - lastMediaTime;
-      if (delta > 0.001) samples.push(delta);
+      if (delta > 0.002 && delta < 0.5) samples.push(delta);
     }
     lastMediaTime = metadata.mediaTime;
+    lastPresentedFrames = metadata.presentedFrames;
 
     if (samples.length < 12) {
       video.requestVideoFrameCallback(sample);
     } else {
       const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
-      const fps = Math.round(1 / avg);
-      onDetected(fps >= 1 && fps <= 240 ? fps : 30);
+      const detected = Math.round(1 / avg);
+      onDetected(detected >= 10 && detected <= 240 ? detected : 30);
     }
   };
 

@@ -92,6 +92,7 @@ interface PaneProps {
   dataset: 'primary' | 'comparison';
   primary: boolean;
   showControls: boolean;
+  fps?: number | null;
   style?: React.CSSProperties;
 }
 
@@ -104,6 +105,7 @@ function Pane({
   dataset,
   primary,
   showControls,
+  fps = null,
   style,
 }: PaneProps): React.ReactElement {
   return (
@@ -116,7 +118,7 @@ function Pane({
         className="card__body"
         style={{ flex: '0 0 auto', height: '44%', backgroundColor: '#05070b' }}
       >
-        <VideoPlayer synchronizer={synchronizer} src={src} primary={primary} />
+        <VideoPlayer synchronizer={synchronizer} src={src} primary={primary} fps={fps} />
       </div>
       {showControls && (
         <div className="card__footer">
@@ -139,7 +141,9 @@ function Pane({
  */
 export function SplitView(): React.ReactElement {
   const primarySrc = useAppStore((s) => s.videoSrc);
+  const primaryFps = useAppStore((s) => s.videoFps);
   const referenceSrc = useComparisonStore((s) => s.referenceVideoSrc);
+  const referenceFps = useComparisonStore((s) => s.referenceFps);
   const referenceName = useComparisonStore((s) => s.referenceName);
   const sharedBar = useComparisonStore((s) => s.sharedBar);
   const setSharedBar = useComparisonStore((s) => s.setSharedBar);
@@ -215,6 +219,7 @@ export function SplitView(): React.ReactElement {
         dataset="primary"
         primary
         showControls={!sharedBar}
+        fps={primaryFps}
         style={{ height: paneAHeight, flexShrink: 0 }}
       />
 
@@ -238,6 +243,7 @@ export function SplitView(): React.ReactElement {
         dataset="comparison"
         primary={false}
         showControls={!sharedBar}
+        fps={referenceFps}
         style={{ flex: '1 1 auto', minHeight: 0 }}
       />
     </div>

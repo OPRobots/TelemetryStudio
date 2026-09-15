@@ -7,6 +7,8 @@ interface ComparisonState {
   referenceName: string | null;
   /** Ruta/URL del vídeo de referencia. */
   referenceVideoSrc: string | null;
+  /** FPS del vídeo de referencia (para el paso a paso). */
+  referenceFps: number | null;
   /** Barra de tiempo compartida entre paneles. */
   sharedBar: boolean;
   /** Diferencias de compatibilidad de widgets (si hubo error). */
@@ -14,7 +16,7 @@ interface ComparisonState {
   /** Mensaje de error a mostrar. */
   errorMessage: string | null;
 
-  start: (name: string, videoSrc: string | null) => void;
+  start: (name: string, videoSrc: string | null, fps?: number | null) => void;
   stop: () => void;
   setSharedBar: (shared: boolean) => void;
   setDifferences: (differences: string[]) => void;
@@ -25,15 +27,17 @@ export const useComparisonStore = create<ComparisonState>((set) => ({
   active: false,
   referenceName: null,
   referenceVideoSrc: null,
+  referenceFps: null,
   sharedBar: true,
   differences: [],
   errorMessage: null,
 
-  start: (name, videoSrc) =>
+  start: (name, videoSrc, fps = null) =>
     set({
       active: true,
       referenceName: name,
       referenceVideoSrc: videoSrc,
+      referenceFps: fps,
       differences: [],
       errorMessage: null,
     }),
@@ -43,6 +47,7 @@ export const useComparisonStore = create<ComparisonState>((set) => ({
       active: false,
       referenceName: null,
       referenceVideoSrc: null,
+      referenceFps: null,
       differences: [],
       errorMessage: null,
     }),

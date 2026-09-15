@@ -8,46 +8,21 @@ import type { DashboardLayout, WidgetConfig } from '@core/types/layout';
 import { useAppStore } from '../stores/app-store';
 import { useLayoutStore } from '../stores/layout-store';
 import { applySyncAnchor } from './sync-actions';
+import { prepareVideoFile } from './video-prepare';
 
 function basename(path: string): string {
   return path.split(/[\\/]/).pop() ?? '';
 }
 
 /**
- * Prepara un vídeo para su reproducción. Si su códec no está soportado por
- * Chromium (p. ej. HEVC/H.265), lo transcodea a H.264 con FFmpeg.
- * Devuelve la ruta reproducible o `null` si se canceló o falló.
+ * Prepara un vídeo y lo carga en el reproductor. Guarda el fps real para que
+ * el paso a paso sea de exactamente un frame.
  */
-async function prepareVideoPath(path: string): Promise<string | null> {
-  const api = window.api;
-  if (!api?.videoPrepare) return path;
-  useAppStore.getState().setStatusMessage('Preparando vídeo…');
-  try {
-    const res = await api.videoPrepare(path);
-    if (!res.success) {
-      useAppStore.getState().setError(res.error ?? 'No se pudo preparar el vídeo');
-      useAppStore.getState().setStatusMessage('');
-      return null;
-    }
-    if (res.cancelled) {
-      useAppStore.getState().setStatusMessage('Conversión cancelada');
-      return null;
-    }
-    useAppStore.getState().setStatusMessage(res.transcoded ? 'Vídeo convertido a H.264' : '');
-    return res.path || path;
-  } catch (err) {
-    useAppStore.getState().setError((err as Error).message);
-    useAppStore.getState().setStatusMessage('');
-    return null;
-  } finally {
-    useAppStore.getState().setVideoPrepare(false);
-  }
-}
-
-/** Carga un vídeo (transcodificando si es necesario) en el reproductor. */
 export async function loadVideoFile(path: string): Promise<void> {
-  const playable = await prepareVideoPath(path);
-  if (playable) useAppStore.getState().setVideo(playable, playable);
+  const prepared = await prepareVideoFile(path);
+  if (!prepared) return;
+  useAppStore.getState().setVideoFps(prepared.fps);
+  useAppStore.getState().setVideo(prepared.path, prepared.path);
 }
 
 export async function openVideoDialog(): Promise<void> {

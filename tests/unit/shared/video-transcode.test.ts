@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildTranscodeArgs, parseFfmpegProgress, transcodePercent } from '@shared/video-transcode';
+import {
+  buildTranscodeArgs,
+  fpsFromRatio,
+  parseFfmpegProgress,
+  transcodePercent,
+} from '@shared/video-transcode';
 
 describe('buildTranscodeArgs', () => {
   it('construye argumentos libx264 con faststart', () => {
@@ -52,5 +57,27 @@ describe('parseFfmpegProgress', () => {
     const us = parseFfmpegProgress('out_time_us=5000000');
     expect(us).not.toBeNull();
     expect(transcodePercent(us as number, 10)).toBe(50);
+  });
+});
+
+describe('fpsFromRatio', () => {
+  it('convierte ratios enteros', () => {
+    expect(fpsFromRatio('60/1')).toBe(60);
+    expect(fpsFromRatio('30/1')).toBe(30);
+    expect(fpsFromRatio('25')).toBe(25);
+  });
+
+  it('convierte ratios NTSC', () => {
+    expect(fpsFromRatio('30000/1001')).toBeCloseTo(29.97, 2);
+    expect(fpsFromRatio('60000/1001')).toBeCloseTo(59.94, 2);
+  });
+
+  it('devuelve 0 para valores inválidos', () => {
+    expect(fpsFromRatio('0/1')).toBe(0);
+    expect(fpsFromRatio('60/0')).toBe(0);
+    expect(fpsFromRatio('abc')).toBe(0);
+    expect(fpsFromRatio('')).toBe(0);
+    expect(fpsFromRatio(null)).toBe(0);
+    expect(fpsFromRatio(undefined)).toBe(0);
   });
 });

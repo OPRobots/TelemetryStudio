@@ -35,8 +35,14 @@ const api = {
   // === Vídeo ===
   videoPrepare: (
     path: string
-  ): Promise<{ success: boolean; path: string; transcoded: boolean; cancelled?: boolean; error?: string }> =>
-    ipcRenderer.invoke('video:prepare', path),
+  ): Promise<{
+    success: boolean;
+    path: string;
+    transcoded: boolean;
+    fps?: number;
+    cancelled?: boolean;
+    error?: string;
+  }> => ipcRenderer.invoke('video:prepare', path),
   videoCancelPrepare: (): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('video:cancel-prepare'),
   videoOnPrepareStatus: (

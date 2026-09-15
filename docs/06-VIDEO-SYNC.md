@@ -13,6 +13,12 @@
 > muestra **tiempo relativo** (0 = punto alineado) y el muestreo de gráficas usa
 > ese origen. «Reset» elimina el anchor. La lógica vive en
 > `src/renderer/src/lib/sync-actions.ts`.
+>
+> **Paso de un frame**: los botones ◀/▶ avanzan `1 / fps` segundos. El fps real
+> se obtiene de **ffprobe** (`r_frame_rate`/`avg_frame_rate`, ver
+> `src/shared/video-transcode.ts`) y se aplica al sincronizador; si no está
+> disponible, se usa una detección por `requestVideoFrameCallback` que ignora
+> seeks/scrubs (solo mide frames consecutivos durante la reproducción).
 
 ## El Problema del Drift
 

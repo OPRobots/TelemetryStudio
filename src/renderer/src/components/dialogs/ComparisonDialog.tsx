@@ -4,6 +4,7 @@ import { sessionManager } from '@services/session-manager';
 import type { SessionWidget } from '@core/types/session';
 import { useLayoutStore } from '../../stores/layout-store';
 import { useComparisonStore } from '../../stores/comparison-store';
+import { prepareVideoFile } from '../../lib/video-prepare';
 
 interface ComparisonDialogProps {
   onClose: () => void;
@@ -44,11 +45,19 @@ export function ComparisonDialog({ onClose }: ComparisonDialogProps): React.Reac
         return;
       }
 
-      let videoSrc = '';
+      let videoSrc: string | null = null;
+      let fps: number | null = null;
       if (reference.video.file) {
-        videoSrc = await sessionManager.resolveVideoPath(res.filePath, reference.video.file);
+        const resolved = await sessionManager.resolveVideoPath(res.filePath, reference.video.file);
+        if (resolved) {
+          const prepared = await prepareVideoFile(resolved);
+          if (prepared) {
+            videoSrc = prepared.path;
+            fps = prepared.fps;
+          }
+        }
       }
-      comparisonStart(reference.name, videoSrc || null);
+      comparisonStart(reference.name, videoSrc, fps);
       onClose();
     } catch (err) {
       setError((err as Error).message);

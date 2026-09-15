@@ -3,7 +3,7 @@ import { spawn, type ChildProcess } from 'child_process';
 import { mkdir, rm } from 'fs/promises';
 import { basename, extname, join } from 'path';
 import { isPlayableVideoCodec } from '../shared/video-codecs';
-import { buildTranscodeArgs, parseFfmpegProgress, transcodePercent } from '../shared/video-transcode';
+import { buildTranscodeArgs, fpsFromRatio, parseFfmpegProgress, transcodePercent } from '../shared/video-transcode';
 import { resolveFfmpegPath, resolveFfprobePath } from './ffmpeg';
 
 let activeChild: ChildProcess | null = null;
@@ -27,8 +27,8 @@ function run(binary: string, args: string[]): Promise<RunResult> {
   });
 }
 
-/** Devuelve el códec de vídeo de un archivo, o null si no se puede leer. */
-export async function probeVideoCodec(path: string): Promise<string | null> {
+/** Devuelve el códec y los fps de vídeo de un archivo. */
+export async function probeVideoInfo(path: string): Promise<{ codec: string | null; fps: number }> {
   try {
     const result = await run(resolveFfprobePath(), [
       '-v',
@@ -36,15 +36,17 @@ export async function probeVideoCodec(path: string): Promise<string | null> {
       '-select_streams',
       'v:0',
       '-show_entries',
-      'stream=codec_name',
+      'stream=codec_name,r_frame_rate,avg_frame_rate',
       '-of',
       'csv=p=0',
       path,
     ]);
-    if (result.code !== 0) return null;
-    return result.stdout.trim().split('\n')[0]?.trim() || null;
+    if (result.code !== 0) return { codec: null, fps: 0 };
+    const [codec, rFrameRate, avgFrameRate] = result.stdout.trim().split('\n')[0]?.split(',') ?? [];
+    const fps = fpsFromRatio(rFrameRate) || fpsFromRatio(avgFrameRate);
+    return { codec: codec?.trim() || null, fps };
   } catch {
-    return null;
+    return { codec: null, fps: 0 };
   }
 }
 
@@ -102,10 +104,10 @@ function runTranscode(
 export async function prepareVideo(
   path: string,
   sender?: WebContents
-): Promise<{ path: string; transcoded: boolean; cancelled?: boolean }> {
-  const codec = await probeVideoCodec(path);
-  if (isPlayableVideoCodec(codec)) {
-    return { path, transcoded: false };
+): Promise<{ path: string; transcoded: boolean; fps: number; cancelled?: boolean }> {
+  const info = await probeVideoInfo(path);
+  if (isPlayableVideoCodec(info.codec)) {
+    return { path, transcoded: false, fps: info.fps };
   }
 
   const dir = join(app.getPath('temp'), 'oprobots-video');
@@ -132,12 +134,12 @@ export async function prepareVideo(
 
   if (cancelled) {
     await rm(output, { force: true }).catch(() => undefined);
-    return { path, transcoded: false, cancelled: true };
+    return { path, transcoded: false, fps: info.fps, cancelled: true };
   }
   if (code !== 0) {
     throw new Error(`FFmpeg no pudo convertir el vídeo (código ${code})`);
   }
-  return { path: output, transcoded: true };
+  return { path: output, transcoded: true, fps: info.fps };
 }
 
 export function registerVideoHandlers(): void {

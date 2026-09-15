@@ -37,6 +37,7 @@ export function AppShell(): React.ReactElement {
 
   const videoSrc = useAppStore((s) => s.videoSrc);
   const videoInfo = useAppStore((s) => s.videoInfo);
+  const videoFps = useAppStore((s) => s.videoFps);
   const appError = useAppStore((s) => s.errorMessage);
   const setError = useAppStore((s) => s.setError);
 
@@ -208,7 +209,7 @@ export function AppShell(): React.ReactElement {
                       backgroundColor: '#05070b',
                     }}
                   >
-                    <VideoPlayer />
+                    <VideoPlayer fps={videoFps} />
                   </div>
                 ) : (
                   <button className="empty-drop" onClick={() => void openVideoDialog()}>

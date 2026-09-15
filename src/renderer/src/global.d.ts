@@ -27,6 +27,7 @@ export interface TelemetryAPI {
     success: boolean;
     path: string;
     transcoded: boolean;
+    fps?: number;
     cancelled?: boolean;
     error?: string;
   }>;

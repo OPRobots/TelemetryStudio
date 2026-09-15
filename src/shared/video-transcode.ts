@@ -56,3 +56,25 @@ export function parseFfmpegProgress(line: string): number | null {
   const match = /out_time_us=(\d+)/.exec(line);
   return match ? Number(match[1]) : null;
 }
+
+/**
+ * Convierte una relación de fps de ffprobe (`r_frame_rate`, p. ej. `"60/1"` o
+ * `"30000/1001"`) a número. Devuelve 0 si no es válida.
+ */
+export function fpsFromRatio(ratio: string | null | undefined): number {
+  if (!ratio) return 0;
+  const [numStr, denStr] = ratio.split('/');
+  const numerator = Number(numStr);
+  const denominator = denStr === undefined ? 1 : Number(denStr);
+  if (
+    !Number.isFinite(numerator) ||
+    !Number.isFinite(denominator) ||
+    denominator === 0 ||
+    numerator <= 0
+  ) {
+    return 0;
+  }
+  const fps = numerator / denominator;
+  if (fps <= 0 || fps > 1000) return 0;
+  return Math.round(fps * 1000) / 1000;
+}

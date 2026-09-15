@@ -52,7 +52,7 @@ function registerMocks(win) {
   ipcMain.handle('dialog:openVideo', () => ({ canceled: false, filePath: mockVideo }));
   ipcMain.handle('video:prepare', () => {
     prepareCalls += 1;
-    return { success: true, path: mockVideo, transcoded: false };
+    return { success: true, path: mockVideo, transcoded: false, fps: 60 };
   });
 }
 
@@ -107,6 +107,17 @@ app.whenReady().then(async () => {
       };
     })()`);
 
+    // Paso de 1 frame: con fps=60 el avance debe ser ~16.7 ms (no 1 s)
+    const beforeStep = await win.webContents.executeJavaScript(
+      `document.querySelector('video').currentTime`
+    );
+    await win.webContents.executeJavaScript(clickByText('▶'));
+    await new Promise((r) => setTimeout(r, 400));
+    const afterStep = await win.webContents.executeJavaScript(
+      `document.querySelector('video').currentTime`
+    );
+    const stepDelta = afterStep - beforeStep;
+
     // Scrub con el slider del timeline: debe mover el vídeo a ese tiempo
     await win.webContents.executeJavaScript(`(() => {
       const el = document.querySelector('.timeline-slider');
@@ -150,19 +161,27 @@ app.whenReady().then(async () => {
 
     console.log(
       'E2E_VIDEO_RESULT ' +
-        JSON.stringify({ ...videoInfo, ...syncState, aligned, scrubTime, prepareCalls })
+        JSON.stringify({ ...videoInfo, ...syncState, aligned, scrubTime, prepareCalls, stepDelta })
     );
     if (errors.length > 0) console.log('E2E_VIDEO_ERRORS ' + JSON.stringify(errors.slice(0, 20)));
 
     const durationOk = videoInfo.duration > 0;
-    const scrubOk = Math.abs(scrubTime - 2.5) < 0.4;
+    const scrubbedOk = Math.abs(scrubTime - 2.5) < 0.4;
+    const stepOk = Math.abs(stepDelta - 1 / 60) < 0.01;
     const syncedOk = syncState.telemetryTimeMs >= 900 && syncState.telemetryTimeMs <= 1200;
     const alignedOk = aligned.telemetryTimeMs >= -50 && aligned.telemetryTimeMs <= 50;
     const footerOk = syncState.footerText.includes('mock_video.mp4');
     const prepareOk = prepareCalls >= 1;
 
     const ok =
-      durationOk && scrubOk && syncedOk && alignedOk && footerOk && prepareOk && errors.length === 0;
+      durationOk &&
+      scrubbedOk &&
+      stepOk &&
+      syncedOk &&
+      alignedOk &&
+      footerOk &&
+      prepareOk &&
+      errors.length === 0;
     console.log(ok ? 'E2E_VIDEO_OK' : 'E2E_VIDEO_FAIL');
 
     if (sendTimer) clearInterval(sendTimer);
