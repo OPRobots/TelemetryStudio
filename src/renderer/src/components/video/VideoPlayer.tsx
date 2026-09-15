@@ -64,6 +64,9 @@ export function VideoPlayer({ onFpsDetected }: VideoPlayerProps): React.ReactEle
     video.addEventListener('ratechange', onRateChange);
     video.addEventListener('seeked', onSeeked);
 
+    // Si los metadatos ya están cargados (caché), dispararlos manualmente
+    if (video.readyState >= 1) onLoadedMetadata();
+
     return () => {
       video.removeEventListener('loadedmetadata', onLoadedMetadata);
       video.removeEventListener('play', onPlay);
