@@ -174,8 +174,8 @@ export function SplitView(): React.ReactElement {
   };
 
   return (
-    <div ref={containerRef} className="flex min-h-0 flex-1 flex-col gap-3 p-3">
-      <div className="flex items-center justify-between gap-3 px-1">
+    <div ref={containerRef} className="flex min-h-0 flex-1 flex-col">
+      <div className="mb-3 flex items-center justify-between gap-3 px-1">
         <span className="section-label" style={{ marginBottom: 0 }}>
           Comparación · A (actual) vs B ({referenceName ?? 'sin nombre'})
         </span>
@@ -198,7 +198,7 @@ export function SplitView(): React.ReactElement {
       </div>
 
       {sharedBar && (
-        <div className="card" style={{ flexShrink: 0 }}>
+        <div className="card" style={{ flexShrink: 0, marginBottom: 12 }}>
           <div className="card__header">
             <span className="card__title">Reproducción</span>
           </div>

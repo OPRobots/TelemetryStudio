@@ -165,7 +165,7 @@ export function AppShell(): React.ReactElement {
         </div>
       )}
 
-      <main className="flex min-h-0 flex-1 overflow-hidden">
+      <main className="flex min-h-0 flex-1 overflow-hidden p-3">
         {panels.inspectorVisible && (
           <>
             <Inspector width={panels.inspectorWidth} />
@@ -188,19 +188,25 @@ export function AppShell(): React.ReactElement {
         ) : (
           <div
             ref={sectionRef}
-            className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-3"
+            className="flex min-h-0 min-w-0 flex-1 flex-col"
           >
             <div className="card" style={{ height: videoHeight, flexShrink: 0 }}>
               <div className="card__header">
                 <span className="card__title">Vídeo</span>
                 <span className="card__subtitle">{videoInfo?.filename ?? 'sin cargar'}</span>
               </div>
-              <div
-                className="card__body"
-                style={{ backgroundColor: '#05070b', padding: videoSrc ? 0 : 12 }}
-              >
+              <div className="card__body" style={{ padding: 10 }}>
                 {videoSrc ? (
-                  <VideoPlayer />
+                  <div
+                    style={{
+                      height: '100%',
+                      borderRadius: 'var(--radius-sm)',
+                      overflow: 'hidden',
+                      backgroundColor: '#05070b',
+                    }}
+                  >
+                    <VideoPlayer />
+                  </div>
                 ) : (
                   <button className="empty-drop" onClick={() => void openVideoDialog()}>
                     <span className="empty-drop__title">Sin vídeo</span>

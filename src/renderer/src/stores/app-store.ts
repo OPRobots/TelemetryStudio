@@ -11,6 +11,11 @@ export interface VideoInfo {
 
 export type StreamState = 'idle' | 'streaming' | 'stopped';
 
+export interface SyncAnchor {
+  video_ms: number;
+  telemetry_ms: number;
+}
+
 interface AppState {
   // Vídeo
   videoPath: string | null;
@@ -36,6 +41,7 @@ interface AppState {
 
   // Sincronización
   syncOffsetMs: number;
+  syncAnchor: SyncAnchor | null;
 
   // Mensajes
   statusMessage: string;
@@ -57,6 +63,7 @@ interface AppState {
   setFrameCount: (count: number) => void;
 
   setSyncOffset: (ms: number) => void;
+  setSyncAnchor: (anchor: SyncAnchor | null) => void;
   setStatusMessage: (message: string) => void;
   setError: (message: string | null) => void;
 }
@@ -82,6 +89,7 @@ export const useAppStore = create<AppState>((set) => ({
   frameCount: 0,
 
   syncOffsetMs: 0,
+  syncAnchor: null,
 
   statusMessage: 'Listo',
   errorMessage: null,
@@ -103,6 +111,7 @@ export const useAppStore = create<AppState>((set) => ({
   setFrameCount: (count) => set({ frameCount: count }),
 
   setSyncOffset: (ms) => set({ syncOffsetMs: ms }),
+  setSyncAnchor: (anchor) => set({ syncAnchor: anchor }),
   setStatusMessage: (message) => set({ statusMessage: message }),
   setError: (message) => set({ errorMessage: message }),
 }));

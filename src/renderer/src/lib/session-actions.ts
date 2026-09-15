@@ -7,6 +7,7 @@ import type { SessionWidget } from '@core/types/session';
 import type { DashboardLayout, WidgetConfig } from '@core/types/layout';
 import { useAppStore } from '../stores/app-store';
 import { useLayoutStore } from '../stores/layout-store';
+import { applySyncAnchor } from './sync-actions';
 
 function basename(path: string): string {
   return path.split(/[\\/]/).pop() ?? '';
@@ -47,12 +48,12 @@ export async function loadSession(jsonPath: string): Promise<void> {
     if (videoPath) useAppStore.getState().setVideo(videoPath, videoPath);
   }
 
-  videoSynchronizer.setDriftOffset(session.sync.offset_ms);
-  useAppStore.getState().setSyncOffset(session.sync.offset_ms);
   videoSynchronizer.setPlaybackRate(session.sync.rate);
-  if (session.sync.anchor) {
-    videoSynchronizer.setAnchorPoint(session.sync.anchor[0], session.sync.anchor[1]);
-  }
+  applySyncAnchor(
+    session.sync.anchor
+      ? { video_ms: session.sync.anchor[0] * 1000, telemetry_ms: session.sync.anchor[1] }
+      : null
+  );
 
   const widgets: WidgetConfig[] = session.layout.widgets.map((w, i) => ({
     id: `session-widget-${i}`,
@@ -82,13 +83,12 @@ export async function loadSession(jsonPath: string): Promise<void> {
  * Construye y persiste la sesión actual.
  */
 export async function saveSession(name: string, outputDir: string): Promise<void> {
-  const { dataset, videoPath, videoInfo, syncOffsetMs, playbackRate } = useAppStore.getState();
+  const { dataset, videoPath, videoInfo, playbackRate, syncAnchor } = useAppStore.getState();
   if (!dataset) {
     useAppStore.getState().setStatusMessage('No hay telemetría para guardar');
     return;
   }
 
-  const anchor = videoSynchronizer.anchor;
   const widgets: SessionWidget[] = useLayoutStore.getState().widgets.map((w) => ({
     t: w.type,
     pos: [w.x, w.y],
@@ -106,8 +106,8 @@ export async function saveSession(name: string, outputDir: string): Promise<void
       resolution: [videoInfo?.width ?? 0, videoInfo?.height ?? 0],
     },
     {
-      offset_ms: syncOffsetMs,
-      anchor: anchor ? [anchor.video_ms / 1000, anchor.telemetry_ms] : null,
+      offset_ms: 0,
+      anchor: syncAnchor ? [syncAnchor.video_ms / 1000, syncAnchor.telemetry_ms] : null,
       rate: playbackRate,
     },
     widgets

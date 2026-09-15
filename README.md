@@ -44,8 +44,9 @@ npm run dev        # desarrollo con HMR
    diálogo; también se aceptan formatos `T:ms,campo:valor`.
 3. **Analizar**: los widgets se auto-configuran según los campos descubiertos.
    Reproduce el vídeo y las gráficas siguen la reproducción.
-4. **Sincronizar**: ajusta el offset de drift en la barra lateral o pulsa
-   "Alinear al inicio". El panel muestra el tiempo de telemetría actual.
+4. **Sincronizar**: con el vídeo cargado, pausa en el frame que marca el inicio y
+   pulsa **«Alinear aquí»** (ese frame pasa a ser `t=0` de la telemetría). El
+   timeline pasa a mostrar tiempo relativo. Usa **Reset** para deshacer.
 5. **Guardar sesión**: crea una carpeta con el JSON y el vídeo.
 
 ### Atajos de teclado

@@ -65,7 +65,9 @@ app.whenReady().then(async () => {
       return {
         rootChildren: root ? root.children.length : 0,
         hasEmptyDrop: !!document.querySelector('.empty-drop'),
-        hasInspector: document.body.innerText.toLowerCase().includes('sincronización'),
+        hasInspector: (document.querySelector('aside .card__title')?.textContent ?? '')
+          .toLowerCase()
+          .includes('campos'),
         hasStatusBar: !!document.querySelector('footer'),
         buttons: Array.from(document.querySelectorAll('button')).map((b) => b.textContent.trim()).slice(0, 20),
       };

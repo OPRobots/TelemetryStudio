@@ -1,14 +1,19 @@
+import { useState } from 'react';
 import { useAppStore } from '../../stores/app-store';
+import { useEventListener } from '../../hooks/useEventListener';
 import { videoSynchronizer } from '@core/video-synchronizer';
+import { alignHere, resetSync } from '../../lib/sync-actions';
 
 const SPEEDS = [0.25, 0.5, 1, 2];
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds)) return '00:00.000';
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  const ms = Math.floor((seconds % 1) * 1000);
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms
+  const sign = seconds < 0 ? '-' : '';
+  const abs = Math.abs(seconds);
+  const m = Math.floor(abs / 60);
+  const s = Math.floor(abs % 60);
+  const ms = Math.floor((abs % 1) * 1000);
+  return `${sign}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms
     .toString()
     .padStart(3, '0')}`;
 }
@@ -18,6 +23,16 @@ export function PlaybackControls(): React.ReactElement {
   const currentTime = useAppStore((s) => s.currentTime);
   const duration = useAppStore((s) => s.duration);
   const playbackRate = useAppStore((s) => s.playbackRate);
+  const anchor = useAppStore((s) => s.syncAnchor);
+  const [telemetryTime, setTelemetryTime] = useState(0);
+
+  useEventListener('sync:frame', ({ context }) => {
+    setTelemetryTime(context.viewTimestamp_ms);
+  });
+
+  const anchorSec = anchor ? anchor.video_ms / 1000 : 0;
+  const relative = currentTime - anchorSec;
+  const relativeTotal = Math.max((duration || 0) - anchorSec, 0);
 
   const togglePlay = (): void => {
     if (isPlaying) videoSynchronizer.pause();
@@ -49,33 +64,54 @@ export function PlaybackControls(): React.ReactElement {
       </button>
 
       <span className="mono ml-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-        {formatTime(currentTime)}
+        {formatTime(relative)}
         <span style={{ color: 'var(--text-disabled)' }}> / </span>
-        {formatTime(duration)}
+        {formatTime(relativeTotal)}
       </span>
 
-      <div className="ml-auto flex items-center gap-1">
-        {SPEEDS.map((rate) => {
-          const active = playbackRate === rate;
-          return (
-            <button
-              key={rate}
-              onClick={() => videoSynchronizer.setPlaybackRate(rate)}
-              className="toolbar-button toolbar-button--compact"
-              style={
-                active
-                  ? {
-                      background: 'var(--accent-soft)',
-                      borderColor: 'var(--accent-border)',
-                      color: 'var(--accent)',
-                    }
-                  : undefined
-              }
-            >
-              {rate}x
-            </button>
-          );
-        })}
+      <span className="sync-time mono ml-2 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+        t {telemetryTime.toFixed(0)} ms
+      </span>
+
+      <div className="ml-auto flex items-center gap-2">
+        <button
+          className="toolbar-button toolbar-button--compact"
+          onClick={() => alignHere()}
+          title="Usa el frame actual como t=0 de la telemetría"
+        >
+          Alinear aquí
+        </button>
+        <button
+          className="toolbar-button toolbar-button--compact"
+          onClick={() => resetSync()}
+          disabled={!anchor}
+        >
+          Reset
+        </button>
+
+        <div className="ml-1 flex items-center gap-1">
+          {SPEEDS.map((rate) => {
+            const active = playbackRate === rate;
+            return (
+              <button
+                key={rate}
+                onClick={() => videoSynchronizer.setPlaybackRate(rate)}
+                className="toolbar-button toolbar-button--compact"
+                style={
+                  active
+                    ? {
+                        background: 'var(--accent-soft)',
+                        borderColor: 'var(--accent-border)',
+                        color: 'var(--accent)',
+                      }
+                    : undefined
+                }
+              >
+                {rate}x
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

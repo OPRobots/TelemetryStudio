@@ -599,47 +599,22 @@ input[type='range']::-moz-range-thumb {
 }
 
 /* ============================================================
-   Divisores (splitters)
+   Divisores (splitters) — invisibles, solo cambian el cursor
    ============================================================ */
 
 .splitter {
-  position: relative;
   flex-shrink: 0;
   padding: 0;
   border: none;
   background: transparent;
 }
 .splitter--vertical {
-  width: 7px;
+  width: 10px;
   cursor: col-resize;
 }
 .splitter--horizontal {
-  height: 7px;
+  height: 10px;
   cursor: row-resize;
-}
-.splitter::after {
-  content: '';
-  position: absolute;
-  background: var(--bg-border);
-  transition: background-color 130ms ease;
-}
-.splitter--vertical::after {
-  top: 8px;
-  bottom: 8px;
-  left: 50%;
-  width: 1px;
-  transform: translateX(-50%);
-}
-.splitter--horizontal::after {
-  left: 8px;
-  right: 8px;
-  top: 50%;
-  height: 1px;
-  transform: translateY(-50%);
-}
-.splitter:hover::after,
-.splitter:focus-visible::after {
-  background: var(--accent);
 }
 .splitter:focus-visible {
   outline: none;

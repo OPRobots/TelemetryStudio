@@ -46,6 +46,13 @@ describe('VideoSynchronizer', () => {
     expect(sync.mapTime(1000)).toBe(1000);
   });
 
+  it('maps the anchored frame to telemetry t=0', () => {
+    sync.setAnchorPoint(3000, 0);
+    expect(sync.mapTime(3000)).toBe(0);
+    expect(sync.mapTime(5000)).toBe(2000);
+    expect(sync.mapTime(2000)).toBe(-1000);
+  });
+
   it('tracks drift statistics', () => {
     expect(sync.averageDrift).toBe(0);
     expect(sync.maxDrift).toBe(0);

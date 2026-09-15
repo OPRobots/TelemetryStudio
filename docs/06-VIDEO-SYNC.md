@@ -6,6 +6,13 @@
 > ese evento. El timestamp de telemetría proviene del primer campo de cada línea
 > Serial (ver `docs/05-PLUGIN-SYSTEM.md`). El mapeo es:
 > `telemetry_ms = mediaTime_ms + offset_ms − anchor.video_ms + anchor.telemetry_ms`.
+>
+> **Alineado por frame (UI)**: el botón **«Alinear aquí»** (barra de controles del
+> vídeo) fija `anchor = { video_ms: frame actual, telemetry_ms: 0 }`, de modo que
+> ese frame pasa a ser el **t=0 de la telemetría**. A partir de ahí el timeline
+> muestra **tiempo relativo** (0 = punto alineado) y el muestreo de gráficas usa
+> ese origen. «Reset» elimina el anchor. La lógica vive en
+> `src/renderer/src/lib/sync-actions.ts`.
 
 ## El Problema del Drift
 

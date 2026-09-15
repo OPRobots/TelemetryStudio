@@ -18,10 +18,10 @@ export function WidgetWrapper({
   return (
     <div className="widget-card flex h-full w-full flex-col overflow-hidden">
       <div
-        className="flex items-center justify-between gap-2 px-2.5 py-1.5"
+        className="flex items-center justify-between gap-3 px-3.5 py-2"
         style={{ borderBottom: '1px solid var(--bg-border)' }}
       >
-        <div className="flex min-w-0 items-baseline gap-2">
+        <div className="flex min-w-0 items-baseline gap-2.5">
           <span className="truncate text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
             {title}
           </span>
@@ -29,7 +29,7 @@ export function WidgetWrapper({
             {type}
           </span>
         </div>
-        <div className="flex flex-shrink-0 items-center gap-0.5">
+        <div className="flex flex-shrink-0 items-center gap-1">
           {onConfigure && (
             <button onClick={onConfigure} className="icon-button" title="Configurar">
               ⚙

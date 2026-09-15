@@ -136,6 +136,7 @@ oprobots-telemetry-studio/
 │   │       │   ├── auto-layout.ts       # Auto-configura widgets según el schema
 │   │       │   ├── serial-ingest.ts     # Ingesta Serial → TelemetryStore
 │   │       │   ├── session-actions.ts   # Abrir/guardar sesión
+│   │       │   ├── sync-actions.ts      # Alinear/restablecer la sync (anchor)
 │   │       │   └── comparison-sync.ts   # Sincronizador del panel de comparación
 │   │       ├── stores/
 │   │       │   ├── app-store.ts         # Zustand: estado global

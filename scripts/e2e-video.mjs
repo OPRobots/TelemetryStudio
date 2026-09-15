@@ -111,7 +111,8 @@ app.whenReady().then(async () => {
 
     const syncState = await win.webContents.executeJavaScript(`(() => {
       const text = document.body.innerText;
-      const m = text.match(/t telemetr[íi]a\\s*:?\\s*([\\d.]+)\\s*ms/);
+      const el = document.querySelector('.sync-time');
+      const m = el ? el.textContent.match(/([\\d.]+)/) : null;
       const footer = document.querySelector('footer');
       return {
         telemetryTimeMs: m ? Number(m[1]) : -1,
@@ -119,14 +120,26 @@ app.whenReady().then(async () => {
       };
     })()`);
 
-    console.log('E2E_VIDEO_RESULT ' + JSON.stringify({ ...videoInfo, ...syncState }));
+    // Alinear aquí: el frame actual (1.0s) pasa a ser t=0 de la telemetría
+    await win.webContents.executeJavaScript(clickByText('Alinear aquí'));
+    await new Promise((r) => setTimeout(r, 800));
+    const aligned = await win.webContents.executeJavaScript(`(() => {
+      const el = document.querySelector('.sync-time');
+      const m = el ? el.textContent.match(/([\\d.]+)/) : null;
+      return { telemetryTimeMs: m ? Number(m[1]) : -1 };
+    })()`);
+
+    console.log(
+      'E2E_VIDEO_RESULT ' + JSON.stringify({ ...videoInfo, ...syncState, aligned })
+    );
     if (errors.length > 0) console.log('E2E_VIDEO_ERRORS ' + JSON.stringify(errors.slice(0, 20)));
 
     const durationOk = videoInfo.duration > 0;
     const syncedOk = syncState.telemetryTimeMs >= 900 && syncState.telemetryTimeMs <= 1200;
+    const alignedOk = aligned.telemetryTimeMs >= -50 && aligned.telemetryTimeMs <= 50;
     const footerOk = syncState.footerText.includes('mock_video.mp4');
 
-    const ok = durationOk && syncedOk && footerOk && errors.length === 0;
+    const ok = durationOk && syncedOk && alignedOk && footerOk && errors.length === 0;
     console.log(ok ? 'E2E_VIDEO_OK' : 'E2E_VIDEO_FAIL');
 
     if (sendTimer) clearInterval(sendTimer);
