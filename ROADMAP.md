@@ -57,7 +57,7 @@ npm run test                   # ✅ 2 tests pasan
 
 ---
 
-## FASE 1: Core Data Engine (2 semanas) ✅ COMPLETADA
+## FASE 1: Core Data Engine (2 semanas) ✅ COMPLETADA — Commit `c1de566`
 
 ### Objetivo
 Implementar el motor de datos central: EventBus, TelemetryStore, búsqueda binaria y modelo de tipos.
