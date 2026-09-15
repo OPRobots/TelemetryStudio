@@ -413,8 +413,8 @@ Los PoCs se encuentran en `pocs/` como referencia de funcionamiento.
 | PoC | Directorio | Estado |
 |---|---|---|
 | PoC 1: Serial → Widget | `pocs/01-serial-widget/` | ✅ Validado |
-| PoC 2: Video Sync | `pocs/02-video-sync/` | ⏳ En progreso |
-| PoC 3: Video Export | `pocs/03-video-export/` | ⏳ Pendiente |
+| PoC 2: Video Sync | `pocs/02-video-sync/` | ✅ Funcional |
+| PoC 3: Video Export | `pocs/03-video-export/` | ✅ Funcional |
 | PoC 4: Packaging | `pocs/04-packaging/` | ⏳ Pendiente |
 
 Ver `docs/13-POC-TESTS.md` para los 4 PoCs detallados con criterios de éxito.
@@ -439,7 +439,7 @@ Ver `docs/13-POC-TESTS.md` para los 4 PoCs detallados con criterios de éxito.
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |---|---|---|---|
 | `serialport` falla en packaging | Alta | Crítico | PoC 4 primero; fallback a Web Serial API |
-| WebCodecs no soportado en Electron | Media | Alto | Fallback a FFmpeg child process |
+| WebCodecs no soportado en Electron | Media | Bajo | Resuelto: fallback a raw RGBA + FFmpeg libx264 (PoC 3) |
 | LTTB bloquea UI con >1M puntos | Media | Medio | Ejecutar en Worker Thread |
 | macOS notarization rechazada | Baja | Alto | Seguir guía Apple exactamente |
 | encodeQueueSize overflow | Media | Medio | Check `> 2` antes de encode (P1) |

@@ -87,10 +87,20 @@ console.log(`Drift: ${drift.toFixed(1)}ms`);
 
 ---
 
-## PoC 3: Widget Canvas Export con WebCodecs
+## PoC 3: Widget Canvas Export — ✅ COMPLETADO
 
 ### Objetivo
-Capturar el canvas de un widget (uPlot o Canvas custom) y composar frame-a-frame en un WebM de 30fps usando WebCodecs API + Mediabunny.
+Capturar el canvas de un widget (uPlot) y codificar frame-a-frame en MP4 usando OffscreenCanvas + FFmpeg (raw RGBA → libx264).
+
+### Implementación final
+- OffscreenCanvas 1920×1080 captura frames renderizados por uPlot
+- Raw RGBA pixels enviados via IPC al Main Process
+- FFmpeg child process codifica con libx264 (`-crf 18 -preset fast`)
+- Mock de 60s (1800 frames) para testing
+- Progress bar con frame actual, velocidad y memoria
+
+### Nota técnica
+WebCodecs `VideoEncoder` requiere GPU process inicializado en Electron. En entornos headless falla. Se optó por raw RGBA + FFmpeg como alternativa más robusta y portable.
 
 ### Setup
 - Widget uPlot con datos de telemetría renderizados
