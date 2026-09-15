@@ -14,7 +14,7 @@ import { SaveSessionDialog } from '../dialogs/SaveSessionDialog';
 import { SessionBrowserDialog } from '../dialogs/SessionBrowserDialog';
 import { ComparisonDialog } from '../dialogs/ComparisonDialog';
 import { ExportDialog } from '../dialogs/ExportDialog';
-import { openVideoDialog, openSessionDialog, loadSession } from '../../lib/session-actions';
+import { openVideoDialog, openSessionDialog, loadSession, loadVideoFile } from '../../lib/session-actions';
 import { serialIngest } from '../../lib/serial-ingest';
 import { useAppStore } from '../../stores/app-store';
 import { useLayoutStore } from '../../stores/layout-store';
@@ -121,7 +121,9 @@ export function AppShell(): React.ReactElement {
     if (!path) return;
 
     if (/\.(mp4|webm|mov|mkv)$/i.test(path)) {
-      useAppStore.getState().setVideo(path, path);
+      void loadVideoFile(path).catch((err) =>
+        useAppStore.getState().setError((err as Error).message)
+      );
     } else if (/\.json$/i.test(path)) {
       void loadSession(path).catch((err) =>
         useAppStore.getState().setError((err as Error).message)

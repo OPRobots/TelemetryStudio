@@ -23,6 +23,7 @@ app.commandLine.appendSwitch('disable-gpu');
 app.whenReady().then(async () => {
   // Stubs mínimos para el IPC que el renderer invoca al arrancar.
   ipcMain.handle('layout:loadAll', () => []);
+  ipcMain.handle('video:prepare', (_e, p) => ({ success: true, path: p, transcoded: false }));
 
   const win = new BrowserWindow({
     show: false,

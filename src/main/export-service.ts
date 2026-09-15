@@ -3,26 +3,11 @@ import { spawn, type ChildProcess } from 'child_process';
 import { existsSync } from 'fs';
 import { mkdir, copyFile } from 'fs/promises';
 import { join } from 'path';
-import { buildFfmpegArgs, ffmpegBinaryName, type FfmpegArgsInput } from '../shared/export-args';
+import { buildFfmpegArgs, type FfmpegArgsInput } from '../shared/export-args';
+import { resolveFfmpegPath } from './ffmpeg';
 
 let ffmpeg: ChildProcess | null = null;
 let outputPath = '';
-
-/**
- * Resuelve el binario de FFmpeg: primero el empaquetado en `resources/bin`
- * (sidecar), y si no existe, el `ffmpeg` del PATH del sistema.
- */
-export function resolveFfmpegPath(): string {
-  const name = ffmpegBinaryName();
-  const candidates = [
-    join(process.resourcesPath ?? '', 'bin', name),
-    join(app.getAppPath(), 'resources', 'bin', name),
-  ];
-  for (const candidate of candidates) {
-    if (candidate && existsSync(candidate)) return candidate;
-  }
-  return 'ffmpeg';
-}
 
 /**
  * Registra los handlers IPC de exportación de vídeo.

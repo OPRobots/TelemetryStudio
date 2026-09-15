@@ -222,13 +222,22 @@ en el diálogo de configuración. No hay arrastre ni redimensionado con el rató
 **Estado**: `WidgetHost` guarda el frame actual en estado de React, provocando un
 re-render por frame. Con pocos widgets es fluido; si el número crece, conviene
 migrar a actualizaciones imperativas por ref.
-
 ### F-06 — Empaquetado multiplataforma
 
 **Estado**: `electron-builder.yml` configurado (extraResources de FFmpeg y udev),
 icono placeholder e workflow de CI preparado. Build Linux verificado
 (`--dir` arranca; AppImage ~109 MB, deb ~75 MB con el PoC 4). Windows y macOS
 quedan como build manual hasta disponer de repo remoto/CI o de esas plataformas.
+
+### F-07 — Vídeos HEVC/H.265 se convierten automáticamente
+
+**Estado**: resuelto. Chromium (Electron) **no decodifica HEVC/H.265** en Linux
+(`canPlayType('...hvc1...')` devuelve vacío), por lo que los vídeos grabados con
+móvil en ese códec cargaban metadata (`duration`) pero con `videoWidth=0` y sin
+imagen. Al cargar un vídeo, `src/main/video-service.ts` lo detecta con `ffprobe`
+y, si el códec no es reproducible (`isPlayableVideoCodec`), lo **transcodea a
+H.264** (`buildTranscodeArgs`) antes de reproducirlo. La autorrotación de FFmpeg
+corrige además los vídeos verticales (rotación en metadata).
 
 ---
 

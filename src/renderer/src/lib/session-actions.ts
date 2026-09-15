@@ -13,12 +13,36 @@ function basename(path: string): string {
   return path.split(/[\\/]/).pop() ?? '';
 }
 
+/**
+ * Prepara un vídeo para su reproducción. Si su códec no está soportado por
+ * Chromium (p. ej. HEVC/H.265), lo transcodea a H.264 con FFmpeg.
+ */
+async function prepareVideoPath(path: string): Promise<string> {
+  const api = window.api;
+  if (!api?.videoPrepare) return path;
+  useAppStore.getState().setStatusMessage('Preparando vídeo…');
+  try {
+    const res = await api.videoPrepare(path);
+    useAppStore.getState().setStatusMessage(res.transcoded ? 'Vídeo convertido a H.264' : '');
+    return res.path || path;
+  } catch {
+    useAppStore.getState().setStatusMessage('');
+    return path;
+  }
+}
+
+/** Carga un vídeo (transcodificando si es necesario) en el reproductor. */
+export async function loadVideoFile(path: string): Promise<void> {
+  const playable = await prepareVideoPath(path);
+  useAppStore.getState().setVideo(playable, playable);
+}
+
 export async function openVideoDialog(): Promise<void> {
   const api = window.api;
   if (!api) return;
   const res = await api.dialogOpenVideo();
   if (res.canceled || !res.filePath) return;
-  useAppStore.getState().setVideo(res.filePath, res.filePath);
+  await loadVideoFile(res.filePath);
 }
 
 export async function openSessionDialog(): Promise<void> {
@@ -45,7 +69,7 @@ export async function loadSession(jsonPath: string): Promise<void> {
 
   if (session.video.file) {
     const videoPath = await sessionManager.resolveVideoPath(jsonPath, session.video.file);
-    if (videoPath) useAppStore.getState().setVideo(videoPath, videoPath);
+    if (videoPath) await loadVideoFile(videoPath);
   }
 
   videoSynchronizer.setPlaybackRate(session.sync.rate);

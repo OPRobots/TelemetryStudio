@@ -32,6 +32,12 @@ const api = {
     return () => ipcRenderer.removeListener('menu:action', handler);
   },
 
+  // === Vídeo ===
+  videoPrepare: (
+    path: string
+  ): Promise<{ success: boolean; path: string; transcoded: boolean; error?: string }> =>
+    ipcRenderer.invoke('video:prepare', path),
+
   // === Dialogs ===
   dialogOpenVideo: (): Promise<DialogResult> => ipcRenderer.invoke('dialog:openVideo'),
   dialogOpenSession: (): Promise<DialogResult> => ipcRenderer.invoke('dialog:openSession'),

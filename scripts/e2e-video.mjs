@@ -17,6 +17,7 @@ const mockVideo = join(root, 'pocs/02-video-sync/examples/mock_video.mp4');
 
 const errors = [];
 let sendTimer = null;
+let prepareCalls = 0;
 
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-gpu');
@@ -49,6 +50,10 @@ function registerMocks(win) {
     return { success: true };
   });
   ipcMain.handle('dialog:openVideo', () => ({ canceled: false, filePath: mockVideo }));
+  ipcMain.handle('video:prepare', () => {
+    prepareCalls += 1;
+    return { success: true, path: mockVideo, transcoded: false };
+  });
 }
 
 app.whenReady().then(async () => {
@@ -144,7 +149,8 @@ app.whenReady().then(async () => {
     })()`);
 
     console.log(
-      'E2E_VIDEO_RESULT ' + JSON.stringify({ ...videoInfo, ...syncState, aligned, scrubTime })
+      'E2E_VIDEO_RESULT ' +
+        JSON.stringify({ ...videoInfo, ...syncState, aligned, scrubTime, prepareCalls })
     );
     if (errors.length > 0) console.log('E2E_VIDEO_ERRORS ' + JSON.stringify(errors.slice(0, 20)));
 
@@ -153,8 +159,10 @@ app.whenReady().then(async () => {
     const syncedOk = syncState.telemetryTimeMs >= 900 && syncState.telemetryTimeMs <= 1200;
     const alignedOk = aligned.telemetryTimeMs >= -50 && aligned.telemetryTimeMs <= 50;
     const footerOk = syncState.footerText.includes('mock_video.mp4');
+    const prepareOk = prepareCalls >= 1;
 
-    const ok = durationOk && scrubOk && syncedOk && alignedOk && footerOk && errors.length === 0;
+    const ok =
+      durationOk && scrubOk && syncedOk && alignedOk && footerOk && prepareOk && errors.length === 0;
     console.log(ok ? 'E2E_VIDEO_OK' : 'E2E_VIDEO_FAIL');
 
     if (sendTimer) clearInterval(sendTimer);

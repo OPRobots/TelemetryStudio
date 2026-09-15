@@ -50,6 +50,7 @@ function prepareFixtures() {
 function registerMocks(win, fixtures) {
   let sessionDialogCount = 0;
   ipcMain.handle('layout:loadAll', () => []);
+  ipcMain.handle('video:prepare', (_e, p) => ({ success: true, path: p, transcoded: false }));
   ipcMain.handle('session:getVideoPath', (_e, jsonPath, file) => join(dirname(jsonPath), file));
   ipcMain.handle('file:read', (_e, jsonPath) => ({
     success: true,

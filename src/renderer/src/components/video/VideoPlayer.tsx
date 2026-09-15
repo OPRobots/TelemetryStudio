@@ -80,6 +80,14 @@ export function VideoPlayer({
       if (primary) setPlaybackRate(video.playbackRate);
     };
     const onSeeked = (): void => sync.refresh();
+    const onError = (): void => {
+      const code = video.error?.code;
+      const message =
+        code === 4
+          ? 'No se pudo reproducir el vídeo: códec no soportado'
+          : `Error al reproducir el vídeo (código ${code ?? 'desconocido'})`;
+      useAppStore.getState().setError(message);
+    };
 
     video.addEventListener('loadedmetadata', onLoadedMetadata);
     video.addEventListener('play', onPlay);
@@ -88,6 +96,7 @@ export function VideoPlayer({
     video.addEventListener('timeupdate', onTimeUpdate);
     video.addEventListener('ratechange', onRateChange);
     video.addEventListener('seeked', onSeeked);
+    video.addEventListener('error', onError);
 
     // Si los metadatos ya están cargados (caché), dispararlos manualmente
     if (video.readyState >= 1) onLoadedMetadata();
@@ -100,6 +109,7 @@ export function VideoPlayer({
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('ratechange', onRateChange);
       video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('error', onError);
       sync.detach();
     };
   }, [sync, setVideoInfo, setVideoElementState, setPlaybackRate, onFpsDetected, videoPath, primary]);

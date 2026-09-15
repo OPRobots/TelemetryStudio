@@ -50,7 +50,9 @@ oprobots-telemetry-studio/
 │   │   ├── index.ts                 # Entry point: app lifecycle, window creation
 │   │   ├── app-menu.ts              # Menú nativo (Archivo/Datos/Ver/Ayuda)
 │   │   ├── ipc-handlers.ts          # Registro de todos los ipcMain.handle
+│   │   ├── ffmpeg.ts                # Resolución de los binarios ffmpeg/ffprobe
 │   │   ├── serial-service.ts        # Servicio SerialPort (apertura, streaming, cierre)
+│   │   ├── video-service.ts         # Prepara vídeos (transcode HEVC→H.264)
 │   │   └── export-service.ts        # Exportación de vídeo con FFmpeg (raw RGBA)
 │   │
 │   ├── preload/                     # ═══ PRELOAD SCRIPT ═══
@@ -146,7 +148,9 @@ oprobots-telemetry-studio/
 │   │           └── globals.css          # Tailwind + variables de color
 │   │
 │   └── shared/                      # ═══ SHARED (Main + Renderer) ═══
-│       └── export-args.ts           # Construcción de argumentos de FFmpeg (puro)
+│       ├── export-args.ts           # Construcción de argumentos de FFmpeg (puro)
+│       ├── video-codecs.ts          # Códecs reproducibles (puro)
+│       └── video-transcode.ts       # Argumentos de conversión a H.264 (puro)
 │
 ├── tests/                           # ═══ TESTS (Vitest) ═══
 │   ├── unit/

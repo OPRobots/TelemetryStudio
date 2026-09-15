@@ -3,6 +3,7 @@ import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import { registerIpcHandlers } from './ipc-handlers';
 import { registerExportHandlers } from './export-service';
+import { registerVideoHandlers } from './video-service';
 import { buildAppMenu } from './app-menu';
 
 function createWindow(): void {
@@ -25,6 +26,7 @@ function createWindow(): void {
 
   registerIpcHandlers(mainWindow);
   registerExportHandlers(mainWindow);
+  registerVideoHandlers();
   buildAppMenu(mainWindow);
 
   mainWindow.on('ready-to-show', () => {

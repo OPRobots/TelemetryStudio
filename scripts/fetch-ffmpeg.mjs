@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * Descarga un binario estático de FFmpeg a `resources/bin/` para empaquetarlo
- * como sidecar (portable, sin depender del FFmpeg del sistema).
+ * Descarga binarios estáticos de FFmpeg (ffmpeg + ffprobe) a `resources/bin/`
+ * para empaquetarlos como sidecar (portable, sin depender del sistema).
  *
  * Uso: node scripts/fetch-ffmpeg.mjs
  *
  * Notas:
- * - Requiere conexión a Internet (solo se ejecuta al preparar el empaquetado).
- * - Usa `tar` (Linux/macOS) o PowerShell (Windows) para extraer.
- * - El binario resultante NO se versiona (ver .gitignore).
+ * - Requiere conexión a Internet (solo al preparar el empaquetado).
+ * - Usa `tar`/`unzip` del sistema.
+ * - Los binarios NO se versionan (ver .gitignore).
  */
 import { createWriteStream } from 'fs';
-import { chmod, mkdir, rm } from 'fs/promises';
+import { chmod, mkdir, rm, copyFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -23,78 +23,88 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const root = join(currentDir, '..');
 const binDir = join(root, 'resources', 'bin');
 
-const SOURCES = {
+const PLATFORMS = {
   linux: {
-    url: 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz',
-    archive: 'ffmpeg-linux.tar.xz',
-    extract: (archive, dest) => {
-      // El tar contiene una carpeta ffmpeg-*-amd64-static con el binario
-      spawnSync('tar', ['-xf', archive, '-C', dest, '--strip-components=1', '--wildcards', '*/ffmpeg'], { stdio: 'inherit' });
-    },
-    binary: 'ffmpeg',
+    binaries: ['ffmpeg', 'ffprobe'],
+    artifacts: [
+      {
+        url: 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz',
+        archive: 'ffmpeg-linux.tar.xz',
+        extract: (archive, dest) =>
+          spawnSync(
+            'tar',
+            ['-xf', archive, '-C', dest, '--strip-components=1', '--wildcards', '*/ffmpeg', '*/ffprobe'],
+            { stdio: 'inherit' }
+          ),
+      },
+    ],
   },
   darwin: {
-    url: 'https://evermeet.cx/ffmpeg/getrelease/zip',
-    archive: 'ffmpeg-mac.zip',
-    extract: (archive, dest) => {
-      spawnSync('unzip', ['-o', archive, '-d', dest], { stdio: 'inherit' });
-    },
-    binary: 'ffmpeg',
+    binaries: ['ffmpeg', 'ffprobe'],
+    artifacts: [
+      {
+        url: 'https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip',
+        archive: 'ffmpeg-mac.zip',
+        extract: (archive, dest) => spawnSync('unzip', ['-o', archive, '-d', dest], { stdio: 'inherit' }),
+      },
+      {
+        url: 'https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip',
+        archive: 'ffprobe-mac.zip',
+        extract: (archive, dest) => spawnSync('unzip', ['-o', archive, '-d', dest], { stdio: 'inherit' }),
+      },
+    ],
   },
   win32: {
-    url: 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip',
-    archive: 'ffmpeg-win.zip',
-    extract: (archive, dest) => {
-      spawnSync('unzip', ['-o', archive, '-d', dest], { stdio: 'inherit' });
-    },
-    binary: 'ffmpeg.exe',
+    binaries: ['ffmpeg.exe', 'ffprobe.exe'],
+    artifacts: [
+      {
+        url: 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip',
+        archive: 'ffmpeg-win.zip',
+        extract: (archive, dest) => spawnSync('unzip', ['-o', archive, '-d', dest], { stdio: 'inherit' }),
+      },
+    ],
   },
 };
 
+function findFile(dir, name) {
+  const res = spawnSync('find', [dir, '-name', name, '-type', 'f'], { encoding: 'utf-8' });
+  return res.stdout?.trim().split('\n')[0] || null;
+}
+
+async function download(url, archivePath) {
+  console.log(`Descargando ${url}…`);
+  const response = await fetch(url);
+  if (!response.ok || !response.body) throw new Error(`HTTP ${response.status} al descargar ${url}`);
+  await pipeline(Readable.fromWeb(response.body), createWriteStream(archivePath));
+}
+
 async function main() {
-  const source = SOURCES[process.platform];
-  if (!source) {
+  const platform = PLATFORMS[process.platform];
+  if (!platform) {
     console.error(`Plataforma no soportada: ${process.platform}`);
     process.exit(1);
   }
 
   await mkdir(binDir, { recursive: true });
-  const archivePath = join(binDir, source.archive);
 
-  console.log(`Descargando FFmpeg para ${process.platform}…`);
-  const response = await fetch(source.url);
-  if (!response.ok || !response.body) {
-    console.error(`No se pudo descargar: HTTP ${response.status}`);
-    process.exit(1);
+  for (const artifact of platform.artifacts) {
+    const archivePath = join(binDir, artifact.archive);
+    await download(artifact.url, archivePath);
+    artifact.extract(archivePath, binDir);
+    await rm(archivePath, { force: true }).catch(() => undefined);
   }
-  await pipeline(Readable.fromWeb(response.body), createWriteStream(archivePath));
 
-  console.log('Extrayendo…');
-  source.extract(archivePath, binDir);
-
-  // Buscar el binario en subcarpetas (los ZIP de Windows/macOS suelen anidar)
-  const target = join(binDir, source.binary);
-  if (!existsSync(target)) {
-    const found = findBinary(binDir, source.binary);
-    if (found) {
-      spawnSync('cp', [found, target]);
+  for (const name of platform.binaries) {
+    let target = join(binDir, name);
+    if (!existsSync(target)) {
+      const found = findFile(binDir, name);
+      if (found) await copyFile(found, target);
     }
+    if (existsSync(target)) await chmod(target, 0o755);
+    else console.warn(`Aviso: no se encontró ${name}`);
   }
 
-  await rm(archivePath, { force: true }).catch(() => undefined);
-  if (existsSync(target)) {
-    await chmod(target, 0o755);
-    console.log(`FFmpeg listo en ${target}`);
-  } else {
-    console.error('No se encontró el binario de FFmpeg tras extraer.');
-    process.exit(1);
-  }
-}
-
-function findBinary(dir, name) {
-  const resultado = spawnSync('find', [dir, '-name', name, '-type', 'f'], { encoding: 'utf-8' });
-  const first = resultado.stdout?.trim().split('\n')[0];
-  return first || null;
+  console.log(`FFmpeg listo en ${binDir}`);
 }
 
 main().catch((err) => {

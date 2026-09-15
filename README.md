@@ -38,7 +38,9 @@ npm run dev        # desarrollo con HMR
 
 ## Uso
 
-1. **Abrir vídeo**: carga el `.mp4` de la ejecución.
+1. **Abrir vídeo**: carga el `.mp4` de la ejecución. Se recomienda **H.264**;
+   si el vídeo usa un códec no soportado por Chromium (p. ej. **HEVC/H.265**,
+   habitual en móviles) se **convierte automáticamente a H.264** con FFmpeg.
 2. **Conectar Serial**: elige el puerto y el baud rate. Si el robot envía CSV
    posicional (`timestamp,accX,...`), ajusta los nombres de columna en el
    diálogo; también se aceptan formatos `T:ms,campo:valor`.
