@@ -223,10 +223,12 @@ en el diálogo de configuración. No hay arrastre ni redimensionado con el rató
 re-render por frame. Con pocos widgets es fluido; si el número crece, conviene
 migrar a actualizaciones imperativas por ref.
 
-### F-06 — Empaquetado de la app de producción pendiente
+### F-06 — Empaquetado multiplataforma
 
-**Estado**: PoC 4 validó el empaquetado (Linux OK, macOS probado por el usuario).
-La app de producción aún no ha sido empaquetada/probada en las 3 plataformas.
+**Estado**: `electron-builder.yml` configurado (extraResources de FFmpeg y udev),
+icono placeholder e workflow de CI preparado. Build Linux verificado
+(`--dir` arranca; AppImage ~109 MB, deb ~75 MB con el PoC 4). Windows y macOS
+quedan como build manual hasta disponer de repo remoto/CI o de esas plataformas.
 
 ---
 

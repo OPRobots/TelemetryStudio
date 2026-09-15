@@ -107,5 +107,5 @@ Zustand para estado de UI (layout, settings, widget active). EventBus custom par
 | Build | electron-vite | 2.x |
 | Package | electron-builder | 25.x |
 | Native | serialport (C++ binding) | 13.x |
-| Video Export | WebCodecs API + Mediabunny | Browser native + 1.x |
-| Testing | Vitest + Playwright | 2.x |
+| Video Export | FFmpeg (sidecar) + Canvas 2D | raw RGBA por stdin |
+| Testing | Vitest + harness Electron propio | 3.x |

@@ -145,7 +145,7 @@ feat(widgets): Añade widget TimeSeriesChart con integración uPlot
 
 ### Framework
 - **Vitest** para unit tests e integration tests
-- **Playwright** para e2e tests (Fase 9)
+- **Tests e2e**: harness Electron propio en `scripts/` (`npm run e2e`), sin Playwright
 
 ### Cobertura Objetivo
 - Core (EventBus, TelemetryStore, binary search, LTTB, ComparisonManager): **80%**
@@ -263,12 +263,12 @@ npm run build:win    # Build Windows (NSIS + portable)
 | Fase 1: Core Data Engine | ✅ Completada | `c1de566` |
 | Fase 2: Serial UART + JSON Parser | ✅ Completada | `f5c1510` |
 | Fase 3: Video Sync | ✅ Completada | `1adfe1f` |
-| Fase 4: Session Manager | 🟡 Parcial (export/import de sesión) | `1adfe1f` |
-| Fase 5: Widgets + Comparación | ✅ Completada | `pendiente` |
+| Fase 4: Session Manager | ✅ Completada | `e26db2c` |
+| Fase 5: Widgets + Comparación | ✅ Completada | `faa8ec7` |
 | Fase 6: Layout Manager | ✅ Completada | `1adfe1f` |
-| Fase 7: Export para Redes | ✅ Completada | `pendiente` |
-| Fase 8: Packaging | 🟡 Build Linux OK; Windows/macOS manual | `25f1877` |
-| Fase 9: Polish + E2E | ✅ Completada | `pendiente` |
+| Fase 7: Export para Redes | ✅ Completada | `c1117a7` |
+| Fase 8: Packaging | 🟡 Build Linux OK; Windows/macOS manual | `dd0f042` |
+| Fase 9: Polish + E2E | ✅ Completada | `7853030` |
 | PoC 1: Serial → Widget | ✅ Validado (hardware real) | `e89a14c` |
 | PoC 2: Video Sync | ✅ Funcional | `8ee0cd5`, `5f6adde` |
 | PoC 3: Video Export | ✅ Funcional | `ddd9354` |

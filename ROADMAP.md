@@ -381,9 +381,7 @@ Pulido final, testing integral, documentación de usuario.
 
 ### Validación
 ```bash
-npm run test:e2e               # Tests e2e pasan
-npm run test                   # Unit tests pasan
-npm run typecheck              # Sin errores TS
+npm run verify                 # lint + typecheck + tests + build + smoke + e2e
 # App empaquetada probada manualmente en las 3 plataformas
 ```
 
