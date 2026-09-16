@@ -44,3 +44,28 @@ export function columnsFromPixels(px: number, containerWidth: number, gap: numbe
 export function rowsFromPixels(px: number, gap: number): number {
   return (px + gap) / (ROW_UNIT + gap);
 }
+
+/**
+ * Empaqueta una lista ordenada de widgets en filas de 12 columnas (como un grid
+ * clásico). Cada widget ocupa `clampWidth(width)` columnas; cuando uno no cabe en
+ * la fila actual, se abre una fila nueva.
+ */
+export function packWidgetRows<T extends { width: number }>(items: T[]): T[][] {
+  const rows: T[][] = [];
+  let current: T[] = [];
+  let used = 0;
+
+  for (const item of items) {
+    const cols = clampWidth(item.width);
+    if (current.length > 0 && used + cols > WIDGET_COLUMNS) {
+      rows.push(current);
+      current = [];
+      used = 0;
+    }
+    current.push(item);
+    used += cols;
+  }
+
+  if (current.length > 0) rows.push(current);
+  return rows;
+}

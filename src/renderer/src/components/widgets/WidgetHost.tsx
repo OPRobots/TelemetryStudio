@@ -10,6 +10,7 @@ import { WidgetWrapper } from './WidgetWrapper';
 import { WidgetConfigDialog } from './WidgetConfigDialog';
 import {
   columnsFromPixels,
+  packWidgetRows,
   rowsFromPixels,
   snapWidthToPreset,
 } from '../../lib/widget-layout';
@@ -215,113 +216,123 @@ export function WidgetHost({
     );
   }
 
+  const visibleWidgets = widgets.filter((w) => w.visible);
+  const rows = packWidgetRows(visibleWidgets);
+
   return (
     <>
       <div
         ref={gridRef}
-        className="h-full w-full overflow-auto"
-        style={{
-          position: 'relative',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(12, minmax(0, 1fr))',
-          gridAutoRows: '40px',
-          gridAutoFlow: 'row',
-          gap: `${GRID_GAP}px`,
-        }}
+        className="flex flex-col overflow-auto"
+        style={{ position: 'relative', gap: `${GRID_GAP}px` }}
       >
-        {widgets
-          .filter((w) => w.visible)
-          .map((widget, index) => {
-            const definition = widgetRegistry.get(widget.type);
-            const isDropTarget = dragKind === 'reorder' && dropIndex === index;
-            return (
-              <div
-                key={widget.id}
-                data-widget-id={widget.id}
-                className="min-h-0 min-w-0"
-                style={{
-                  gridColumn: `span ${Math.max(widget.width, 3)}`,
-                  gridRow: `span ${Math.max(widget.height, 2)}`,
-                }}
-              >
-                <WidgetWrapper
-                  title={widget.label}
-                  type={widget.type}
-                  dropTarget={isDropTarget}
-                  onConfigure={primary ? () => setEditingId(widget.id) : undefined}
-                  onRemove={primary ? () => removeWidget(widget.id) : undefined}
-                  onHeaderPointerDown={
-                    primary
-                      ? () =>
-                          startDrag({
-                            kind: 'reorder',
-                            id: widget.id,
-                            startIndex: index,
-                            startX: 0,
-                            startY: 0,
-                            startWidthPx: 0,
-                            startHeightPx: 0,
-                          })
-                      : undefined
-                  }
-                  onResizeWidthStart={
-                    primary
-                      ? (e) => {
-                          const el = gridRef.current?.querySelector<HTMLElement>(
-                            `[data-widget-id="${widget.id}"]`
-                          );
-                          startDrag({
-                            kind: 'width',
-                            id: widget.id,
-                            startIndex: index,
-                            startX: e.clientX,
-                            startY: e.clientY,
-                            startWidthPx: el?.getBoundingClientRect().width ?? 0,
-                            startHeightPx: 0,
-                          });
-                        }
-                      : undefined
-                  }
-                  onResizeHeightStart={
-                    primary
-                      ? (e) => {
-                          const el = gridRef.current?.querySelector<HTMLElement>(
-                            `[data-widget-id="${widget.id}"]`
-                          );
-                          startDrag({
-                            kind: 'height',
-                            id: widget.id,
-                            startIndex: index,
-                            startX: e.clientX,
-                            startY: e.clientY,
-                            startWidthPx: 0,
-                            startHeightPx: el?.getBoundingClientRect().height ?? 0,
-                          });
-                        }
-                      : undefined
-                  }
-                >
-                  {definition ? (
-                    <definition.component
-                      widgetId={widget.id}
-                      config={widget.config}
-                      dataFields={widget.dataFields}
-                      frame={frame}
-                      context={context}
-                      frames={frames}
-                    />
-                  ) : (
-                    <div
-                      className="flex h-full items-center justify-center text-xs"
-                      style={{ color: '#f87171' }}
+        {rows.map((row, rowIndex) => {
+          const used = row.reduce((sum, w) => sum + Math.min(Math.max(w.width, 3), 12), 0);
+          const spacer = 12 - used;
+          return (
+            <div
+              key={rowIndex}
+              className="flex"
+              style={{ gap: `${GRID_GAP}px`, alignItems: 'flex-start' }}
+            >
+              {row.map((widget) => {
+                const index = visibleWidgets.indexOf(widget);
+                const definition = widgetRegistry.get(widget.type);
+                const isDropTarget = dragKind === 'reorder' && dropIndex === index;
+                const cols = Math.min(Math.max(widget.width, 3), 12);
+                const rowSpan = Math.max(widget.height, 2);
+                const heightPx = rowSpan * 40 + (rowSpan - 1) * GRID_GAP;
+                return (
+                  <div
+                    key={widget.id}
+                    data-widget-id={widget.id}
+                    data-cols={cols}
+                    data-rows={rowSpan}
+                    className="min-w-0"
+                    style={{ flex: `${cols} 1 0`, minWidth: 0, height: heightPx }}
+                  >
+                    <WidgetWrapper
+                      title={widget.label}
+                      type={widget.type}
+                      dropTarget={isDropTarget}
+                      onConfigure={primary ? () => setEditingId(widget.id) : undefined}
+                      onRemove={primary ? () => removeWidget(widget.id) : undefined}
+                      onHeaderPointerDown={
+                        primary
+                          ? () =>
+                              startDrag({
+                                kind: 'reorder',
+                                id: widget.id,
+                                startIndex: index,
+                                startX: 0,
+                                startY: 0,
+                                startWidthPx: 0,
+                                startHeightPx: 0,
+                              })
+                          : undefined
+                      }
+                      onResizeWidthStart={
+                        primary
+                          ? (e) => {
+                              const el = gridRef.current?.querySelector<HTMLElement>(
+                                `[data-widget-id="${widget.id}"]`
+                              );
+                              startDrag({
+                                kind: 'width',
+                                id: widget.id,
+                                startIndex: index,
+                                startX: e.clientX,
+                                startY: e.clientY,
+                                startWidthPx: el?.getBoundingClientRect().width ?? 0,
+                                startHeightPx: 0,
+                              });
+                            }
+                          : undefined
+                      }
+                      onResizeHeightStart={
+                        primary
+                          ? (e) => {
+                              const el = gridRef.current?.querySelector<HTMLElement>(
+                                `[data-widget-id="${widget.id}"]`
+                              );
+                              startDrag({
+                                kind: 'height',
+                                id: widget.id,
+                                startIndex: index,
+                                startX: e.clientX,
+                                startY: e.clientY,
+                                startWidthPx: 0,
+                                startHeightPx: el?.getBoundingClientRect().height ?? 0,
+                              });
+                            }
+                          : undefined
+                      }
                     >
-                      Widget desconocido: {widget.type}
-                    </div>
-                  )}
-                </WidgetWrapper>
-              </div>
-            );
-          })}
+                      {definition ? (
+                        <definition.component
+                          widgetId={widget.id}
+                          config={widget.config}
+                          dataFields={widget.dataFields}
+                          frame={frame}
+                          context={context}
+                          frames={frames}
+                        />
+                      ) : (
+                        <div
+                          className="flex h-full items-center justify-center text-xs"
+                          style={{ color: '#f87171' }}
+                        >
+                          Widget desconocido: {widget.type}
+                        </div>
+                      )}
+                    </WidgetWrapper>
+                  </div>
+                );
+              })}
+              {spacer > 0 && <div aria-hidden style={{ flex: `${spacer} 1 0`, minWidth: 0 }} />}
+            </div>
+          );
+        })}
       </div>
 
       {editingWidget && (

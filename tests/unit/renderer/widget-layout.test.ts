@@ -3,6 +3,7 @@ import {
   clampHeight,
   clampWidth,
   columnsFromPixels,
+  packWidgetRows,
   rowsFromPixels,
   snapWidthToPreset,
 } from '@renderer/lib/widget-layout';
@@ -57,5 +58,32 @@ describe('rowsFromPixels', () => {
     expect(rowsFromPixels(92, 12)).toBeCloseTo(2, 5);
     // 4 filas → alto = 4*40 + 3*12 = 196
     expect(rowsFromPixels(196, 12)).toBeCloseTo(4, 5);
+  });
+});
+
+describe('packWidgetRows', () => {
+  const w = (id: string, width: number) => ({ id, width });
+
+  it('coloca dos widgets al 50% en la misma fila', () => {
+    const rows = packWidgetRows([w('a', 6), w('b', 6)]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.map((x) => x.id)).toEqual(['a', 'b']);
+  });
+
+  it('baja a la siguiente fila cuando no cabe', () => {
+    const rows = packWidgetRows([w('a', 8), w('b', 6), w('c', 6)]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]!.map((x) => x.id)).toEqual(['a']);
+    expect(rows[1]!.map((x) => x.id)).toEqual(['b', 'c']);
+  });
+
+  it('un widget a ancho completo ocupa su propia fila', () => {
+    const rows = packWidgetRows([w('a', 6), w('b', 12), w('c', 6)]);
+    expect(rows).toHaveLength(3);
+  });
+
+  it('cuatro al 25% caben en una fila', () => {
+    const rows = packWidgetRows([w('a', 3), w('b', 3), w('c', 3), w('d', 3)]);
+    expect(rows).toHaveLength(1);
   });
 });
