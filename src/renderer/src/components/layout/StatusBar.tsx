@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '../../stores/app-store';
 import { useComparisonStore } from '../../stores/comparison-store';
 import { videoSynchronizer } from '@core/video-synchronizer';
+import { serialStatusLabel } from '../../lib/session-save-status';
 
 interface StatusBarProps {
   onOpenSerial: () => void;
@@ -11,21 +12,24 @@ interface StatusBarProps {
 export function StatusBar({ onOpenSerial, onOpenVideo }: StatusBarProps): React.ReactElement {
   const serialConnected = useAppStore((s) => s.serialConnected);
   const serialPort = useAppStore((s) => s.serialPort);
+  const lastDataAt = useAppStore((s) => s.lastDataAt);
   const frameCount = useAppStore((s) => s.frameCount);
   const schema = useAppStore((s) => s.schema);
   const videoInfo = useAppStore((s) => s.videoInfo);
-  const streamState = useAppStore((s) => s.streamState);
   const statusMessage = useAppStore((s) => s.statusMessage);
   const comparisonActive = useComparisonStore((s) => s.active);
   const [drift, setDrift] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const id = window.setInterval(() => setDrift(videoSynchronizer.averageDrift), 500);
+    const id = window.setInterval(() => {
+      setDrift(videoSynchronizer.averageDrift);
+      setNow(Date.now());
+    }, 1000);
     return () => window.clearInterval(id);
   }, []);
 
-  const streamLabel =
-    streamState === 'streaming' ? 'grabando' : streamState === 'stopped' ? 'detenido' : 'inactivo';
+  const serialLabel = serialStatusLabel({ serialConnected, lastDataAt, now });
 
   return (
     <footer
@@ -44,9 +48,8 @@ export function StatusBar({ onOpenSerial, onOpenVideo }: StatusBarProps): React.
           />
           <span>Serial</span>
           <span className="chip__value">
-            {serialConnected ? (serialPort ?? 'conectado') : 'desconectado'}
+            {serialConnected ? `${serialPort ?? 'conectado'} · ${serialLabel}` : 'desconectado'}
           </span>
-          {serialConnected && <span className="chip__value">· {streamLabel}</span>}
         </button>
 
         <button className="chip chip--button" onClick={onOpenVideo} title="Abrir vídeo">

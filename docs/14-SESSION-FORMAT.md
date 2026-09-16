@@ -405,9 +405,18 @@ export function datasetToSession(
 
 ## Servicio de Sesiones
 
-> **Estado**: pseudo-código de referencia. La implementación actual está en
-> `src/renderer/src/lib/session-actions.ts` + handlers IPC `session:*`; el
-> servicio `src/services/session-manager.ts` se formaliza en la Fase 4.
+> **Estado**: la implementación actual vive en `src/renderer/src/lib/session-actions.ts`
+> (usa `session-codec` + los handlers IPC `session:*`) y el servicio
+> `src/services/session-manager.ts`; el pseudo-código se conserva como referencia.
+>
+> **Cuándo se puede guardar**: se guarda con los datos capturados hasta el
+> momento, sin necesidad de cerrar el puerto Serie. Para no cortar una captura en
+> curso, el guardado se **bloquea mientras se reciben datos** (el diálogo explica
+> el motivo) y se **habilita** al desconectar o tras **10 s de silencio** desde el
+> último dato (`STALE_TRANSMISSION_MS`). Con el puerto abierto pero sin datos, la
+> barra de estado muestra el Serial como **"en reposo"**. Si la sesión no se había
+> finalizado, el `TelemetryDataset` se construye al vuelo desde los frames
+> capturados (`currentDataset()`).
 
 ```typescript
 // src/services/session-manager.ts

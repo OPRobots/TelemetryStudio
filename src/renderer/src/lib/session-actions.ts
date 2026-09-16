@@ -5,6 +5,7 @@ import { createEmptyLayout } from '@services/layout-manager';
 import { sessionManager } from '@services/session-manager';
 import type { SessionWidget } from '@core/types/session';
 import type { DashboardLayout, WidgetConfig } from '@core/types/layout';
+import type { TelemetryDataset } from '@core/types/telemetry';
 import { useAppStore } from '../stores/app-store';
 import { useLayoutStore } from '../stores/layout-store';
 import { applySyncAnchor } from './sync-actions';
@@ -12,6 +13,35 @@ import { prepareVideoFile } from './video-prepare';
 
 function basename(path: string): string {
   return path.split(/[\\/]/).pop() ?? '';
+}
+
+/**
+ * Dataset actual: el de la sesión cargada, o uno construido con los frames
+ * capturados por Serial hasta el momento (aunque el stream no se haya cerrado).
+ */
+function currentDataset(): TelemetryDataset | null {
+  const { dataset, schema } = useAppStore.getState();
+  if (dataset) return dataset;
+
+  const frames = [...telemetryStore.getAllFrames()].sort((a, b) => a.timestamp_ms - b.timestamp_ms);
+  if (frames.length === 0) return null;
+
+  const startTime_ms = frames[0]!.timestamp_ms;
+  const endTime_ms = frames[frames.length - 1]!.timestamp_ms;
+  const duration_ms = endTime_ms - startTime_ms;
+
+  return {
+    id: `capture-${Date.now()}`,
+    name: 'Captura Serial',
+    frames,
+    schema,
+    startTime_ms,
+    endTime_ms,
+    duration_ms,
+    avgSampleRate_hz: duration_ms > 0 ? (frames.length / duration_ms) * 1000 : 0,
+    frameCount: frames.length,
+    source: { type: 'serial', port: '', baudRate: 115200 },
+  };
 }
 
 /**
@@ -95,7 +125,8 @@ export async function loadSession(jsonPath: string): Promise<void> {
  * Construye y persiste la sesión actual.
  */
 export async function saveSession(name: string, outputDir: string): Promise<void> {
-  const { dataset, videoPath, videoInfo, playbackRate, syncAnchor } = useAppStore.getState();
+  const { videoPath, videoInfo, playbackRate, syncAnchor } = useAppStore.getState();
+  const dataset = currentDataset();
   if (!dataset) {
     useAppStore.getState().setStatusMessage('No hay telemetría para guardar');
     return;

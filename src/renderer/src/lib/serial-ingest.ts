@@ -69,6 +69,7 @@ class SerialIngestService {
     this.autoLayoutApplied = false;
     useAppStore.getState().setDataset(null, []);
     useAppStore.getState().setFrameCount(0);
+    useAppStore.getState().setLastDataAt(null);
     useAppStore.getState().setSerialError(null);
   }
 
@@ -78,6 +79,7 @@ class SerialIngestService {
 
     telemetryStore.addFrame(frame);
     eventBus.emit('data:streaming-frame', { frame });
+    useAppStore.getState().setLastDataAt(Date.now());
 
     const count = this.parser.frameCount;
     if (count % 5 === 0) {
