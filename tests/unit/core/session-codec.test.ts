@@ -41,7 +41,6 @@ const SAMPLE_SESSION: SessionFile = {
     widgets: [
       {
         t: 'TimeSeriesChart',
-        pos: [0, 0],
         size: [10, 6],
         fields: ['speed', 'motor_left'],
         config: { colors: ['#22d3ee', '#4ade80'] },
@@ -97,7 +96,7 @@ describe('session-codec round-trip', () => {
       dataset,
       { file: 'out.mp4', fps: 30, duration_s: 5, resolution: [1280, 720] },
       { offset_ms: 0, anchor: null, rate: 1 },
-      [{ t: 'TimeSeriesChart', pos: [0, 0], size: [4, 2], fields: ['speed'] }]
+      [{ t: 'TimeSeriesChart', size: [4, 2], fields: ['speed'] }]
     );
 
     expect(rebuilt.v).toBe(1);

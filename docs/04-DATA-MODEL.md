@@ -254,10 +254,10 @@ interface WidgetConfig {
   /** Nombre descriptivo del widget */
   label: string;
 
-  /** Posición y tamaño en el grid */
-  x: number;
-  y: number;
+  /** Ancho en columnas de la rejilla (3..12; presets 12/9/8/6/4/3) */
   width: number;
+
+  /** Alto en filas de la rejilla (2..16; fila = 40px) */
   height: number;
 
   /** Campos de telemetría que este widget visualiza */
@@ -268,9 +268,6 @@ interface WidgetConfig {
 
   /** Si el widget está visible */
   visible: boolean;
-
-  /** Orden de apilamiento (z-index) */
-  zIndex: number;
 }
 
 /**

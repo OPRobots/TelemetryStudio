@@ -29,7 +29,7 @@ function makeSession(name) {
     },
     layout: {
       widgets: [
-        { t: 'TimeSeriesChart', pos: [0, 0], size: [12, 7], fields: ['value'] },
+        { t: 'TimeSeriesChart', size: [12, 7], fields: ['value'] },
       ],
     },
   };

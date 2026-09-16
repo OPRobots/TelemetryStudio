@@ -20,14 +20,11 @@ function makeWidget(id: string): WidgetConfig {
     id,
     type: 'TimeSeriesChart',
     label: 'Chart',
-    x: 0,
-    y: 0,
     width: 12,
     height: 6,
     dataFields: ['speed'],
     config: {},
     visible: true,
-    zIndex: 0,
   };
 }
 

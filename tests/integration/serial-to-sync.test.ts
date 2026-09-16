@@ -103,7 +103,7 @@ describe('Integración: Serial → Store → auto-layout → sync', () => {
       dataset,
       { file: 'video.mp4', fps: 30, duration_s: 2, resolution: [1920, 1080] },
       { offset_ms: 250, anchor: [0, 0], rate: 1 },
-      [{ t: 'TimeSeriesChart', pos: [0, 0], size: [12, 6], fields: ['accX', 'accY'] }]
+      [{ t: 'TimeSeriesChart', size: [12, 6], fields: ['accX', 'accY'] }]
     );
 
     const reloaded = sessionToDataset(decodeSession(encodeSession(session)));

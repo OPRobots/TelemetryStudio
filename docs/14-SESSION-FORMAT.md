@@ -158,9 +158,6 @@ interface SessionWidget {
   /** Tipo de widget (e.g., "TimeSeriesChart") */
   t: string;
 
-  /** Posición [columna, fila] */
-  pos: [number, number];
-
   /** Tamaño [columnas, filas] */
   size: [number, number];
 
@@ -217,15 +214,18 @@ interface SessionWidget {
   "layout": {
     "widgets": [
       {
+        "t": "Minimap2D",
+        "size": [6, 8],
+        "fields": ["position_x", "position_y", "heading_deg"]
+      },
+      {
         "t": "DigitalBitmask",
-        "pos": [12, 0],
         "size": [6, 4],
         "fields": ["ir_sensors"]
       },
       {
         "t": "TimeSeriesChart",
-        "pos": [12, 4],
-        "size": [10, 6],
+        "size": [6, 4],
         "fields": ["motor_left", "motor_right"],
         "config": {
           "colors": ["#22d3ee", "#4ade80"],
@@ -234,15 +234,8 @@ interface SessionWidget {
       },
       {
         "t": "StateTimeline",
-        "pos": [0, 8],
-        "size": [22, 3],
+        "size": [12, 3],
         "fields": ["state"]
-      },
-      {
-        "t": "Minimap2D",
-        "pos": [0, 0],
-        "size": [12, 8],
-        "fields": ["position_x", "position_y", "heading_deg"]
       }
     ]
   }
@@ -393,7 +386,6 @@ export function datasetToSession(
     layout: {
       widgets: layout.widgets.map((w) => ({
         t: w.type,
-        pos: w.pos,
         size: w.size,
         fields: w.fields,
         config: w.config,
@@ -464,7 +456,6 @@ class SessionManager {
       sync,
       { widgets: layout.widgets.map(w => ({
         type: w.type,
-        pos: [w.x, w.y] as [number, number],
         size: [w.width, w.height] as [number, number],
         fields: w.dataFields,
         config: w.config,
@@ -511,14 +502,11 @@ class SessionManager {
         id: `widget-${i}`,
         type: w.t,
         label: w.t,
-        x: w.pos[0],
-        y: w.pos[1],
         width: w.size[0],
         height: w.size[1],
         dataFields: w.fields,
         config: w.config ?? {},
         visible: true,
-        zIndex: i,
       })),
       global: { theme: 'dark', units: { speed: 'rpm', distance: 'm', angle: 'deg' }, showGrid: true, snapToGrid: true, gridSize: 40 },
     });

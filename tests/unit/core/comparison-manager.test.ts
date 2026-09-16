@@ -20,9 +20,7 @@ function makeSession(widgets: SessionWidget[]): SessionFile {
 describe('ComparisonManager', () => {
   it('should detect matching widgets', () => {
     const manager = new ComparisonManager();
-    const widgets: SessionWidget[] = [
-      { t: 'timeseries', pos: [0, 0], size: [4, 2], fields: ['value'] },
-    ];
+    const widgets: SessionWidget[] = [{ t: 'timeseries', size: [4, 2], fields: ['value'] }];
 
     const sessionA = makeSession(widgets);
     const sessionB = makeSession([...widgets]);
@@ -38,12 +36,8 @@ describe('ComparisonManager', () => {
 
   it('should detect different widget types', () => {
     const manager = new ComparisonManager();
-    const widgetsA: SessionWidget[] = [
-      { t: 'timeseries', pos: [0, 0], size: [4, 2], fields: ['value'] },
-    ];
-    const widgetsB: SessionWidget[] = [
-      { t: 'bitmask', pos: [0, 0], size: [4, 2], fields: ['value'] },
-    ];
+    const widgetsA: SessionWidget[] = [{ t: 'timeseries', size: [4, 2], fields: ['value'] }];
+    const widgetsB: SessionWidget[] = [{ t: 'bitmask', size: [4, 2], fields: ['value'] }];
 
     const result = manager.validateWidgetCompatibility(widgetsA, widgetsB);
 
@@ -53,9 +47,7 @@ describe('ComparisonManager', () => {
 
   it('should detect different number of widgets', () => {
     const manager = new ComparisonManager();
-    const widgetsA: SessionWidget[] = [
-      { t: 'timeseries', pos: [0, 0], size: [4, 2], fields: ['value'] },
-    ];
+    const widgetsA: SessionWidget[] = [{ t: 'timeseries', size: [4, 2], fields: ['value'] }];
     const widgetsB: SessionWidget[] = [];
 
     const result = manager.validateWidgetCompatibility(widgetsA, widgetsB);
@@ -66,12 +58,8 @@ describe('ComparisonManager', () => {
 
   it('should detect different fields', () => {
     const manager = new ComparisonManager();
-    const widgetsA: SessionWidget[] = [
-      { t: 'timeseries', pos: [0, 0], size: [4, 2], fields: ['temp'] },
-    ];
-    const widgetsB: SessionWidget[] = [
-      { t: 'timeseries', pos: [0, 0], size: [4, 2], fields: ['speed'] },
-    ];
+    const widgetsA: SessionWidget[] = [{ t: 'timeseries', size: [4, 2], fields: ['temp'] }];
+    const widgetsB: SessionWidget[] = [{ t: 'timeseries', size: [4, 2], fields: ['speed'] }];
 
     const result = manager.validateWidgetCompatibility(widgetsA, widgetsB);
 
@@ -79,19 +67,15 @@ describe('ComparisonManager', () => {
     expect(result.differences.some((d) => d.includes('campos diferentes'))).toBe(true);
   });
 
-  it('should detect different positions', () => {
+  it('should detect different sizes', () => {
     const manager = new ComparisonManager();
-    const widgetsA: SessionWidget[] = [
-      { t: 'timeseries', pos: [0, 0], size: [4, 2], fields: ['value'] },
-    ];
-    const widgetsB: SessionWidget[] = [
-      { t: 'timeseries', pos: [1, 1], size: [4, 2], fields: ['value'] },
-    ];
+    const widgetsA: SessionWidget[] = [{ t: 'timeseries', size: [6, 2], fields: ['value'] }];
+    const widgetsB: SessionWidget[] = [{ t: 'timeseries', size: [12, 2], fields: ['value'] }];
 
     const result = manager.validateWidgetCompatibility(widgetsA, widgetsB);
 
     expect(result.compatible).toBe(false);
-    expect(result.differences.some((d) => d.includes('posición diferente'))).toBe(true);
+    expect(result.differences.some((d) => d.includes('tamaño diferente'))).toBe(true);
   });
 
   it('should track active state', () => {

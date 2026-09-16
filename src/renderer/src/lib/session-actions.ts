@@ -101,14 +101,11 @@ export async function loadSession(jsonPath: string): Promise<void> {
     id: `session-widget-${i}`,
     type: w.t,
     label: w.t,
-    x: w.pos[0],
-    y: w.pos[1],
     width: w.size[0],
     height: w.size[1],
     dataFields: w.fields,
     config: w.config ?? {},
     visible: true,
-    zIndex: i,
   }));
 
   const layout: DashboardLayout = {
@@ -134,7 +131,6 @@ export async function saveSession(name: string, outputDir: string): Promise<void
 
   const widgets: SessionWidget[] = useLayoutStore.getState().widgets.map((w) => ({
     t: w.type,
-    pos: [w.x, w.y],
     size: [w.width, w.height],
     fields: w.dataFields,
     config: w.config,

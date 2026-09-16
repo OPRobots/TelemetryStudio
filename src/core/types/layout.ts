@@ -49,15 +49,30 @@ export interface WidgetConfig {
   id: string;
   type: string;
   label: string;
-  x: number;
-  y: number;
+  /** Ancho en columnas de la rejilla (3..12). */
   width: number;
+  /** Alto en filas de la rejilla (2..16). */
   height: number;
   dataFields: string[];
   config: Record<string, unknown>;
   visible: boolean;
-  zIndex: number;
 }
+
+/** Número de columnas de la rejilla de widgets. */
+export const WIDGET_COLUMNS = 12;
+
+/** Anchos permitidos (columnas): completo, 3/4, 2/3, 1/2, 1/3, 1/4. */
+export const WIDTH_PRESETS = [12, 9, 8, 6, 4, 3] as const;
+
+/** Ancho mínimo global (1/4). */
+export const MIN_WIDTH = 3;
+
+/** Alto de fila en píxeles (unidad de los "saltos" de alto). */
+export const ROW_UNIT = 40;
+
+/** Alto mínimo y máximo globales (en filas). */
+export const MIN_ROWS = 2;
+export const MAX_ROWS = 16;
 
 export interface OverlayConfig {
   type: 'speed' | 'state' | 'vector' | 'custom';

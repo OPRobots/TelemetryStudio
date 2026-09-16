@@ -61,11 +61,11 @@ describe('buildAutoLayoutWidgets', () => {
     expect(widgets[0]!.dataFields).toEqual(['a', 'b']);
   });
 
-  it('stacks widgets without overlapping rows', () => {
+  it('creates every widget a full width', () => {
     const widgets = buildAutoLayoutWidgets(FULL_SCHEMA);
-    for (let i = 1; i < widgets.length; i++) {
-      const prev = widgets[i - 1]!;
-      expect(widgets[i]!.y).toBeGreaterThanOrEqual(prev.y + prev.height);
+    for (const widget of widgets) {
+      expect(widget.width).toBe(12);
+      expect(widget.height).toBeGreaterThanOrEqual(2);
     }
   });
 });

@@ -44,7 +44,6 @@ export function decodeSession(json: string): SessionFile {
     layout: {
       widgets: (raw.layout?.widgets ?? []).map((w) => ({
         t: w.t ?? 'unknown',
-        pos: w.pos ?? [0, 0],
         size: w.size ?? [1, 1],
         fields: w.fields ?? [],
         config: w.config ?? {},

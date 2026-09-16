@@ -32,7 +32,6 @@ export function ComparisonDialog({ onClose }: ComparisonDialogProps): React.Reac
       const reference = await sessionManager.readSession(res.filePath);
       const currentWidgets: SessionWidget[] = widgets.map((w) => ({
         t: w.type,
-        pos: [w.x, w.y],
         size: [w.width, w.height],
         fields: w.dataFields,
         config: w.config,

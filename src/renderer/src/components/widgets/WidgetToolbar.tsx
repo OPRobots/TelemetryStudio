@@ -32,7 +32,6 @@ interface WidgetToolbarProps {
 
 export function WidgetToolbar({ open, onOpenChange }: WidgetToolbarProps): React.ReactElement {
   const schema = useAppStore((s) => s.schema);
-  const widgets = useLayoutStore((s) => s.widgets);
   const addWidget = useLayoutStore((s) => s.addWidget);
 
   const add = (type: string): void => {
@@ -41,20 +40,16 @@ export function WidgetToolbar({ open, onOpenChange }: WidgetToolbarProps): React
     const { metadata } = definition;
 
     addCounter += 1;
-    const nextY = widgets.reduce((max, w) => Math.max(max, w.y + w.height), 0);
 
     const widget: WidgetConfig = {
       id: `widget-${Date.now().toString(36)}-${addCounter}`,
       type: metadata.name,
       label: metadata.displayName,
-      x: 0,
-      y: nextY,
-      width: metadata.defaultSize.width,
+      width: 12,
       height: metadata.defaultSize.height,
       dataFields: pickFields(metadata.name, schema),
       config: { ...metadata.defaultConfig },
       visible: true,
-      zIndex: widgets.length,
     };
 
     addWidget(widget);

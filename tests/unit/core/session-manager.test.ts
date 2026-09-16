@@ -15,7 +15,7 @@ const SESSION: SessionFile = {
       [10, 200],
     ],
   },
-  layout: { widgets: [{ t: 'TimeSeriesChart', pos: [0, 0], size: [4, 2], fields: ['speed'] }] },
+  layout: { widgets: [{ t: 'TimeSeriesChart', size: [4, 2], fields: ['speed'] }] },
 };
 
 function makeAdapter(): SessionStorageAdapter & { exported: unknown[] } {

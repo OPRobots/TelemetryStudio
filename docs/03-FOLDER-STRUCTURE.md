@@ -31,6 +31,9 @@ oprobots-telemetry-studio/
 │   ├── e2e-video.mjs                # E2E: vídeo + sincronización
 │   ├── e2e-comparison.mjs           # E2E: comparación side-by-side
 │   ├── e2e-export.mjs               # E2E: composición de exportación
+│   ├── e2e-prepare.mjs              # E2E: diálogo de transcode
+│   ├── e2e-save.mjs                 # E2E: guardar sesión (bloqueo/reposo)
+│   ├── e2e-widgets.mjs              # E2E: rejilla fluida (resize + reordenar)
 │   ├── run-electron.mjs             # Lanzador de Electron (filtra ruido ambiental)
 │   ├── screenshot.mjs               # Captura de pantalla para revisión visual
 │   ├── fonts.conf                   # Config mínima de fontconfig para dev
@@ -141,6 +144,7 @@ oprobots-telemetry-studio/
 │   │       │   ├── session-actions.ts   # Abrir/guardar sesión
 │   │       │   ├── session-save-status.ts # ¿Se puede guardar? (por último dato)
 │   │       │   ├── sync-actions.ts      # Alinear/restablecer la sync (anchor)
+│   │       │   ├── widget-layout.ts     # Snap de rejilla (ancho/alto) de widgets
 │   │       │   └── comparison-sync.ts   # Sincronizador del panel de comparación
 │   │       ├── stores/
 │   │       │   ├── app-store.ts         # Zustand: estado global

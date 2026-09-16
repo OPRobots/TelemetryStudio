@@ -59,7 +59,6 @@ export interface SessionLayout {
 
 export interface SessionWidget {
   t: string;
-  pos: [number, number];
   size: [number, number];
   fields: string[];
   config?: Record<string, unknown>;

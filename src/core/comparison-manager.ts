@@ -88,12 +88,6 @@ export class ComparisonManager {
         );
       }
 
-      if (JSON.stringify(wA.pos) !== JSON.stringify(wB.pos)) {
-        differences.push(
-          `Widget #${i + 1}: posición diferente ([${wA.pos}] vs [${wB.pos}])`
-        );
-      }
-
       if (JSON.stringify(wA.size) !== JSON.stringify(wB.size)) {
         differences.push(
           `Widget #${i + 1}: tamaño diferente ([${wA.size}] vs [${wB.size}])`

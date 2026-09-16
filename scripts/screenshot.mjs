@@ -28,6 +28,7 @@ function makeLine(t) {
 
 function registerMocks(win) {
   ipcMain.handle('layout:loadAll', () => []);
+  ipcMain.handle('video:prepare', (_e, p) => ({ success: true, path: p, transcoded: false, fps: 30 }));
   ipcMain.handle('dialog:openVideo', () => ({ canceled: false, filePath: mockVideo }));
   ipcMain.handle('serial:list', () => [{ path: '/dev/ttyACM0', manufacturer: 'STMicroelectronics' }]);
   ipcMain.handle('serial:open', () => {

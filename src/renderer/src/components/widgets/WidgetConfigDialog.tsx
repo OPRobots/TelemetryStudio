@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { WidgetConfig } from '@core/types/layout';
+import { ROW_UNIT, WIDTH_PRESETS } from '@core/types/layout';
 import { useLayoutStore } from '../../stores/layout-store';
 import { useAppStore } from '../../stores/app-store';
+import { clampHeight } from '../../lib/widget-layout';
 import { DEFAULT_SERIES_COLORS } from '@widgets/time-series-chart';
 
 interface WidgetConfigDialogProps {
@@ -16,8 +18,6 @@ export function WidgetConfigDialog({ widget, onClose }: WidgetConfigDialogProps)
   const [label, setLabel] = useState(widget.label);
   const [fields, setFields] = useState<string[]>(widget.dataFields);
   const [config, setConfig] = useState<Record<string, unknown>>({ ...widget.config });
-  const [x, setX] = useState(widget.x);
-  const [y, setY] = useState(widget.y);
   const [width, setWidth] = useState(widget.width);
   const [height, setHeight] = useState(widget.height);
 
@@ -41,8 +41,6 @@ export function WidgetConfigDialog({ widget, onClose }: WidgetConfigDialogProps)
       label,
       dataFields: fields,
       config,
-      x,
-      y,
       width,
       height,
     });
@@ -140,23 +138,48 @@ export function WidgetConfigDialog({ widget, onClose }: WidgetConfigDialogProps)
           </div>
         )}
 
-        <div className="dialog-row">
-          <div>
-            <label className="dialog-label">Columna (X)</label>
-            <input type="number" className="dialog-input" value={x} onChange={(e) => setX(Number(e.target.value))} />
-          </div>
-          <div>
-            <label className="dialog-label">Fila (Y)</label>
-            <input type="number" className="dialog-input" value={y} onChange={(e) => setY(Number(e.target.value))} />
-          </div>
-          <div>
-            <label className="dialog-label">Ancho</label>
-            <input type="number" className="dialog-input" value={width} onChange={(e) => setWidth(Number(e.target.value))} />
-          </div>
-          <div>
-            <label className="dialog-label">Alto</label>
-            <input type="number" className="dialog-input" value={height} onChange={(e) => setHeight(Number(e.target.value))} />
-          </div>
+        <label className="dialog-label">Ancho</label>
+        <div className="dialog-row" style={{ flexWrap: 'wrap' }}>
+          {WIDTH_PRESETS.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              className="toolbar-button toolbar-button--compact"
+              style={
+                width === preset
+                  ? {
+                      background: 'var(--accent-soft)',
+                      borderColor: 'var(--accent-border)',
+                      color: 'var(--accent)',
+                    }
+                  : undefined
+              }
+              onClick={() => setWidth(preset)}
+            >
+              {preset === 12 ? 'Completo' : `${preset}/12`}
+            </button>
+          ))}
+        </div>
+
+        <label className="dialog-label">Alto · {height} filas ({height * ROW_UNIT}px)</label>
+        <div className="dialog-row" style={{ alignItems: 'center' }}>
+          <button
+            type="button"
+            className="toolbar-button toolbar-button--compact"
+            onClick={() => setHeight((h) => clampHeight(h - 1))}
+          >
+            −
+          </button>
+          <span className="mono text-xs" style={{ flex: 1, textAlign: 'center', color: 'var(--text-secondary)' }}>
+            {height} filas
+          </span>
+          <button
+            type="button"
+            className="toolbar-button toolbar-button--compact"
+            onClick={() => setHeight((h) => clampHeight(h + 1))}
+          >
+            +
+          </button>
         </div>
 
         <div className="mt-4 flex justify-end gap-2">

@@ -33,8 +33,6 @@ El LayoutManager permite guardar y cargar esquemas de pantalla completos en JSON
       "id": "widget-ir-sensors",
       "type": "DigitalBitmask",
       "label": "IR Sensors",
-      "x": 12,
-      "y": 0,
       "width": 6,
       "height": 4,
       "dataFields": ["ir_sensors"],
@@ -43,16 +41,13 @@ El LayoutManager permite guardar y cargar esquemas de pantalla completos en JSON
         "rows": 2,
         "onColor": "#22d3ee"
       },
-      "visible": true,
-      "zIndex": 0
+      "visible": true
     },
     {
       "id": "widget-pid-chart",
       "type": "TimeSeriesChart",
       "label": "PID Output",
-      "x": 12,
-      "y": 4,
-      "width": 10,
+      "width": 6,
       "height": 6,
       "dataFields": ["motor_left", "motor_right"],
       "config": {
@@ -61,16 +56,13 @@ El LayoutManager permite guardar y cargar esquemas de pantalla completos en JSON
         "yMin": -1000,
         "yMax": 1000
       },
-      "visible": true,
-      "zIndex": 1
+      "visible": true
     },
     {
       "id": "widget-state",
       "type": "StateTimeline",
       "label": "Robot State",
-      "x": 12,
-      "y": 10,
-      "width": 16,
+      "width": 12,
       "height": 3,
       "dataFields": ["state"],
       "config": {
@@ -80,8 +72,7 @@ El LayoutManager permite guardar y cargar esquemas de pantalla completos en JSON
           "2": { "label": "TURNING", "color": "#eab308" }
         }
       },
-      "visible": true,
-      "zIndex": 2
+      "visible": true
     }
   ],
   "panels": {
@@ -125,9 +116,9 @@ const BUILT_IN_LAYOUTS: DashboardLayout[] = [
     modifiedAt: '2026-01-01T00:00:00Z',
     videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: true, overlays: [] },
     widgets: [
-      { id: 'w1', type: 'DigitalBitmask', label: 'IR Sensors', x: 12, y: 0, width: 6, height: 4, dataFields: ['ir_sensors'], config: {}, visible: true, zIndex: 0 },
-      { id: 'w2', type: 'TimeSeriesChart', label: 'PID Output', x: 12, y: 4, width: 10, height: 6, dataFields: ['motor_left', 'motor_right'], config: {}, visible: true, zIndex: 1 },
-      { id: 'w3', type: 'StateTimeline', label: 'State', x: 0, y: 8, width: 22, height: 3, dataFields: ['state'], config: {}, visible: true, zIndex: 2 },
+      { id: 'w1', type: 'DigitalBitmask', label: 'IR Sensors', width: 12, height: 4, dataFields: ['ir_sensors'], config: {}, visible: true },
+      { id: 'w2', type: 'TimeSeriesChart', label: 'PID Output', width: 12, height: 6, dataFields: ['motor_left', 'motor_right'], config: {}, visible: true },
+      { id: 'w3', type: 'StateTimeline', label: 'State', width: 12, height: 3, dataFields: ['state'], config: {}, visible: true },
     ],
     global: { theme: 'dark', units: { speed: 'rpm', distance: 'm', angle: 'deg' }, showGrid: true, snapToGrid: true, gridSize: 40 },
   },
@@ -139,8 +130,8 @@ const BUILT_IN_LAYOUTS: DashboardLayout[] = [
     modifiedAt: '2026-01-01T00:00:00Z',
     videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: true, overlays: [] },
     widgets: [
-      { id: 'w1', type: 'Minimap2D', label: 'Maze Path', x: 12, y: 0, width: 10, height: 10, dataFields: ['position_x', 'position_y', 'heading_deg'], config: {}, visible: true, zIndex: 0 },
-      { id: 'w2', type: 'TimeSeriesChart', label: 'Speed', x: 12, y: 10, width: 10, height: 4, dataFields: ['speed_rpm'], config: {}, visible: true, zIndex: 1 },
+      { id: 'w1', type: 'Minimap2D', label: 'Maze Path', width: 12, height: 8, dataFields: ['position_x', 'position_y', 'heading_deg'], config: {}, visible: true },
+      { id: 'w2', type: 'TimeSeriesChart', label: 'Speed', width: 12, height: 4, dataFields: ['speed_rpm'], config: {}, visible: true },
     ],
     global: { theme: 'dark', units: { speed: 'cm/s', distance: 'cm', angle: 'deg' }, showGrid: true, snapToGrid: true, gridSize: 40 },
   },

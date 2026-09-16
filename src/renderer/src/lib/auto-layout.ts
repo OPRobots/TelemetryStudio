@@ -16,6 +16,9 @@ function findField(schema: FieldSchema[], patterns: RegExp[]): string | undefine
  * Construye automáticamente un layout de widgets a partir del schema
  * de telemetría descubierto, teniendo en cuenta el tipo de cada campo.
  *
+ * Todos los widgets se crean a ancho completo; el orden define su colocación
+ * en la rejilla fluida.
+ *
  * - Campos numéricos → una sola TimeSeriesChart con múltiples series
  * - Bitmasks/arrays → DigitalBitmask
  * - Campos position_x/y (+ heading) → Minimap2D
@@ -54,23 +57,18 @@ export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
     .map((s) => s.name);
 
   const widgets: WidgetConfig[] = [];
-  let row = 0;
 
   if (xField && yField) {
     widgets.push({
       id: makeId('minimap'),
       type: 'Minimap2D',
       label: 'Trayectoria',
-      x: 0,
-      y: row,
       width: 12,
       height: 8,
       dataFields: [xField, yField, thetaField].filter(Boolean) as string[],
       config: {},
       visible: true,
-      zIndex: widgets.length,
     });
-    row += 8;
   }
 
   const chartFields = [...numericFields, ...booleanFields];
@@ -79,16 +77,12 @@ export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
       id: makeId('chart'),
       type: 'TimeSeriesChart',
       label: 'Telemetría',
-      x: 0,
-      y: row,
       width: 12,
       height: 7,
       dataFields: chartFields,
       config: { autoFollow: true, windowSeconds: 10 },
       visible: true,
-      zIndex: widgets.length,
     });
-    row += 7;
   }
 
   if (bitmaskFields.length > 0) {
@@ -96,16 +90,12 @@ export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
       id: makeId('bitmask'),
       type: 'DigitalBitmask',
       label: 'Bits',
-      x: 0,
-      y: row,
       width: 12,
       height: 3,
       dataFields: bitmaskFields,
       config: {},
       visible: true,
-      zIndex: widgets.length,
     });
-    row += 3;
   }
 
   if (stateField) {
@@ -113,16 +103,12 @@ export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
       id: makeId('state'),
       type: 'StateTimeline',
       label: 'Estado',
-      x: 0,
-      y: row,
       width: 12,
       height: 3,
       dataFields: [stateField],
       config: {},
       visible: true,
-      zIndex: widgets.length,
     });
-    row += 3;
   }
 
   return widgets;

@@ -1,5 +1,19 @@
 # Sistema de Widgets
 
+> **Colocación (rejilla fluida)**: los widgets se colocan en una rejilla de 12
+> columnas con flujo tipo Bootstrap (no *masonry*). Cada widget tiene `width`
+> (columnas: 12/9/8/6/4/3) y `height` (filas de 40px, 2–16). El **orden** es el
+> de la lista (no hay x/y).
+>
+> - **Ancho por defecto**: ancho completo (12). Se redimensiona arrastrando el
+>   **asa derecha** (snap a presets: 12/9/8/6/4/3).
+> - **Alto**: arrastrando el **asa inferior**, a saltos de fila (40px), con mínimo
+>   2 y máximo 16 filas.
+> - **Reordenar**: arrastrando la **cabecera** del widget (salvo ⚙/✕); los widgets
+>   se refluyen automáticamente.
+> - El diálogo de configuración ofrece un **respaldo compacto** (presets de ancho
+>   y stepper de alto).
+>
 > **Sección de UI**: la card que contiene los widgets se muestra como
 > **"Telemetría"** y el botón para añadirlos es **"+ Añadir gráfica"**. El panel de
 > **Vídeo** aparece solo cuando hay un vídeo cargado; sin vídeo, la zona de
