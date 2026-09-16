@@ -7,6 +7,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { writeFileSync } from 'fs';
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const root = join(currentDir, '..');
@@ -169,6 +170,12 @@ app.whenReady().then(async () => {
     const order = await win.webContents.executeJavaScript(
       `Array.from(document.querySelectorAll('[data-widget-id]')).map((c) => c.dataset.widgetId)`
     );
+
+    if (process.env.SCREENSHOT) {
+      await wait(2000);
+      const image = await win.webContents.capturePage();
+      writeFileSync('/tmp/opencode/oprobots-widgets.png', image.toPNG());
+    }
 
     console.log(
       'E2E_WIDGETS ' + JSON.stringify({ initial, afterAdd, beforeOrder, resizedColumn, order })
