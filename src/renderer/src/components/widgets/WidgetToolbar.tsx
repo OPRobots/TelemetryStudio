@@ -68,7 +68,7 @@ export function WidgetToolbar({ open, onOpenChange }: WidgetToolbarProps): React
         onClick={() => onOpenChange(!open)}
         aria-expanded={open}
       >
-        + Añadir widget
+        + Añadir gráfica
       </button>
       {open && (
         <div className="widget-menu" onMouseLeave={() => onOpenChange(false)}>

@@ -1,5 +1,11 @@
 # Sistema de Widgets
 
+> **Sección de UI**: la card que contiene los widgets se muestra como
+> **"Telemetría"** y el botón para añadirlos es **"+ Añadir gráfica"**. El panel de
+> **Vídeo** aparece solo cuando hay un vídeo cargado; sin vídeo, la zona de
+> telemetría ocupa toda la ventana (modo sin vídeo, válido para telemetría
+> capturada sin grabación de vídeo).
+>
 > **Estado de implementación**: los widgets están implementados como componentes
 > React (no clases) que reciben `frame`/`context` por props desde `WidgetHost`.
 > Cada widget exporta una `WidgetDefinition` (`{ metadata, component }`) y se

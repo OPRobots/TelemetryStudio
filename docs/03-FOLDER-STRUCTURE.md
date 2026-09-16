@@ -121,7 +121,7 @@ oprobots-telemetry-studio/
 │   │       │   │   └── TimelineSlider.tsx   # Slider de seek
 │   │       │   ├── widgets/
 │   │       │   │   ├── WidgetHost.tsx       # Contenedor dinámico de widgets
-│   │       │   │   ├── WidgetToolbar.tsx    # Añadir widgets
+│   │       │   │   ├── WidgetToolbar.tsx    # Añadir widgets (+ Añadir gráfica)
 │   │       │   │   ├── WidgetWrapper.tsx    # Marco con título y acciones
 │   │       │   │   └── WidgetConfigDialog.tsx # Configuración de campos/colores
 │   │       │   └── dialogs/

@@ -104,6 +104,9 @@ app.whenReady().then(async () => {
         hasVideo: !!v,
         duration: v ? v.duration : 0,
         readyState: v ? v.readyState : 0,
+        hasVideoCard: Array.from(document.querySelectorAll('.card__title')).some((e) =>
+          e.textContent.toLowerCase().includes('vídeo')
+        ),
       };
     })()`);
 
@@ -166,6 +169,7 @@ app.whenReady().then(async () => {
     if (errors.length > 0) console.log('E2E_VIDEO_ERRORS ' + JSON.stringify(errors.slice(0, 20)));
 
     const durationOk = videoInfo.duration > 0;
+    const videoCardOk = videoInfo.hasVideoCard === true;
     const scrubbedOk = Math.abs(scrubTime - 2.5) < 0.4;
     const stepOk = Math.abs(stepDelta - 1 / 60) < 0.01;
     const syncedOk = syncState.telemetryTimeMs >= 900 && syncState.telemetryTimeMs <= 1200;
@@ -175,6 +179,7 @@ app.whenReady().then(async () => {
 
     const ok =
       durationOk &&
+      videoCardOk &&
       scrubbedOk &&
       stepOk &&
       syncedOk &&

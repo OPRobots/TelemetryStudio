@@ -28,6 +28,7 @@ export function WidgetHost({
 }: WidgetHostProps): React.ReactElement {
   const widgets = useLayoutStore((s) => s.widgets);
   const removeWidget = useLayoutStore((s) => s.removeWidget);
+  const hasTelemetry = useAppStore((s) => s.frameCount > 0);
   const [frame, setFrame] = useState<TelemetryFrame | null>(null);
   const [context, setContext] = useState<VideoFrameContext | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -50,6 +51,16 @@ export function WidgetHost({
   );
 
   if (widgets.length === 0) {
+    if (!hasTelemetry) {
+      return (
+        <div className="empty-drop" style={{ cursor: 'default' }}>
+          <span className="empty-drop__title">Sin telemetría</span>
+          <span className="empty-drop__hint">
+            Conecta el Serial, abre una sesión o carga un vídeo
+          </span>
+        </div>
+      );
+    }
     return (
       <button
         className="empty-drop"
@@ -57,8 +68,8 @@ export function WidgetHost({
         disabled={!onRequestAdd}
         style={{ cursor: onRequestAdd ? 'pointer' : 'default' }}
       >
-        <span className="empty-drop__title">Sin widgets</span>
-        <span className="empty-drop__hint">Pulsa para añadir una visualización</span>
+        <span className="empty-drop__title">Sin visualizaciones</span>
+        <span className="empty-drop__hint">Pulsa para añadir una gráfica</span>
       </button>
     );
   }

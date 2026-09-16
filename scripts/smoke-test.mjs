@@ -63,6 +63,7 @@ app.whenReady().then(async () => {
 
     const result = await win.webContents.executeJavaScript(`(() => {
       const root = document.getElementById('root');
+      const titles = Array.from(document.querySelectorAll('.card__title')).map((e) => e.textContent.toLowerCase());
       return {
         rootChildren: root ? root.children.length : 0,
         hasEmptyDrop: !!document.querySelector('.empty-drop'),
@@ -70,6 +71,8 @@ app.whenReady().then(async () => {
           .toLowerCase()
           .includes('campos'),
         hasStatusBar: !!document.querySelector('footer'),
+        hasTelemetryCard: titles.some((t) => t.includes('telemetría')),
+        hasVideoCard: titles.some((t) => t.includes('vídeo')),
         buttons: Array.from(document.querySelectorAll('button')).map((b) => b.textContent.trim()).slice(0, 20),
       };
     })()`);
@@ -83,6 +86,8 @@ app.whenReady().then(async () => {
       result.hasEmptyDrop &&
       result.hasInspector &&
       result.hasStatusBar &&
+      result.hasTelemetryCard &&
+      !result.hasVideoCard &&
       errors.length === 0;
 
     console.log(ok ? 'SMOKE_OK' : 'SMOKE_FAIL');

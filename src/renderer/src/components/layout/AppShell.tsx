@@ -190,55 +190,47 @@ export function AppShell(): React.ReactElement {
             <SplitView />
           </div>
         ) : (
-          <div
-            ref={sectionRef}
-            className="flex min-h-0 min-w-0 flex-1 flex-col"
-          >
-            <div className="card" style={{ height: videoHeight, flexShrink: 0 }}>
-              <div className="card__header">
-                <span className="card__title">Vídeo</span>
-                <span className="card__subtitle">{videoInfo?.filename ?? 'sin cargar'}</span>
-              </div>
-              <div className="card__body" style={{ padding: 10 }}>
-                {videoSrc ? (
-                  <div
-                    style={{
-                      height: '100%',
-                      borderRadius: 'var(--radius-sm)',
-                      overflow: 'hidden',
-                      backgroundColor: '#05070b',
-                    }}
-                  >
-                    <VideoPlayer fps={videoFps} />
+          <div ref={sectionRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {videoSrc && (
+              <>
+                <div className="card" style={{ height: videoHeight, flexShrink: 0 }}>
+                  <div className="card__header">
+                    <span className="card__title">Vídeo</span>
+                    <span className="card__subtitle">{videoInfo?.filename ?? 'sin cargar'}</span>
                   </div>
-                ) : (
-                  <button className="empty-drop" onClick={() => void openVideoDialog()}>
-                    <span className="empty-drop__title">Sin vídeo</span>
-                    <span className="empty-drop__hint">Pulsa para abrir o arrastra un .mp4</span>
-                  </button>
-                )}
-              </div>
-              {videoSrc && (
-                <div className="card__footer">
-                  <Toolbar />
+                  <div className="card__body" style={{ padding: 10 }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        borderRadius: 'var(--radius-sm)',
+                        overflow: 'hidden',
+                        backgroundColor: '#05070b',
+                      }}
+                    >
+                      <VideoPlayer fps={videoFps} />
+                    </div>
+                  </div>
+                  <div className="card__footer">
+                    <Toolbar />
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <Splitter
-              orientation="horizontal"
-              value={panels.videoRatio}
-              min={0.15}
-              max={0.8}
-              unit="ratio"
-              label="Alto del vídeo"
-              onChange={(v) => setPanels({ videoRatio: v })}
-              onReset={() => setPanels({ videoRatio: DEFAULT_PANELS.videoRatio })}
-            />
+                <Splitter
+                  orientation="horizontal"
+                  value={panels.videoRatio}
+                  min={0.15}
+                  max={0.8}
+                  unit="ratio"
+                  label="Alto del vídeo"
+                  onChange={(v) => setPanels({ videoRatio: v })}
+                  onReset={() => setPanels({ videoRatio: DEFAULT_PANELS.videoRatio })}
+                />
+              </>
+            )}
 
             <div className="card" style={{ flex: '1 1 auto', minHeight: 0 }}>
               <div className="card__header">
-                <span className="card__title">Widgets</span>
+                <span className="card__title">Telemetría</span>
                 <WidgetToolbar open={widgetMenuOpen} onOpenChange={setWidgetMenuOpen} />
               </div>
               <div className="card__body" style={{ padding: 12 }}>
