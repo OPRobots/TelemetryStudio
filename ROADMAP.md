@@ -154,7 +154,7 @@ Implementar la sincronización frame-a-frame entre vídeo MP4 y telemetría, con
   - Speed selector (0.25x, 0.5x, 1x, 2x)
   - [x] Controles duplicables para comparación (sustituido por la barra de reproducción compartida)
 - [x] `src/renderer/components/video/TimelineSlider.tsx`
-  - [ ] Slider de seek con preview (seek funcional sin preview)
+  - [x] Slider de seek con tooltip de tiempo (preview con miniatura descartado)
   - Display de timestamp actual / total
   - [x] Reproducción siempre simétrica, scroll de widgets y zoom/cursor compartidos en comparación
 - [x] Tests de sincronización:
@@ -227,7 +227,7 @@ Implementar los 4 widgets estándar con registro dinámico, más el sistema de c
   - Triángulo rotado para heading
   - Grid de fondo
   - [x] Encuadre del recorrido completo (escala adaptativa) y zoom al rango seleccionado, atenuando lo que queda fuera
-  - [ ] Pan/zoom manual del minimapa (pendiente)
+  - [x] Pan/zoom manual del minimapa (rueda/arrastre/doble clic)
 - [x] `src/widgets/state-timeline/` — Widget de estados
   - Barra de tiempo con colores por estado
   - Estado actual grande
@@ -278,7 +278,7 @@ Persistencia de layouts en JSON con layouts predefinidos.
 - [x] `src/renderer/components/dialogs/LayoutDialog.tsx`
   - Lista de layouts disponibles
   - Botones: cargar, guardar, eliminar
-  - [ ] Botón "nuevo" dedicado (se puede crear guardando con un nombre nuevo)
+  - [x] "Nuevo layout" (menú Ver → Nuevo layout…, con confirmación)
 - [x] `src/renderer/stores/layout-store.ts` — Zustand store
 - [x] Test: guardar → cargar → verificar igualdad
 
@@ -373,11 +373,11 @@ Pulido final, testing integral, documentación de usuario.
   - Zoom compartido (`e2e:zoom`)
   - Reinicio de captura serial (`e2e:serial-reset`) y reset aislado en comparación (`e2e:comparison-reset`)
   - Nota: se descartó Playwright por el harness Electron propio (más estable y sin dependencias)
-- [x] Documentación de usuario (`README.md`; capturas pendientes)
+- [x] Documentación de usuario (`README.md`; capturas en `docs/assets`)
 - [x] Manejo de errores robusto (banner global de errores; sin crashes)
 - [x] Keyboard shortcuts (Espacio, ←/→, +/−, Home/End)
 - [x] ESLint + Prettier configurados e integrados en `verify`
-- [ ] Performance profiling final (pendiente; WidgetHost re-renderiza por frame con pocos widgets)
+- [x] Rendimiento de widgets (P10.3: FrameBus + capa estática cacheada)
 - [x] Fix de bugs restantes
 - [x] Release v1.0.0
 
