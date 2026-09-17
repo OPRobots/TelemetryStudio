@@ -104,6 +104,8 @@ export function WidgetHost({
   const hasTelemetry = useAppStore((s) => s.frameCount > 0);
   const hoverTimestamp = useCursorStore((s) => s.hoverTimestamp_ms);
   const setHoverTimestamp = useCursorStore((s) => s.setHoverTimestamp);
+  const zoomRange = useCursorStore((s) => s.zoomRange);
+  const setZoomRange = useCursorStore((s) => s.setZoomRange);
 
   const [frame, setFrame] = useState<TelemetryFrame | null>(null);
   const [context, setContext] = useState<VideoFrameContext | null>(null);
@@ -135,11 +137,15 @@ export function WidgetHost({
     return frames.length > 0 ? frames[frames.length - 1]!.timestamp_ms : null;
   }, [hoverTimestamp, context, frame, frames]);
 
-  // Limpia el hover al cambiar de dataset o al desmontar el panel.
+  // Limpia hover y zoom al cambiar de dataset o al desmontar el panel.
   useEffect(() => {
     setHoverTimestamp(null);
-    return () => setHoverTimestamp(null);
-  }, [dataset, eventName, setHoverTimestamp]);
+    setZoomRange(null);
+    return () => {
+      setHoverTimestamp(null);
+      setZoomRange(null);
+    };
+  }, [dataset, eventName, setHoverTimestamp, setZoomRange]);
 
   const editingWidget = useMemo(
     () => widgets.find((w) => w.id === editingId) ?? null,
@@ -342,6 +348,8 @@ export function WidgetHost({
                           frames={frames}
                           viewTimestamp_ms={viewTimestamp}
                           onCursorHover={setHoverTimestamp}
+                          zoomRange={zoomRange}
+                          onZoomRangeChange={setZoomRange}
                         />
                       ) : (
                         <div

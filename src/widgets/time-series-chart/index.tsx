@@ -105,17 +105,20 @@ export function TimeSeriesChart({
   frames,
   viewTimestamp_ms,
   onCursorHover,
+  zoomRange,
+  onZoomRangeChange,
 }: WidgetProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const uplotRef = useRef<uPlot | null>(null);
 
   const hoveringRef = useRef(false);
-  const userZoomRef = useRef(false);
+  const userZoomPendingRef = useRef(false);
   const lastIdxRef = useRef<number | null>(null);
   const xValuesRef = useRef<number[]>([]);
-  const framesRef = useRef<TelemetryFrame[] | null>(null);
   const onHoverRef = useRef(onCursorHover);
   onHoverRef.current = onCursorHover;
+  const onZoomRef = useRef(onZoomRangeChange);
+  onZoomRef.current = onZoomRangeChange;
 
   const fieldsKey = dataFields.join('|');
   const configKey = JSON.stringify(config ?? {});
@@ -194,9 +197,25 @@ export function TimeSeriesChart({
       plugins: [
         {
           hooks: {
+            // Marca que el usuario está arrastrando para hacer zoom.
             setSelect: [
               (u) => {
-                if (u.select.width > 0) userZoomRef.current = true;
+                if (u.select.width > 0) userZoomPendingRef.current = true;
+              },
+            ],
+            // uPlot aplica la escala del arrastre DESPUÉS de nuestro mouseup
+            // (su handler está en `document`), así que publicamos desde aquí,
+            // cuando la escala ya es la definitiva.
+            setScale: [
+              (u, key) => {
+                if (key !== 'x' || !userZoomPendingRef.current) return;
+                userZoomPendingRef.current = false;
+                const min = u.scales.x?.min;
+                const max = u.scales.x?.max;
+                if (min == null || max == null || !Number.isFinite(min) || !Number.isFinite(max)) {
+                  return;
+                }
+                onZoomRef.current?.({ startMs: min * 1000, endMs: max * 1000 });
               },
             ],
           },
@@ -227,9 +246,7 @@ export function TimeSeriesChart({
       onHoverRef.current?.(null);
     };
     const handleDblClick = (): void => {
-      userZoomRef.current = false;
-      const x = xValuesRef.current;
-      if (x.length > 1) u.setScale('x', { min: x[0], max: x[x.length - 1] });
+      onZoomRef.current?.(null);
     };
     over.addEventListener('mousemove', handleMove);
     over.addEventListener('mouseleave', handleLeave);
@@ -249,12 +266,6 @@ export function TimeSeriesChart({
     const u = uplotRef.current;
     if (!u) return;
 
-    // Un dataset nuevo (referencia distinta) resetea el zoom.
-    if (framesRef.current !== frames) {
-      framesRef.current = frames;
-      userZoomRef.current = false;
-    }
-
     if (!sampled) {
       xValuesRef.current = [];
       u.setData([new Float64Array(0)]);
@@ -269,16 +280,16 @@ export function TimeSeriesChart({
       u.setScale('y', { min: cfg.yMin, max: cfg.yMax });
     }
 
-    // Rango X completo (t=0..final) salvo que el usuario haya hecho zoom.
-    if (!userZoomRef.current) {
-      if (sampled.x.length > 1) {
-        u.setScale('x', { min: sampled.x[0], max: sampled.x[sampled.x.length - 1] });
-      } else {
-        const only = sampled.x[0] ?? 0;
-        u.setScale('x', { min: only - 1, max: only + 1 });
-      }
+    // Rango X: el zoom compartido, o el dataset completo (t=0..final).
+    if (zoomRange) {
+      u.setScale('x', { min: zoomRange.startMs / 1000, max: zoomRange.endMs / 1000 });
+    } else if (sampled.x.length > 1) {
+      u.setScale('x', { min: sampled.x[0], max: sampled.x[sampled.x.length - 1] });
+    } else {
+      const only = sampled.x[0] ?? 0;
+      u.setScale('x', { min: only - 1, max: only + 1 });
     }
-  }, [sampled, frames, cfg.yMin, cfg.yMax]);
+  }, [sampled, cfg.yMin, cfg.yMax, zoomRange]);
 
   // Mover el cursor a la posición actual (no pisar el hover del usuario).
   useEffect(() => {

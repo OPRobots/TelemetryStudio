@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { TelemetryFrame } from '@core/types/telemetry';
 import type { VideoFrameContext } from '@core/types/video';
+import type { ZoomRange } from './zoom-range';
 
 export type WidgetFieldType = 'number' | 'boolean' | 'string' | 'array' | 'bitmask';
 
@@ -61,9 +62,15 @@ export interface WidgetProps {
 
   /**
    * Publica el timestamp bajo el cursor de una gráfica (hover) o `null` al
-   * salir. Solo la gráfica temporal lo emite; el resto de widgets lo ignoran.
+   * salir. Lo emiten la gráfica temporal y la StateTimeline.
    */
   onCursorHover?: (timestamp_ms: number | null) => void;
+
+  /** Rango de zoom compartido entre timelines; `null` = vista completa. */
+  zoomRange?: ZoomRange | null;
+
+  /** Publica el rango de zoom (o `null` al restablecer). */
+  onZoomRangeChange?: (range: ZoomRange | null) => void;
 }
 
 /**
