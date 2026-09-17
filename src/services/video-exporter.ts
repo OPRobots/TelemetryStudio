@@ -59,7 +59,8 @@ function drawOverlay(ctx: CanvasRenderingContext2D, config: ExportConfig): void 
  */
 export async function exportVideo(
   config: ExportConfig,
-  onProgress?: (progress: ExportProgress) => void
+  onProgress?: (progress: ExportProgress) => void,
+  signal?: AbortSignal
 ): Promise<string> {
   const api = window.api;
   if (!api) throw new Error('API no disponible');
@@ -68,6 +69,12 @@ export async function exportVideo(
   const wasPlaying = video ? !video.paused : false;
   const originalTime = video?.currentTime ?? 0;
   video?.pause();
+
+  const restoreVideo = (): void => {
+    if (!video) return;
+    video.currentTime = originalTime;
+    if (wasPlaying) video.play().catch(() => undefined);
+  };
 
   const canvas = document.createElement('canvas');
   canvas.width = config.width;
@@ -88,6 +95,7 @@ export async function exportVideo(
 
   try {
     for (let i = config.startFrame; i <= config.endFrame; i++) {
+      if (signal?.aborted) throw new DOMException('Exportación cancelada', 'AbortError');
       const t = i / config.fps;
       if (video) await seekTo(video, Math.min(t, video.duration || t));
 
@@ -118,15 +126,12 @@ export async function exportVideo(
   } catch (error) {
     await api.exportAbort().catch(() => undefined);
     throw error;
+  } finally {
+    restoreVideo();
   }
 
   const finalize = await api.exportFinalize();
   if (!finalize.success) throw new Error(finalize.error ?? 'FFmpeg falló al finalizar');
-
-  if (video) {
-    video.currentTime = originalTime;
-    if (wasPlaying) video.play().catch(() => undefined);
-  }
 
   return finalize.outputPath ?? '';
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { ExportConfig } from '@core/types/video';
 import { exportVideo, type ExportProgress } from '@services/video-exporter';
 import { useAppStore } from '../../stores/app-store';
@@ -26,6 +26,8 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
   const [progress, setProgress] = useState<ExportProgress | null>(null);
   const [outputPath, setOutputPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [canceled, setCanceled] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const totalFrames = useMemo(
     () => Math.max(Math.round((videoInfo?.duration_s || 1) * fps), 1),
@@ -58,14 +60,24 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
     setBusy(true);
     setError(null);
     setOutputPath(null);
+    setCanceled(false);
+    setProgress(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      const path = await exportVideo(config, (p) => setProgress(p));
+      const path = await exportVideo(config, (p) => setProgress(p), controller.signal);
       setOutputPath(path);
     } catch (err) {
-      setError((err as Error).message);
+      if ((err as Error).name === 'AbortError') setCanceled(true);
+      else setError((err as Error).message);
     } finally {
+      abortRef.current = null;
       setBusy(false);
     }
+  };
+
+  const cancel = (): void => {
+    abortRef.current?.abort();
   };
 
   const save = async (): Promise<void> => {
@@ -135,16 +147,27 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
         </div>
 
         {progress && busy && (
-          <div className="mt-3">
-            <div className="h-2 w-full overflow-hidden rounded" style={{ backgroundColor: 'var(--bg-primary)' }}>
-              <div
-                className="h-full"
-                style={{ width: `${progress.percent}%`, backgroundColor: '#3b82f6' }}
-              />
+          <div className="mt-3 flex items-center gap-3">
+            <div className="flex-1">
+              <div className="h-2 w-full overflow-hidden rounded" style={{ backgroundColor: 'var(--bg-primary)' }}>
+                <div
+                  className="h-full"
+                  style={{ width: `${progress.percent}%`, backgroundColor: '#3b82f6' }}
+                />
+              </div>
+              <div className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                {progress.currentFrame}/{progress.totalFrames} frames ({progress.percent}%)
+              </div>
             </div>
-            <div className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-              {progress.currentFrame}/{progress.totalFrames} frames ({progress.percent}%)
-            </div>
+            <button className="toolbar-button toolbar-button--compact" onClick={cancel}>
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {canceled && (
+          <div className="mt-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            Exportación cancelada.
           </div>
         )}
 

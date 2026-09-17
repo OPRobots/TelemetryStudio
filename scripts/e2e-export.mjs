@@ -20,6 +20,8 @@ const mockVideo = join(root, 'pocs/02-video-sync/examples/mock_video.mp4');
 const errors = [];
 let sendTimer = null;
 let sentFrames = 0;
+let aborted = 0;
+let slowWrite = false;
 
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-gpu');
@@ -51,7 +53,8 @@ function registerMocks(win) {
     sentFrames = 0;
     return { success: true };
   });
-  ipcMain.handle('export:writeFrame', () => {
+  ipcMain.handle('export:writeFrame', async () => {
+    if (slowWrite) await new Promise((r) => setTimeout(r, 15));
     sentFrames += 1;
     return { success: true };
   });
@@ -59,6 +62,10 @@ function registerMocks(win) {
     success: true,
     outputPath: '/tmp/opencode/export-e2e.mp4',
   }));
+  ipcMain.handle('export:abort', () => {
+    aborted += 1;
+    return { success: true };
+  });
   ipcMain.handle('export:save', () => ({ canceled: true }));
 }
 
@@ -141,10 +148,34 @@ app.whenReady().then(async () => {
       if (done) break;
     }
 
-    console.log('E2E_EXPORT ' + JSON.stringify({ opened, sentFrames, done }));
+    const firstExportFrames = sentFrames;
+
+    // Segundo escenario: cancelar a mitad de una exportación larga
+    slowWrite = true;
+    await win.webContents.executeJavaScript(setInput('export-fps', 30));
+    await win.webContents.executeJavaScript(setInput('export-start', 0));
+    await win.webContents.executeJavaScript(setInput('export-end', 299));
+    await new Promise((r) => setTimeout(r, 200));
+    await win.webContents.executeJavaScript(clickByText('Iniciar exportación'));
+    await new Promise((r) => setTimeout(r, 700));
+    await win.webContents.executeJavaScript(clickByText('Cancelar'));
+    await new Promise((r) => setTimeout(r, 200));
+    const framesAtCancel = sentFrames;
+    await new Promise((r) => setTimeout(r, 700));
+    const framesAfterCancel = sentFrames;
+    const cancelText = await win.webContents.executeJavaScript(
+      `document.body.innerText.includes('Exportación cancelada')`
+    );
+
+    console.log(
+      'E2E_EXPORT ' +
+        JSON.stringify({ opened, firstExportFrames, done, aborted, framesAtCancel, framesAfterCancel, cancelText })
+    );
     if (errors.length > 0) console.log('E2E_EXPORT_ERRORS ' + JSON.stringify(errors.slice(0, 10)));
 
-    const ok = opened && done && sentFrames === 10 && errors.length === 0;
+    const cancelOk =
+      aborted >= 1 && cancelText && framesAtCancel < 300 && framesAfterCancel - framesAtCancel <= 1;
+    const ok = opened && done && firstExportFrames === 10 && cancelOk && errors.length === 0;
     console.log(ok ? 'E2E_EXPORT_OK' : 'E2E_EXPORT_FAIL');
 
     if (sendTimer) clearInterval(sendTimer);
