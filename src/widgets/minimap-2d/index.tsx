@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import type { TelemetryFrame } from '@core/types/telemetry';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { frameAt } from '../frame-lookup';
 import { useCanvasSize } from '../use-canvas-size';
@@ -38,7 +39,7 @@ const TEXT_HEIGHT = 18;
  * Ajusta la escala para mostrar el recorrido completo, centrado; el triángulo
  * del robot se desplaza por la posición del timestamp visualizado.
  */
-export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms }: WidgetProps): React.ReactElement {
+export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms, zoomRange }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
 
@@ -67,25 +68,38 @@ export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms 
     // Frame del cursor: timestamp visualizado > frame actual.
     const cursorFrame = frameAt(frames, viewTimestamp_ms) ?? frame;
 
-    // Bounding box de TODO el recorrido.
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
-    for (const f of frames) {
-      const fx = f.data[fieldX];
-      const fy = f.data[fieldY];
-      if (typeof fx !== 'number' || typeof fy !== 'number') continue;
-      if (fx < minX) minX = fx;
-      if (fx > maxX) maxX = fx;
-      if (fy < minY) minY = fy;
-      if (fy > maxY) maxY = fy;
-    }
-    const hasBounds = Number.isFinite(minX) && Number.isFinite(minY);
+    const bboxFor = (
+      include: (f: TelemetryFrame) => boolean
+    ): { minX: number; maxX: number; minY: number; maxY: number } => {
+      let bMinX = Infinity;
+      let bMaxX = -Infinity;
+      let bMinY = Infinity;
+      let bMaxY = -Infinity;
+      for (const f of frames) {
+        if (!include(f)) continue;
+        const fx = f.data[fieldX];
+        const fy = f.data[fieldY];
+        if (typeof fx !== 'number' || typeof fy !== 'number') continue;
+        if (fx < bMinX) bMinX = fx;
+        if (fx > bMaxX) bMaxX = fx;
+        if (fy < bMinY) bMinY = fy;
+        if (fy > bMaxY) bMaxY = fy;
+      }
+      return { minX: bMinX, maxX: bMaxX, minY: bMinY, maxY: bMaxY };
+    };
+
+    const inRange = (f: TelemetryFrame): boolean =>
+      zoomRange == null || (f.timestamp_ms >= zoomRange.startMs && f.timestamp_ms <= zoomRange.endMs);
+
+    // Con zoom, encuadra el tramo seleccionado; si no hay puntos, cae al completo.
+    let bounds = zoomRange ? bboxFor(inRange) : bboxFor(() => true);
+    const hasBounds = Number.isFinite(bounds.minX) && Number.isFinite(bounds.minY);
+    if (!hasBounds && zoomRange) bounds = bboxFor(() => true);
+    const boundsOk = Number.isFinite(bounds.minX) && Number.isFinite(bounds.minY);
 
     const cx = cursorFrame?.data[fieldX];
     const cy = cursorFrame?.data[fieldY];
-    if (!hasBounds && (typeof cx !== 'number' || typeof cy !== 'number')) {
+    if (!boundsOk && (typeof cx !== 'number' || typeof cy !== 'number')) {
       ctx.fillStyle = '#475569';
       ctx.font = '12px Inter, sans-serif';
       ctx.textAlign = 'center';
@@ -94,41 +108,44 @@ export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms 
       return;
     }
 
-    if (!hasBounds) {
-      minX = maxX = typeof cx === 'number' ? cx : 0;
-      minY = maxY = typeof cy === 'number' ? cy : 0;
-    }
+    const bMinX = boundsOk ? bounds.minX : typeof cx === 'number' ? cx : 0;
+    const bMaxX = boundsOk ? bounds.maxX : typeof cx === 'number' ? cx : 0;
+    const bMinY = boundsOk ? bounds.minY : typeof cy === 'number' ? cy : 0;
+    const bMaxY = boundsOk ? bounds.maxY : typeof cy === 'number' ? cy : 0;
 
-    const rangeX = Math.max(maxX - minX, 1e-6);
-    const rangeY = Math.max(maxY - minY, 1e-6);
+    const rangeX = Math.max(bMaxX - bMinX, 1e-6);
+    const rangeY = Math.max(bMaxY - bMinY, 1e-6);
     const availW = Math.max(width - PAD * 2, 1);
     const availH = Math.max(height - PAD * 2 - TEXT_HEIGHT, 1);
     const scale = Math.min(availW / rangeX, availH / rangeY);
 
     const centerX = PAD + availW / 2;
     const centerY = PAD + TEXT_HEIGHT + availH / 2;
-    const dataCenterX = (minX + maxX) / 2;
-    const dataCenterY = (minY + maxY) / 2;
+    const dataCenterX = (bMinX + bMaxX) / 2;
+    const dataCenterY = (bMinY + bMaxY) / 2;
     const mapX = (x: number): number => centerX + (x - dataCenterX) * scale;
     const mapY = (y: number): number => centerY - (y - dataCenterY) * scale;
 
-    // Grid en coordenadas de datos.
-    if (cfg.showGrid && cfg.gridSize > 0 && cfg.gridSize * scale > 4) {
+    // Grid en coordenadas de datos. El paso se adapta a la escala para que la
+    // separación en pantalla sea legible aunque haya zoom (múltiplos de gridSize).
+    if (cfg.showGrid && cfg.gridSize > 0) {
+      let step = cfg.gridSize;
+      while (step * scale < 40) step *= 2;
       ctx.strokeStyle = '#1e293b';
       ctx.lineWidth = 0.5;
-      const startKx = Math.floor(minX / cfg.gridSize);
-      const endKx = Math.ceil(maxX / cfg.gridSize);
+      const startKx = Math.floor(bMinX / step);
+      const endKx = Math.ceil(bMaxX / step);
       for (let k = startKx; k <= endKx; k++) {
-        const px = mapX(k * cfg.gridSize);
+        const px = mapX(k * step);
         ctx.beginPath();
         ctx.moveTo(px, 0);
         ctx.lineTo(px, height);
         ctx.stroke();
       }
-      const startKy = Math.floor(minY / cfg.gridSize);
-      const endKy = Math.ceil(maxY / cfg.gridSize);
+      const startKy = Math.floor(bMinY / step);
+      const endKy = Math.ceil(bMaxY / step);
       for (let k = startKy; k <= endKy; k++) {
-        const py = mapY(k * cfg.gridSize);
+        const py = mapY(k * step);
         ctx.beginPath();
         ctx.moveTo(0, py);
         ctx.lineTo(width, py);
@@ -136,40 +153,57 @@ export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms 
       }
     }
 
-    // Trayectoria completa.
-    if (frames.length > 1) {
+    // Trayectoria. Con zoom, fuera del rango con opacidad baja (contexto) y
+    // dentro del rango resaltada.
+    const strokeTrail = (include: (f: TelemetryFrame) => boolean, alpha: number): void => {
       ctx.strokeStyle = cfg.trailColor;
       ctx.lineWidth = 2;
-      ctx.globalAlpha = 0.85;
+      ctx.globalAlpha = alpha;
       ctx.beginPath();
-      let started = false;
+      // `penDown` se corta en cada frame excluido: así no se unen los tramos
+      // separados (p. ej. antes y después del rango de zoom) con una cuerda.
+      let penDown = false;
       for (const f of frames) {
         const fx = f.data[fieldX];
         const fy = f.data[fieldY];
-        if (typeof fx !== 'number' || typeof fy !== 'number') continue;
+        if (!include(f) || typeof fx !== 'number' || typeof fy !== 'number') {
+          penDown = false;
+          continue;
+        }
         const px = mapX(fx);
         const py = mapY(fy);
-        if (!started) {
+        if (!penDown) {
           ctx.moveTo(px, py);
-          started = true;
+          penDown = true;
         } else {
           ctx.lineTo(px, py);
         }
       }
-      if (started) ctx.stroke();
+      ctx.stroke();
       ctx.globalAlpha = 1;
+    };
 
-      // Punto de inicio.
+    if (frames.length > 1) {
+      if (zoomRange) {
+        strokeTrail((f) => !inRange(f), 0.2);
+        strokeTrail(inRange, 0.9);
+      } else {
+        strokeTrail(() => true, 0.85);
+      }
+
+      // Punto de inicio (resaltado si cae dentro del rango).
       const first = frames.find((f) => {
         const fx = f.data[fieldX];
         const fy = f.data[fieldY];
         return typeof fx === 'number' && typeof fy === 'number';
       });
       if (first) {
+        ctx.globalAlpha = zoomRange && !inRange(first) ? 0.35 : 1;
         ctx.fillStyle = '#22c55e';
         ctx.beginPath();
         ctx.arc(mapX(first.data[fieldX] as number), mapY(first.data[fieldY] as number), 3, 0, Math.PI * 2);
         ctx.fill();
+        ctx.globalAlpha = 1;
       }
     }
 
@@ -203,6 +237,7 @@ export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms 
     frames,
     frames.length,
     viewTimestamp_ms,
+    zoomRange,
     size.width,
     size.height,
     fieldX,
