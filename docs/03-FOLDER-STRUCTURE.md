@@ -19,7 +19,8 @@ oprobots-telemetry-studio/
 │   ├── 01-serial-widget/            # PoC 1: Serial → parse → uPlot
 │   ├── 02-video-sync/               # PoC 2: Video Sync (requestVideoFrameCallback)
 │   ├── 03-video-export/             # PoC 3: Video Export (raw RGBA → FFmpeg)
-│   └── 04-packaging/                # PoC 4: Packaging multiplataforma
+│   ├── 04-packaging/                # PoC 4: Packaging multiplataforma
+│   └── 05-telemetry-sender/         # PoC 5: emisor de telemetría STM32 (PlatformIO)
 │
 ├── examples/                        # Pruebas manuales y utilidades
 │   ├── README.md                    # Cómo probar sin hardware (socat + simulador)
@@ -34,6 +35,10 @@ oprobots-telemetry-studio/
 │   ├── e2e-prepare.mjs              # E2E: diálogo de transcode
 │   ├── e2e-save.mjs                 # E2E: guardar sesión (bloqueo/reposo)
 │   ├── e2e-widgets.mjs              # E2E: rejilla fluida (resize + reordenar)
+│   ├── e2e-widget-kinds.mjs         # E2E: render de los 4 tipos de widget
+│   ├── e2e-zoom.mjs                 # E2E: zoom compartido entre timelines
+│   ├── e2e-serial-reset.mjs         # E2E: "recibiendo"/"en reposo" + reinicio de captura
+│   ├── e2e-comparison-reset.mjs     # E2E: reset aislado en comparación
 │   ├── run-electron.mjs             # Lanzador de Electron (filtra ruido ambiental)
 │   ├── screenshot.mjs               # Captura de pantalla para revisión visual
 │   ├── fonts.conf                   # Config mínima de fontconfig para dev
@@ -60,8 +65,6 @@ oprobots-telemetry-studio/
 │   │
 │   ├── preload/                     # ═══ PRELOAD SCRIPT ═══
 │   │   └── index.ts                 # contextBridge: expone API segura al renderer
-│   │
-│   ├── workers/                     # ═══ WORKER THREADS ═══ (vacío; export corre en main)
 │   │
 │   ├── core/                        # ═══ CORE / DATA ENGINE ═══
 │   │   ├── types/
@@ -91,6 +94,8 @@ oprobots-telemetry-studio/
 │   │   ├── register-widgets.ts      # Registra los 4 widgets estándar
 │   │   ├── frame-lookup.ts          # Frame más cercano a un timestamp (cursor)
 │   │   ├── use-canvas-size.ts       # ResizeObserver para widgets canvas
+│   │   ├── color-palette.ts         # Paletas automáticas (series / estados)
+│   │   ├── zoom-range.ts            # Rango de zoom compartido (helpers puros)
 │   │   ├── time-series-chart/       # Gráfica temporal multi-serie (uPlot)
 │   │   │   └── index.tsx
 │   │   ├── digital-bitmask/         # Matriz de LEDs (Canvas 2D)
@@ -98,7 +103,8 @@ oprobots-telemetry-studio/
 │   │   ├── minimap-2d/              # Minimapa de trayectoria (Canvas 2D)
 │   │   │   └── index.tsx
 │   │   └── state-timeline/          # Línea de tiempo de estados (Canvas 2D)
-│   │       └── index.tsx
+│   │       ├── index.tsx
+│   │       └── state-entry.ts       # Resolución de etiqueta/color por estado
 │   │
 │   ├── services/                    # ═══ SERVICIOS ═══
 │   │   ├── layout-manager.ts        # Guardar/cargar layouts en JSON
@@ -147,6 +153,8 @@ oprobots-telemetry-studio/
 │   │       │   ├── session-save-status.ts # ¿Se puede guardar? (por último dato)
 │   │       │   ├── sync-actions.ts      # Alinear/restablecer la sync (anchor)
 │   │       │   ├── widget-layout.ts     # Snap de rejilla (ancho/alto) de widgets
+│   │       │   ├── widget-scroll-sync.ts # Scroll sincronizado entre paneles
+│   │       │   ├── video-prepare.ts     # Transcode de vídeo (diálogo + progreso)
 │   │       │   └── comparison-sync.ts   # Sincronizador del panel de comparación
 │   │       ├── stores/
 │   │       │   ├── app-store.ts         # Zustand: estado global
@@ -165,12 +173,16 @@ oprobots-telemetry-studio/
 │   ├── unit/
 │   │   ├── core/                    # event-bus, telemetry-store, video-synchronizer,
 │   │   │                            # layout-manager, session-codec, comparison-manager,
-│   │   │                            # lttb, binary-search
+│   │   │                            # lttb, binary-search, session-manager, setup
 │   │   ├── parsers/                 # serial-uart-parser, json-session-parser, parser-registry
-│   │   ├── renderer/                # auto-layout
-│   │   └── widgets/                 # widget-registry
+│   │   ├── renderer/                # auto-layout, layout-store, comparison-store,
+│   │   │                            # cursor-store, widget-layout, splitter, session-save-status
+│   │   ├── shared/                  # export-args, video-codecs, video-transcode
+│   │   └── widgets/                 # widget-registry, frame-lookup, state-entry, color-palette
 │   ├── integration/
-│   │   └── serial-to-sync.test.ts   # Serial → Store → auto-layout → sync
+│   │   ├── serial-to-sync.test.ts   # Serial → Store → auto-layout → sync
+│   │   ├── export-ffmpeg.test.ts    # Composición + FFmpeg real (ffprobe)
+│   │   └── video-transcode.test.ts  # Transcode HEVC→H.264
 │   ├── e2e/                         # (vacío) los e2e viven en scripts/*.mjs
 │   └── fixtures/
 │       └── session.json
@@ -202,7 +214,6 @@ oprobots-telemetry-studio/
 | Clases e interfaces | `PascalCase` | `TelemetryStore`, `ITelemetryParser` |
 | Componentes React | `PascalCase.tsx` | `VideoPlayer.tsx` |
 | Hooks | `camelCase` con prefijo `use` | `useEventListener.ts` |
-| Worker threads | `*.worker.ts` | `video-export.worker.ts` |
 | Test files | `*.test.ts` | `lttb.test.ts` |
 | Scripts e2e | `e2e-*.mjs` | `e2e-serial.mjs` |
 | Constantes | `UPPER_SNAKE_CASE` | `MAX_BAUD_RATE` |
@@ -221,4 +232,4 @@ preload/         ← No tiene dependencias (solo electron API)
 renderer/        ← Depende de core/, widgets/, services/, shared/
 ```
 
-**Regla de dependencias**: Nunca importar desde `renderer/` hacia `main/` o `workers/`. La comunicación es exclusivamente via IPC.
+**Regla de dependencias**: Nunca importar desde `renderer/` hacia `main/`. La comunicación es exclusivamente via IPC.

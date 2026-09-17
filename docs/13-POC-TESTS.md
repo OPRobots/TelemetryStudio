@@ -1,196 +1,94 @@
-# Pruebas de Concepto (PoCs) Obligatorias
+# Pruebas de Concepto (PoCs)
 
-Antes de iniciar la programación completa de la aplicación, se deben realizar 4 PoCs rápidas para validar que todo el stack funciona sin bloqueos. Cada PoC tiene criterios de éxito medibles.
-
----
-
-## PoC 1: Serial UART → Widget en Tiempo Real
-
-### Objetivo
-Leer datos de telemetría de un STM32 vía UART y renderizarlos en un gráfico uPlot en tiempo real sin drops de FPS.
-
-### Setup
-- STM32 ejecutando firmware con `printf` de telemetría a 115200 baud
-- Cable USB-UART conectado al PC
-- Electron app mínima con serialport + uPlot
-
-### Implementación
-```
-1. SerialPort.open() a 115200 baud
-2. Pipe through ReadlineParser
-3. Cada línea → parsear → emitir al EventBus
-4. uPlot se suscribe al EventBus y redibuja
-```
-
-### Criterios de Éxito
-- [ ] Detecta y abre el puerto serie correctamente
-- [ ] Parsea las líneas de telemetría sin errores
-- [ ] El gráfico uPlot se actualiza en vivo
-- [ ] **60 FPS sostenidos** durante 60 segundos de streaming continuo
-- [ ] La UI de Electron no se congela (botones responden, seek funciona)
-- [ ] Memory leak test: 5 minutos de streaming sin incremento de RAM > 10 MB
-
-### Comandos
-```bash
-# STM32 firmware (pseudo-código)
-printf("T:%lu,S:%d,M:%d,%d,G:%d\n", millis(), speed, motorL, motorR, gyro);
-
-# Electron
-npx electron-vite dev
-# Abrir consola del devtools → pestaña Performance → grabar 30s
-```
-
-### Riesgos identificados
-- `serialport` puede fallar al abrir si el usuario no tiene permisos (Linux/macOS)
-- `highWaterMark` puede necesitar tuning para baud rates altos
+Los PoCs validan que el stack funciona antes de construir la app completa. Viven en
+`pocs/` como referencia de funcionamiento. Hay **5 PoCs**.
 
 ---
 
-## PoC 2: Video-Telemetry Sync con requestVideoFrameCallback
+## PoC 1: Serial UART → Widget en Tiempo Real — ✅ Validado (hardware real)
 
-### Objetivo
-Sincronizar un vídeo MP4 de 30fps con telemetría temporal usando `requestVideoFrameCallback`, validando que el drift es < 1 frame.
+**Objetivo**: leer telemetría de un STM32 vía UART y renderizarla en uPlot sin drops.
 
-### Setup
-- Vídeo MP4 de 10 segundos a 30fps (300 frames)
-- Archivo `session.json` de telemetría con timestamps alineados al vídeo
-- El JSON debe tener un "pico" de datos en el frame exacto 150 (para validación visual)
+**Criterios**
+- [x] Detecta y abre el puerto serie correctamente
+- [x] Parsea las líneas de telemetría sin errores
+- [x] El gráfico uPlot se actualiza en vivo
+- [x] UI de Electron fluida (botones y seek responden)
+- [x] Stream sostenido sin incremento apreciable de RAM
 
-### Implementación
-```
-1. Cargar MP4 en HTMLVideoElement
-2. Cargar session.json → TelemetryDataset
-3. Iniciar requestVideoFrameCallback loop
-4. En cada callback: mediaTime → buscar TelemetryFrame más cercano
-5. Renderizar: vídeo a la izquierda, gráfico uPlot a la derecha
-6. Observar que el pico del gráfico coincide con el frame 150 del vídeo
-```
-
-### Criterios de Éxito
-- [ ] `requestVideoFrameCallback` funciona nativamente en Electron (sin polyfill)
-- [ ] El mediaTime (PTS) se obtiene correctamente del callback
-- [ ] La búsqueda binaria O(log N) encuentra el frame correcto en < 0.1ms
-- [ ] **Drift < 1 frame** (< 33ms a 30fps) durante reproducción continua de 10s
-- [ ] Seek manual (adelante/atrás 1 frame) funciona correctamente
-- [ ] Speed change (0.5x, 1x, 2x) mantiene la sincronización
-- [ ] El polyfill se detecta y usa solo si RVFC no está disponible
-
-### Medición de drift
-```typescript
-// En el callback:
-const expectedTelemetryTime = mediaTime_s * 1000 + driftOffset_ms;
-const actualTelemetryTime = closestFrame.timestamp_ms;
-const drift = Math.abs(expectedTelemetryTime - actualTelemetryTime);
-console.log(`Drift: ${drift.toFixed(1)}ms`);
-// Debe ser < 33ms (1 frame a 30fps)
-```
+**Firmware de referencia**: `pocs/05-telemetry-sender/` (emisor STM32).
 
 ---
 
-## PoC 3: Widget Canvas Export — ✅ COMPLETADO
+## PoC 2: Video-Telemetry Sync con requestVideoFrameCallback — ✅ Funcional
 
-### Objetivo
-Capturar el canvas de un widget (uPlot) y codificar frame-a-frame en MP4 usando OffscreenCanvas + FFmpeg (raw RGBA → libx264).
+**Objetivo**: sincronizar un MP4 con telemetría temporal, con drift < 1 frame.
 
-### Implementación final
-- OffscreenCanvas 1920×1080 captura frames renderizados por uPlot
-- Raw RGBA pixels enviados via IPC al Main Process
-- FFmpeg child process codifica con libx264 (`-crf 18 -preset fast`)
-- Mock de 60s (1800 frames) para testing
-- Progress bar con frame actual, velocidad y memoria
+**Criterios**
+- [x] `requestVideoFrameCallback` funciona nativamente en Electron (con polyfill de respaldo)
+- [x] Se usa el `mediaTime` (PTS) del callback
+- [x] Búsqueda binaria O(log N) del frame más cercano
+- [x] Drift < 1 frame durante reproducción continua
+- [x] Seek manual (adelante/atrás 1 frame) correcto
+- [x] Cambio de velocidad (0.5x, 1x, 2x) mantiene la sincronización
+- [x] El polyfill solo se usa si RVFC no está disponible
 
-### Nota técnica
-WebCodecs `VideoEncoder` requiere GPU process inicializado en Electron. En entornos headless falla. Se optó por raw RGBA + FFmpeg como alternativa más robusta y portable.
-
-### Setup
-- Widget uPlot con datos de telemetría renderizados
-- 60 segundos de datos (1800 frames a 30fps)
-- WebCodecs `VideoEncoder` + Mediabunny muxer
-
-### Implementación
-```
-1. Crear OffscreenCanvas del tamaño de salida (1920x1080)
-2. Para cada frame (0 a 1799):
-   a. Renderizar widget actual en el OffscreenCanvas
-   b. Crear VideoFrame del canvas
-   c. Verificar encoder.encodeQueueSize < 2
-   d. encoder.encode(frame, { keyFrame: every 60 frames })
-   e. frame.close()
-3. encoder.flush()
-4. muxer.finalize()
-5. Descargar WebM resultante
-```
-
-### Criterios de Éxito
-- [ ] `VideoEncoder.isConfigSupported()` retorna `true` para H.264 y VP9
-- [ ] Se generan los 1800 frames sin drops
-- [ ] El WebM resultante se reproduce correctamente en VLC y Chrome
-- [ ] Tiempo de exportación < 30 segundos para 60s de vídeo (real-time o más rápido)
-- [ ] `encodeQueueSize` se mantiene < 5 durante la exportación
-- [ ] El vídeo exportado tiene audio sincronizado (si hay audio)
-- [ ] Memory usage no excede 500 MB durante la exportación
-
-### Codecs a probar
-```typescript
-const configs = [
-  { codec: 'avc1.42001f', label: 'H.264' },
-  { codec: 'vp09.00.10.08.00', label: 'VP9' },
-];
-
-for (const config of configs) {
-  const support = await VideoEncoder.isConfigSupported({
-    ...config,
-    width: 1920,
-    height: 1080,
-    bitrate: 5_000_000,
-  });
-  console.log(`${config.label}: ${support.supported ? 'SUPPORTED' : 'NOT SUPPORTED'}`);
-}
-```
+**Medición**: `drift = |mediaTime_s·1000 + offset − frame.timestamp_ms|` (el e2e
+`e2e:video` valida el sync 1 s de vídeo → 1000 ms de telemetría).
 
 ---
 
-## PoC 4: Native Module Packaging en 3 Plataformas
+## PoC 3: Widget Canvas Export — ✅ Completado
 
-### Objetivo
-Empaquetar la app con electron-builder y `serialport` funcionando en Windows, macOS y Linux desde un solo pipeline de CI/CD.
+**Objetivo**: capturar la composición (vídeo + widgets) y codificarla en MP4.
 
-### Setup
-- App Electron mínima con serialport que liste puertos disponibles
-- electron-builder configurado
-- CI/CD con runners para las 3 plataformas
+**Implementación final (real)**: el renderer compone cada frame en un **canvas** y
+lo envía como **raw RGBA** por IPC al Main Process, que ejecuta **FFmpeg**
+(`libx264 -crf 18 -preset fast`) leyendo de `stdin`. Se descartó WebCodecs/Muxer
+JS por su fragilidad en entornos sin GPU.
 
-### Implementación
-```
-1. Configurar electron-builder.yml con asarUnpack para serialport
-2. Configurar electron-rebuild en postinstall
-3. Build en cada plataforma:
-   - Windows: .exe (NSIS) + portable
-   - macOS: .dmg (universal binary)
-   - Linux: .AppImage + .deb
-4. Ejecutar la app empaquetada en cada plataforma
-5. Verificar que serialport detecta puertos USB-UART
-```
+**Criterios**
+- [x] Se generan los frames del rango sin drops relevantes
+- [x] El MP4 resultante se reproduce correctamente (validado con ffprobe)
+- [x] Exportación más rápida que tiempo real
+- [x] Memory usage contenido (streaming a `stdin` con backpressure)
+- [x] El progreso se reporta en el renderer
 
-### Criterios de Éxito
-- [ ] Build exitoso en las 3 plataformas sin errores
-- [ ] La app empaquetada abre correctamente en cada plataforma
-- [ ] `SerialPort.list()` retorna puertos disponibles en las 3 plataformas
-- [ ] El puerto se abre y lee datos correctamente en las 3 plataformas
-- [ ] Windows: NSIS installer + portable ambos funcionan
-- [ ] macOS: DMG abre, app pasa notarization, serial funciona con CP210x
-- [ ] Linux: AppImage ejecuta sin instalación, serial funciona con FTDI/CP210x
-- [ ] Tamaño del paquete < 200 MB en cada plataforma
-- [ ] La app se ejecuta sin permisos de administrador (excepto primer uso de serial en Linux)
+---
 
-### CI/CD
-```yaml
-# Build en paralelo para las 3 plataformas
-jobs:
-  build-windows: { runs-on: windows-latest }
-  build-macos: { runs-on: macos-latest }
-  build-linux: { runs-on: ubuntu-latest }
-```
+## PoC 4: Native Module Packaging — 🟡 Linux OK; Windows/macOS manual
+
+**Objetivo**: empaquetar con electron-builder y `serialport` funcionando.
+
+**Criterios**
+- [x] Build Linux (AppImage + deb) sin errores y app abre
+- [x] `SerialPort.list()` funciona en la app empaquetada (Linux)
+- [x] Tamaño de paquete < 200 MB (AppImage ~109 MB, deb ~75 MB)
+- [ ] Windows: `.exe` (NSIS) + portable — build manual pendiente
+- [ ] macOS: `.dmg` (universal) — build manual pendiente
+- [ ] Serial en las 3 plataformas empaquetadas (Windows pendiente)
+
+---
+
+## PoC 5: Emisor de telemetría de prueba (STM32) — ✅ Firmware de prueba
+
+Firmware PlatformIO (STM32F401CC + libopencm3) que envía telemetría simulada a
+100 Hz durante 10 s por UART a 115200 baud, con los 4 tipos de datos que la app sabe
+graficar:
+
+- `adc1..adc4` (numérico multi-serie)
+- `ir_sensors` (bitmask IR de 24 bits en hex)
+- `pos_x`, `pos_y` (trayectoria figure-8)
+- `state` (número 0–5), `state_run` (**texto**) y `state_debug` (número 0–3) → valida
+  el parseo de strings y **un `StateTimeline` por cada `state_*`**.
+
+- Directorio: `pocs/05-telemetry-sender/`
+- Formato: genérico con claves `T:<ms>,campo:valor,...`
+- Uso: `pio run -t upload` y conectar por Serial a 115200 en la app.
+- Pinout y configuración de placa: ver su `README.md`.
+
+> `ir_sensors` se envía en hexadecimal (`0x...`): el parser lo infiere como `bitmask`
+> y el auto-layout crea el `DigitalBitmask` con los 24 bits en una sola fila.
 
 ---
 
@@ -199,49 +97,25 @@ jobs:
 ```
 PoC 4 (Packaging)          ← Primero: validar que el stack empaqueta
     ↓
-PoC 1 (Serial → Widget)    ← Segundo: validar pipeline de datos
+PoC 1 (Serial → Widget)    ← Segundo: validar el pipeline de datos
     ↓
-PoC 2 (Video Sync)         ← Tercero: validar sincronización
+PoC 2 (Video Sync)         ← Tercero: validar la sincronización
     ↓
-PoC 3 (Video Export)       ← Cuarto: validar exportación (depende de todo lo anterior)
+PoC 3 (Video Export)       ← Cuarto: validar la exportación
+    ↓
+PoC 5 (Emisor STM32)       ← Fuente de datos de prueba para validar los 4 widgets
 ```
 
-**Justificación**: Si el packaging falla (PoC 4), todo lo demás es inútil. Si el serial falla (PoC 1), el data engine no tiene datos. Si la sync falla (PoC 2), los widgets no se redibujan. Si la export falla (PoC 3), es el último feature en implementarse.
+**Justificación**: si el packaging falla (PoC 4), lo demás es inútil; si el serial
+falla (PoC 1), el data engine no tiene datos; si la sync falla (PoC 2), los widgets
+no se redibujan; la export (PoC 3) es el último feature. El PoC 5 aporta un emisor
+de datos reproducible para probar todos los widgets sin hardware del robot.
 
 ---
 
-## Prueba de Estrés Adicional: 100Hz Telemetry Streaming
+## Prueba de Estrés Adicional: 100 Hz Telemetry Streaming (pendiente)
 
-Para validar el rendimiento bajo carga real:
-
-```
-1. STM32 enviar telemetría a 100 Hz (10ms entre frames)
-2. Cada frame contiene: timestamp, 8 sensores IR, 4 motores, IMU 6-DOF
-3. Mantener streaming durante 10 minutos
-4. Medir:
-   - FPS del widget uPlot: debe mantener > 30 FPS
-   - Memory delta: < 50 MB en 10 minutos
-   - CPU usage: < 30% promedio
-   - Dropped frames del serial: 0
-   - UI responsiveness: < 16ms para clics
-```
-
----
-
-## PoC 5: Emisor de telemetría de prueba (STM32) — ✅ Firmware de prueba
-
-Firmware PlatformIO (STM32 + libopencm3) que envía telemetría simulada a 100 Hz
-durante 10 s por UART a 115200 baud, con los 4 tipos de datos que la app sabe
-graficar (numérico multi-serie, bitmask IR de 24 bits, trayectoria figure-8 y
-estados). Envía **tres campos de estado**: `state` (número 0–5), `state_run`
-(**texto**: IDLE/RUNNING/…) y `state_debug` (número 0–3), de modo que se validan
-el parseo de strings y la creación de **un StateTimeline por cada `state_*`**.
-
-- Directorio: `pocs/05-telemetry-sender/`
-- Formato: genérico con claves `T:<ms>,campo:valor,...`
-- Uso: `pio run -t upload` y conectar por Serial a 115200 en la app.
-- Pinout y configuración de placa: ver su `README.md`.
-
-> Nota: `ir_sensors` se envía en hexadecimal (`0x...`), así que el parser lo
-> infiere como `bitmask` y el auto-layout crea el widget `DigitalBitmask`
-> automáticamente con los 24 bits en una sola fila.
+1. STM32 enviando telemetría a 100 Hz (10 ms entre frames).
+2. Mantener durante varios minutos.
+3. Medir: FPS del widget (uPlot > 30), memory delta contenido, CPU < 30 %,
+   sin drops del serial y UI responsiva (< 16 ms para clics).

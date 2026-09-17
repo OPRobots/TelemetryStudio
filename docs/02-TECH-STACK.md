@@ -6,8 +6,8 @@
 |---|---|---|---|
 | `serialport` (C++ native module) | Funciona con `electron-rebuild` | Sin binding Rust maduro; USB/serial parcial y variable por plataforma | **Electron** |
 | Parsing binario C/C++ (SRAM dumps) | Node.js `Buffer` + `DataView` + Worker Threads | Requiere sidecar C++ o FFI Rust | **Electron** |
-| Exportación de vídeo | WebCodecs nativo en Chromium; codecs consistentes | Depende del WebView del SO (WebKitGTK en Linux = codecs limitados) | **Electron** |
-| Bundle size | ~150 MB (Chromium embebido) | ~10 MB | Tauri |
+| Exportación de vídeo | FFmpeg sidecar; codecs consistentes | Depende del WebView del SO (WebKitGTK en Linux = codecs limitados) | **Electron** |
+| Bundle size | ~109 MB AppImage (Chromium embebido) | ~10 MB | Tauri |
 | RAM idle | ~250 MB | ~80 MB | Tauri |
 | Consistencia cross-platform | Pixel-perfect (mismo Chromium) | Varía: WebView2 / WKWebView / WebKitGTK | **Electron** |
 | Ecosistema / Stack Overflow | Masivo | Creciente pero gaps en "long tail" | **Electron** |
@@ -60,13 +60,15 @@ Para widgets dinámicos que se registran/desregistran en runtime, React tiene el
 
 | Opción | Tamaño bundle | Personalización IDE oscuro | Accesibilidad | Veredicto |
 |---|---|---|---|---|
-| **Tailwind 4 + shadcn/ui** | ~8 KB gzipped | Total via CSS vars | WAI-ARIA built-in | **Ganador** |
+| **Tailwind CSS 4** (tokens en CSS vars) | ~8 KB gzipped | Total via CSS vars | Manual (WAI-ARIA en componentes propios) | **Ganador** |
 | Material UI | ~80 KB | Limitado | Excelente | Demasiado pesado |
-| CSS Modules puro | 0 KB | Total pero sin componentes | Manual | Mucho trabajo |
+| CSS Modules puro | 0 KB | Total pero sin utilidades | Manual | Mucho trabajo |
 
-**Decisión final: Tailwind CSS 4.x + Radix UI Primitives + shadcn/ui**
+**Decisión final: Tailwind CSS 4.x (sin librería de componentes)**
 
-Theme oscuro tipo IDE robótico con paleta OPRobots (cyan accent, dark backgrounds, JetBrains Mono para datos).
+Tema oscuro tipo IDE con la paleta OPRobots (base neutra + **acento azul**
+`#2563eb`/`#3b82f6` usado con moderación, JetBrains Mono para datos). Los tokens
+viven en `globals.css`.
 
 ---
 
@@ -89,9 +91,9 @@ Zustand para estado de UI (layout, settings, widget active). EventBus custom par
 
 | Herramienta | Función | Veredicto |
 |---|---|---|
-| **electron-vite 2.x** | Bundler (Vite para Electron) | **Ganador** — worker threads built-in, native modules externals automáticos |
+| **electron-vite 2.x** | Bundler (Vite para Electron) | **Ganador** — native modules externals automáticos |
 | **electron-builder 25.x** | Packaging multiplataforma | **Ganador** — soporte nativo para ASAR unpack, universal macOS |
-| **Mediabunny** | Muxer para exportación de vídeo | **Ganador** — reemplaza mp4-muxer/webm-muxer deprecados |
+| **FFmpeg (sidecar)** | Codificación de vídeo para exportación | **Ganador** — raw RGBA por stdin; sin dependencias de muxer JS |
 
 ---
 
@@ -101,7 +103,7 @@ Zustand para estado de UI (layout, settings, widget active). EventBus custom par
 |---|---|---|
 | Runtime | Electron | 34.x |
 | Frontend | React + TypeScript | 19.x / 5.6 |
-| Styling | Tailwind CSS + shadcn/ui | 4.x |
+| Styling | Tailwind CSS | 4.x |
 | Charts | uPlot (time-series) | 1.6.x |
 | State | Zustand + EventBus custom | 5.x |
 | Build | electron-vite | 2.x |

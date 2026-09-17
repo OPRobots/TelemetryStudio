@@ -22,15 +22,17 @@ La aplicación está diseñada para funcionar **100% offline**, sin dependencias
 
 El vídeo **siempre** es pregrabado. La telemetría llega por serial en vivo y se sincroniza con el vídeo.
 
-1. Cargar vídeo `.mp4` pregrabado (drag-and-drop o diálogo de archivos)
-2. Conectar serial al robot (USB-UART, 115200 / 460800 / 921600 baud)
-3. Streaming de telemetría en vivo desde el microcontrolador
-4. Esperar a que termine el stream → campos disponibles con sus nombres
-5. Configurar widgets (agrupar parámetros en gráficas, ej: `target_linear_speed`, `ideal_linear_speed`, `measured_linear_speed` en una misma gráfica)
-6. Calibrar sincronización vídeo-telemetría (anchor point: frame del vídeo = timestamp del serial)
-7. Análisis frame-a-frame con barra vertical sincronizada al milisegundo
-8. Guardar sesión → exportar carpeta (`session.json` + copia del `.mp4`)
-9. **Opcional**: exportar vídeo con gráficos superpuestos para redes sociales
+1. Cargar vídeo `.mp4` pregrabado (diálogo de archivos)
+2. Conectar serial al robot (USB-UART, 115200 baud por defecto; se puede indicar otro)
+3. Streaming de telemetría en vivo desde el microcontrolador (los widgets se
+   auto-configuran según los campos descubiertos)
+4. Calibrar la sincronización vídeo-telemetría (anchor point: frame del vídeo = `t=0` de la telemetría)
+5. Análisis frame-a-frame con cursor temporal compartido entre widgets
+6. Guardar sesión → exportar carpeta (`session.json` + copia del `.mp4`)
+7. **Opcional**: exportar vídeo con gráficos superpuestos para redes sociales
+
+> También se puede analizar telemetría **sin vídeo** (modo sin vídeo): la zona de
+> telemetría ocupa toda la ventana.
 
 ### Flujo B — Revisión de Sesión Guardada
 
@@ -42,7 +44,7 @@ El vídeo **siempre** es pregrabado. La telemetría llega por serial en vivo y s
 ### Flujo C — Comparación Side-by-Side (máx. 2 sesiones)
 
 1. Cargar sesión A como referencia (desde Flujo A o B)
-2. Cargar sesión B (nueva sesión serial o另一sesión guardada)
+2. Cargar sesión B (nueva sesión serial u otra sesión guardada)
 3. La interfaz se duplica en paralelo, con un divisor vertical:
 
 ```
@@ -61,7 +63,7 @@ El vídeo **siempre** es pregrabado. La telemetría llega por serial en vivo y s
 
 ### Exportación de Contenido para Redes Sociales
 
-La funcionalidad de exportación de vídeo genera archivos MP4/WebM con los gráficos de telemetría superpuestos sobre el vídeo base. Está diseñada para crear contenido para redes sociales del equipo, no es parte del flujo de análisis principal.
+La funcionalidad de exportación de vídeo genera un archivo **MP4** con los gráficos de telemetría superpuestos sobre el vídeo base. El renderer compone los frames en un canvas y los envía como **raw RGBA a FFmpeg** (sidecar empaquetado o del PATH). Está diseñada para crear contenido para redes sociales del equipo, no es parte del flujo de análisis principal.
 
 ## Restricciones Técnicas Clave
 
@@ -71,7 +73,7 @@ La funcionalidad de exportación de vídeo genera archivos MP4/WebM con los grá
 - **Sesiones portables**: Formato `.json` compacto + `.mp4` para intercambio y reanálisis
 - **Sincronización frame-a-frame**: `requestVideoFrameCallback` con drift < 1 frame.
 - **Comparación**: Máximo 2 sesiones simultáneas, interfaz en paralelo (A izquierda / B derecha) con divisor vertical.
-- **Exportación para redes**: MP4/WebM con gráficos superpuestos (WebCodecs + Worker).
+- **Exportación para redes**: MP4 con gráficos superpuestos (composición en canvas + FFmpeg sidecar).
 
 ## Arquitectura Modular (4 Pilares)
 

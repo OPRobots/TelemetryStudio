@@ -363,7 +363,6 @@ interface EventMap {
   // === Eventos de Comparación ===
   'comparison:start': { referenceSession: SessionFile; referenceDataset: TelemetryDataset };
   'comparison:stop': {};
-  'comparison:sync-mode-change': { sharedBar: boolean };
   'comparison:widget-mismatch': { differences: string[] };
 
   // === Eventos de Exportación ===
