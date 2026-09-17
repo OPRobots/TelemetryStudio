@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
+import { valueAt } from '../frame-lookup';
+import { useCanvasSize } from '../use-canvas-size';
 
 interface BitmaskConfig {
   ledsPerRow: number;
@@ -20,6 +22,8 @@ const DEFAULT_CONFIG: BitmaskConfig = {
   showBitIndex: true,
   showHexValue: true,
 };
+
+const PAD = 8;
 
 /**
  * Normaliza el valor de un campo a un bitmask entero.
@@ -48,9 +52,12 @@ function toBitmask(value: unknown): number | null {
 
 /**
  * Matriz de LEDs para bitmasks (ej. sensores IR).
+ * Muestra el valor del timestamp visualizado (hover/vídeo/último frame).
  */
-export function DigitalBitmask({ config, dataFields, frame }: WidgetProps): React.ReactElement {
+export function DigitalBitmask({ config, dataFields, frame, frames, viewTimestamp_ms }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const size = useCanvasSize(canvasRef);
+
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<BitmaskConfig>) };
   const field = dataFields[0];
 
@@ -61,18 +68,19 @@ export function DigitalBitmask({ config, dataFields, frame }: WidgetProps): Reac
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = Math.max(rect.width * dpr, 1);
-    canvas.height = Math.max(rect.height * dpr, 1);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const width = size.width;
+    const height = size.height;
+    if (width <= 0 || height <= 0) return;
 
-    const width = rect.width;
-    const height = rect.height;
+    canvas.width = Math.max(width * dpr, 1);
+    canvas.height = Math.max(height * dpr, 1);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     ctx.fillStyle = cfg.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    const value = field ? frame?.data[field] : null;
+    const sampled = valueAt(frames, field, viewTimestamp_ms);
+    const value = sampled ?? (field ? frame?.data[field] : null);
     const bitmask = toBitmask(value);
     const totalBits = cfg.ledsPerRow * cfg.rows;
 
@@ -85,24 +93,27 @@ export function DigitalBitmask({ config, dataFields, frame }: WidgetProps): Reac
       return;
     }
 
-    const reserved = cfg.showHexValue ? 18 : 6;
-    const usableHeight = height - reserved;
-    const cellW = width / cfg.ledsPerRow;
-    const cellH = usableHeight / cfg.rows;
-    const ledSize = Math.max(Math.min(cellW, cellH) * 0.62, 4);
-    const gapX = cellW;
-    const gapY = cellH;
+    // Rejilla cuadrada, centrada, que se adapta al tamaño disponible.
+    const reserved = cfg.showHexValue ? 20 : 0;
+    const availW = Math.max(width - PAD * 2, 1);
+    const availH = Math.max(height - PAD * 2 - reserved, 1);
+    const cell = Math.max(Math.min(availW / cfg.ledsPerRow, availH / cfg.rows), 1);
+    const gridW = cell * cfg.ledsPerRow;
+    const gridH = cell * cfg.rows;
+    const ox = (width - gridW) / 2;
+    const oy = (height - reserved - gridH) / 2;
+    const ledSize = Math.max(cell * 0.62, 4);
 
     for (let row = 0; row < cfg.rows; row++) {
       for (let col = 0; col < cfg.ledsPerRow; col++) {
         const bitIndex = row * cfg.ledsPerRow + col;
         const isOn = ((bitmask >> bitIndex) & 1) === 1;
 
-        const cx = col * gapX + gapX / 2;
-        const cy = row * gapY + gapY / 2;
+        const ccx = ox + col * cell + cell / 2;
+        const ccy = oy + row * cell + cell / 2;
 
         ctx.beginPath();
-        ctx.roundRect(cx - ledSize / 2, cy - ledSize / 2, ledSize, ledSize, ledSize * 0.22);
+        ctx.roundRect(ccx - ledSize / 2, ccy - ledSize / 2, ledSize, ledSize, ledSize * 0.22);
 
         if (isOn) {
           ctx.fillStyle = cfg.onColor;
@@ -120,7 +131,7 @@ export function DigitalBitmask({ config, dataFields, frame }: WidgetProps): Reac
           ctx.font = `${Math.min(10, ledSize * 0.32)}px "JetBrains Mono", monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(String(bitIndex), cx, cy);
+          ctx.fillText(String(bitIndex), ccx, ccy);
         }
       }
     }
@@ -131,9 +142,23 @@ export function DigitalBitmask({ config, dataFields, frame }: WidgetProps): Reac
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       const hex = bitmask.toString(16).toUpperCase().padStart(Math.ceil(totalBits / 4), '0');
-      ctx.fillText(`0x${hex}`, width / 2, height - 3);
+      ctx.fillText(`0x${hex}`, width / 2, height - 4);
     }
-  }, [frame, field, cfg.ledsPerRow, cfg.rows, cfg.onColor, cfg.offColor, cfg.backgroundColor, cfg.showBitIndex, cfg.showHexValue]);
+  }, [
+    frames,
+    frame,
+    field,
+    viewTimestamp_ms,
+    size.width,
+    size.height,
+    cfg.ledsPerRow,
+    cfg.rows,
+    cfg.onColor,
+    cfg.offColor,
+    cfg.backgroundColor,
+    cfg.showBitIndex,
+    cfg.showHexValue,
+  ]);
 
   return <canvas ref={canvasRef} className="h-full w-full" />;
 }

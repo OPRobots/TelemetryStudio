@@ -25,13 +25,46 @@
 > Cada widget exporta una `WidgetDefinition` (`{ metadata, component }`) y se
 > registra en `src/widgets/widget-registry.ts` vía `register-widgets.ts`.
 > `WidgetHost` se suscribe al evento `sync:frame` del EventBus y pasa el frame
-> sincronizado a todos los widgets del layout. Los 4 widgets son:
-> `TimeSeriesChart` (uPlot multi-serie con LTTB), `DigitalBitmask`,
-> `Minimap2D` y `StateTimeline`.
+> sincronizado a todos los widgets del layout, junto con `viewTimestamp_ms`
+> (timestamp efectivo del cursor compartido) y `onCursorHover` (publicación del
+> hover). Los 4 widgets son: `TimeSeriesChart` (uPlot multi-serie con LTTB),
+> `DigitalBitmask`, `Minimap2D` y `StateTimeline`.
 
 ## Visión General
 
 Los widgets son componentes visuales que se renderizan en canvas y se redibujan automáticamente con cada frame de telemetría sincronizado. Cada widget declara qué campos de datos necesita y se suscribe al EventBus.
+
+## Cursor Temporal Compartido
+
+Los cuatro widgets comparten un cursor temporal a través de un store Zustand
+(`src/renderer/src/stores/cursor-store.ts`, `useCursorStore`):
+
+- La **gráfica temporal** publica el timestamp bajo el ratón al hacer hover,
+  mediante la prop `onCursorHover` (y publica `null` al salir con el ratón).
+- `WidgetHost` resuelve el **timestamp efectivo** que entrega a todos los widgets
+  como prop `viewTimestamp_ms`, con esta prioridad:
+  `hover de la gráfica → context.viewTimestamp_ms (vídeo) → frame.timestamp_ms (streaming) → último frame`.
+- `DigitalBitmask`, `StateTimeline` y `Minimap2D` muestran el valor / estado /
+  posición **exactos** en ese timestamp. Sin hover y sin vídeo, muestran el
+  último frame disponible.
+
+La búsqueda del frame más cercano se hace con búsqueda binaria sobre el dataset
+(`src/widgets/frame-lookup.ts`: `frameAt`, `frameIndexAt`, `valueAt`).
+
+## Comportamiento por Defecto
+
+- **TimeSeriesChart**: muestra siempre **todo el dataset (t=0..final)**. El zoom
+  por arrastre se conserva entre actualizaciones de datos; **doble clic**
+  restablece la vista completa. El cursor vertical sigue la posición actual
+  (`autoFollow`). Las series se muestrean con LTTB usando un **único conjunto de
+  índices**, de modo que la X y todas las Y quedan alineadas por índice.
+- **Minimap2D**: ajusta la escala automáticamente para encuadrar **todo el
+  recorrido**, centrado y con márgenes; el triángulo del robot (con orientación)
+  se desplaza por la trayectoria según `viewTimestamp_ms`.
+- **DigitalBitmask** y **StateTimeline**: se repintan al cambiar de tamaño
+  (`ResizeObserver` vía `src/widgets/use-canvas-size.ts`) y escalan su contenido
+  proporcionalmente (rejilla de LEDs cuadrada y centrada; barra + etiqueta
+  proporcionales al alto), en lugar de estirar el bitmap.
 
 ## Ciclo de Vida de un Widget
 

@@ -52,6 +52,18 @@ export interface WidgetProps {
   context: VideoFrameContext | null;
   /** Dataset completo del panel (primario o comparación). */
   frames: TelemetryFrame[];
+
+  /**
+   * Timestamp efectivo a visualizar (ms): hover sobre la gráfica temporal >
+   * posición del vídeo > último frame disponible. `null` si no hay datos.
+   */
+  viewTimestamp_ms?: number | null;
+
+  /**
+   * Publica el timestamp bajo el cursor de una gráfica (hover) o `null` al
+   * salir. Solo la gráfica temporal lo emite; el resto de widgets lo ignoran.
+   */
+  onCursorHover?: (timestamp_ms: number | null) => void;
 }
 
 /**

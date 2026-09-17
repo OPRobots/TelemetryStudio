@@ -6,6 +6,7 @@ import type { VideoFrameContext } from '@core/types/video';
 import { useEventListener } from '../../hooks/useEventListener';
 import { useLayoutStore } from '../../stores/layout-store';
 import { useAppStore } from '../../stores/app-store';
+import { useCursorStore } from '../../stores/cursor-store';
 import { WidgetWrapper } from './WidgetWrapper';
 import { WidgetConfigDialog } from './WidgetConfigDialog';
 import {
@@ -101,6 +102,8 @@ export function WidgetHost({
   const setWidgetWidth = useLayoutStore((s) => s.setWidgetWidth);
   const setWidgetHeight = useLayoutStore((s) => s.setWidgetHeight);
   const hasTelemetry = useAppStore((s) => s.frameCount > 0);
+  const hoverTimestamp = useCursorStore((s) => s.hoverTimestamp_ms);
+  const setHoverTimestamp = useCursorStore((s) => s.setHoverTimestamp);
 
   const [frame, setFrame] = useState<TelemetryFrame | null>(null);
   const [context, setContext] = useState<VideoFrameContext | null>(null);
@@ -123,6 +126,20 @@ export function WidgetHost({
 
   const frames =
     dataset === 'comparison' ? telemetryStore.getComparisonFrames() : telemetryStore.getAllFrames();
+
+  // Timestamp efectivo: hover de la gráfica > vídeo > último frame.
+  const viewTimestamp = useMemo<number | null>(() => {
+    if (hoverTimestamp != null) return hoverTimestamp;
+    if (context?.viewTimestamp_ms != null) return context.viewTimestamp_ms;
+    if (frame?.timestamp_ms != null) return frame.timestamp_ms;
+    return frames.length > 0 ? frames[frames.length - 1]!.timestamp_ms : null;
+  }, [hoverTimestamp, context, frame, frames]);
+
+  // Limpia el hover al cambiar de dataset o al desmontar el panel.
+  useEffect(() => {
+    setHoverTimestamp(null);
+    return () => setHoverTimestamp(null);
+  }, [dataset, eventName, setHoverTimestamp]);
 
   const editingWidget = useMemo(
     () => widgets.find((w) => w.id === editingId) ?? null,
@@ -323,6 +340,8 @@ export function WidgetHost({
                           frame={frame}
                           context={context}
                           frames={frames}
+                          viewTimestamp_ms={viewTimestamp}
+                          onCursorHover={setHoverTimestamp}
                         />
                       ) : (
                         <div

@@ -89,6 +89,8 @@ oprobots-telemetry-studio/
 │   │   ├── interfaces.ts            # WidgetDefinition, WidgetMetadata, WidgetProps
 │   │   ├── widget-registry.ts       # WidgetRegistry singleton (agnóstico)
 │   │   ├── register-widgets.ts      # Registra los 4 widgets estándar
+│   │   ├── frame-lookup.ts          # Frame más cercano a un timestamp (cursor)
+│   │   ├── use-canvas-size.ts       # ResizeObserver para widgets canvas
 │   │   ├── time-series-chart/       # Gráfica temporal multi-serie (uPlot)
 │   │   │   └── index.tsx
 │   │   ├── digital-bitmask/         # Matriz de LEDs (Canvas 2D)
@@ -149,7 +151,8 @@ oprobots-telemetry-studio/
 │   │       ├── stores/
 │   │       │   ├── app-store.ts         # Zustand: estado global
 │   │       │   ├── layout-store.ts      # Zustand: widgets del dashboard
-│   │       │   └── comparison-store.ts  # Zustand: estado de comparación
+│   │       │   ├── comparison-store.ts  # Zustand: estado de comparación
+│   │       │   └── cursor-store.ts      # Zustand: cursor temporal compartido
 │   │       └── styles/
 │   │           └── globals.css          # Tailwind + variables de color
 │   │
