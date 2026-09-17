@@ -9,14 +9,16 @@ Firmware de prueba para STM32F401CC (WeAct Black Pill) que envía telemetría si
 | TimeSeriesChart | `adc1`, `adc2`, `adc3`, `adc4` | 4 ondas seno a diferentes frecuencias (0–4095) |
 | DigitalBitmask | `ir_sensors` | Array de 24 sensores de siguelíneas (bitmask hex 24-bit) |
 | Minimap2D | `pos_x`, `pos_y` | Trayectoria de ocho (lemniscata) simulando robotracer |
-| StateTimeline | `state` | FSM con 6 estados: IDLE → RUNNING → TURNING → SEARCHING → LOST → FINISHED |
+| StateTimeline | `state` | FSM numérico con 6 estados (0–5) |
+| StateTimeline | `state_run` (texto) | Los mismos estados como texto: IDLE → RUNNING → TURNING → SEARCHING → LOST → FINISHED (valida el parseo de strings) |
+| StateTimeline | `state_debug` | Sub-estado numérico 0–3 (cambia cada 600 ms) |
 
 ## Formato de salida
 
 Una línea por frame, formato generic keyed:
 
 ```
-T:100,adc1:3071,adc2:1024,adc3:4095,adc4:0,ir_sensors:0x001FFE,pos_x:45.20,pos_y:89.10,state:1
+T:100,adc1:3071,adc2:1024,adc3:4095,adc4:0,ir_sensors:0x001FFE,pos_x:45.20,pos_y:89.10,state:1,state_run:RUNNING,state_debug:2
 ```
 
 ## Requisitos

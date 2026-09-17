@@ -232,8 +232,10 @@ Para validar el rendimiento bajo carga real:
 
 Firmware PlatformIO (STM32 + libopencm3) que envía telemetría simulada a 100 Hz
 durante 10 s por UART a 115200 baud, con los 4 tipos de datos que la app sabe
-graficar (numérico multi-serie, bitmask IR de 24 bits, trayectoria figure-8 y una
-FSM de 6 estados).
+graficar (numérico multi-serie, bitmask IR de 24 bits, trayectoria figure-8 y
+estados). Envía **tres campos de estado**: `state` (número 0–5), `state_run`
+(**texto**: IDLE/RUNNING/…) y `state_debug` (número 0–3), de modo que se validan
+el parseo de strings y la creación de **un StateTimeline por cada `state_*`**.
 
 - Directorio: `pocs/05-telemetry-sender/`
 - Formato: genérico con claves `T:<ms>,campo:valor,...`

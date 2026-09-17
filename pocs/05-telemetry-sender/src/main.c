@@ -20,7 +20,7 @@ int main(void) {
   printf("\r\n=== OPR Telemetry Test Sender (STM32F401CC) ===\r\n");
   printf("Sample rate: %d Hz | Duration: %d s | Frames: %d\r\n",
          SAMPLE_RATE_HZ, DURATION_S, TOTAL_FRAMES);
-  printf("Format: T:<ms>,adc1:v,...,state:v\r\n");
+  printf("Format: T:<ms>,campo:valor,... (state_run es texto)\r\n");
   printf("--------------------------------------------------\r\n");
 
   uint32_t start = get_clock_ticks();

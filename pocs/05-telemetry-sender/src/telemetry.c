@@ -37,6 +37,13 @@ static const state_entry_t fsm_table[] = {
 
 #define FSM_LEN (sizeof(fsm_table) / sizeof(fsm_table[0]))
 
+/* Nombres textuales de cada estado, para probar el parseo de strings. */
+static const char *const fsm_names[] = {
+    "IDLE", "RUNNING", "TURNING", "SEARCHING", "LOST", "FINISHED",
+};
+
+#define DEBUG_STATE_COUNT 4
+
 /* ---------- Public API ---------- */
 
 void telemetry_init(void) {
@@ -85,14 +92,20 @@ void telemetry_print_frame(uint32_t elapsed_ms) {
     }
     fsm_time -= fsm_table[i].duration_ms;
   }
+  if (fsm_state >= FSM_LEN)
+    fsm_state = 0;
 
-  /* Print frame */
+  /* 5. Debug sub-state (numérico, cambia cada 600 ms) */
+  uint8_t debug_state = (uint8_t)((elapsed_ms / 600) % DEBUG_STATE_COUNT);
+
+  /* Print frame: state (número), state_run (texto) y state_debug (número). */
   printf("T:%lu,adc1:%d,adc2:%d,adc3:%d,adc4:%d,"
          "ir_sensors:0x%06lx,"
-         "pos_x:%.2f,pos_y:%.2f,state:%d\r\n",
+         "pos_x:%.2f,pos_y:%.2f,"
+         "state:%d,state_run:%s,state_debug:%d\r\n",
          (unsigned long)elapsed_ms,
          adc1, adc2, adc3, adc4,
          (unsigned long)ir_mask,
          (double)pos_x, (double)pos_y,
-         (int)fsm_state);
+         (int)fsm_state, fsm_names[fsm_state], (int)debug_state);
 }
