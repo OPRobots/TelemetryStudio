@@ -12,7 +12,8 @@ export type MenuAction =
   | 'compare'
   | 'stop-comparison'
   | 'toggle-inspector'
-  | 'layouts';
+  | 'layouts'
+  | 'new-layout';
 
 /**
  * Construye y establece el menú nativo de la aplicación.
@@ -24,6 +25,19 @@ export function buildAppMenu(win: BrowserWindow): void {
     (): void => {
       if (!win.isDestroyed()) win.webContents.send('menu:action', action);
     };
+
+  const confirmNewLayout = (): void => {
+    const choice = dialog.showMessageBoxSync(win, {
+      type: 'warning',
+      title: 'Nuevo layout',
+      message: '¿Crear un layout nuevo?',
+      detail: 'Se vaciará el lienzo actual sin guardar.',
+      buttons: ['Cancelar', 'Nuevo layout'],
+      defaultId: 0,
+      cancelId: 0,
+    });
+    if (choice === 1 && !win.isDestroyed()) win.webContents.send('menu:action', 'new-layout');
+  };
 
   const showAbout = (): void => {
     void dialog.showMessageBox(win, {
@@ -65,6 +79,7 @@ export function buildAppMenu(win: BrowserWindow): void {
       label: 'Ver',
       submenu: [
         { label: 'Mostrar/ocultar inspector', accelerator: 'CmdOrCtrl+B', click: send('toggle-inspector') },
+        { label: 'Nuevo layout…', click: confirmNewLayout },
         { label: 'Layouts…', click: send('layouts') },
         { type: 'separator' },
         { role: 'reload', label: 'Recargar' },

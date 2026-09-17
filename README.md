@@ -3,7 +3,7 @@
 Aplicación de escritorio multiplataforma para **análisis de telemetría de robots
 de competición con vídeo sincronizado**. 100 % offline y portable.
 
-> _Capturas de pantalla pendientes._
+![Análisis de telemetría con vídeo sincronizado](docs/assets/analysis.png)
 
 ## Características
 
@@ -86,9 +86,24 @@ npm run typecheck    # Verificación de tipos
 npm run test         # Tests unitarios e integración (Vitest)
 npm run lint         # ESLint
 npm run smoke        # Smoke test del renderer
-npm run e2e          # 11 pruebas e2e (serial, vídeo, comparación, export, widgets...)
+npm run e2e          # 12 pruebas e2e (serial, vídeo, comparación, export, widgets, layouts...)
 npm run verify       # Gate completo (lint + typecheck + tests + build + smoke + e2e)
 ```
+
+## Capturas
+
+**Modo sin vídeo** — la telemetría ocupa toda la ventana.
+
+![Modo sin vídeo](docs/assets/no-video.png)
+
+**Comparación de dos sesiones** en paralelo, con reproducción, scroll, cursor y zoom
+sincronizados.
+
+![Comparación A/B](docs/assets/comparison.png)
+
+**Exportación** a `.mp4` con los widgets superpuestos.
+
+![Exportar vídeo con overlays](docs/assets/export.png)
 
 ## Permisos de Serial (Linux)
 

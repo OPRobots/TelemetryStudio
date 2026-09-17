@@ -23,6 +23,7 @@ import {
   closeVideo,
 } from '../../lib/session-actions';
 import { serialIngest } from '../../lib/serial-ingest';
+import { layoutManager, createEmptyLayout } from '@services/layout-manager';
 import { useAppStore } from '../../stores/app-store';
 import { useLayoutStore } from '../../stores/layout-store';
 import { useComparisonStore } from '../../stores/comparison-store';
@@ -117,6 +118,12 @@ export function AppShell(): React.ReactElement {
         case 'layouts':
           setLayoutsOpen(true);
           break;
+        case 'new-layout': {
+          const layout = createEmptyLayout('Sin guardar');
+          useLayoutStore.getState().setLayout(layout);
+          layoutManager.loadLayout(layout);
+          break;
+        }
         default:
           break;
       }

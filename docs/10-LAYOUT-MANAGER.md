@@ -90,5 +90,8 @@ La lógica de rejilla (snap de ancho/alto, empaquetado en filas) vive en
 - `layout:save`, `layout:loadAll`, `layout:delete`.
 
 Almacenamiento: `app.getPath('userData')/layouts/`. La UI de gestión es
-`LayoutDialog` (listar/cargar/guardar/eliminar; para "nuevo" se guarda con un nombre
-nuevo — no hay botón dedicado, **pendiente**).
+`LayoutDialog` (listar/cargar/guardar/eliminar). **Nuevo layout** es una acción del menú
+nativo (**Ver → Nuevo layout…**) con confirmación propia en el main process
+(`dialog.showMessageBoxSync`): parte de un layout vacío (`createEmptyLayout`,
+`Sin guardar`) y limpia el lienzo. El layout nuevo no se persiste hasta pulsar
+**Guardar** en `LayoutDialog`.

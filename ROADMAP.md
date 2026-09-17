@@ -461,7 +461,7 @@ Ver `docs/13-POC-TESTS.md` para los PoCs detallados con criterios de éxito.
 > Trabajo restante tras la v1.0.0, en orden de ejecución. Documentado aquí para no
 > perder el plan si se compacta el contexto.
 
-### P10.1 — Limpieza y deuda técnica
+### P10.1 — Limpieza y deuda técnica ✅
 
 - `src/renderer/src/components/widgets/WidgetConfigDialog.tsx`: quitar la sección del
   Minimap2D ("Escala"/"Estela", claves deprecadas sin efecto) y corregir el default de
@@ -475,7 +475,7 @@ Ver `docs/13-POC-TESTS.md` para los PoCs detallados con criterios de éxito.
 - `docs/00-PROJECT-OVERVIEW.md`: corregir el baud (es **lista fija** `BAUD_RATES`, no libre).
 - **Aceptación**: `npm run verify` verde; sin imports rotos.
 
-### P10.2 — "Nuevo" en LayoutDialog + capturas del README
+### P10.2 — "Nuevo" en LayoutDialog + capturas del README ✅
 
 - `LayoutDialog.tsx`: botón **"Nuevo"** que parte de un layout vacío
   (`createEmptyLayout`/`clearWidgets`) y permite nombrar y guardar, sin alterar el layout
