@@ -57,6 +57,24 @@ Los cuatro widgets comparten un cursor temporal a través de un store Zustand
 La búsqueda del frame más cercano se hace con búsqueda binaria sobre el dataset
 (`src/widgets/frame-lookup.ts`: `frameAt`, `frameIndexAt`, `valueAt`).
 
+## Zoom Compartido
+
+El mismo store guarda un `zoomRange` (`{ startMs, endMs } | null`) compartido por
+todas las timelines (estado **global**, no se persiste en sesión/layout):
+
+- **TimeSeriesChart**: el arrastre de uPlot publica el rango (`mouseup`); el
+  rango de la store es la única verdad (reemplaza al antiguo zoom interno).
+- **StateTimeline**: **arrastrar** sobre la barra selecciona un rango (con
+  rectángulo translúcido) y lo publica; el hover se suspende durante el arrastre.
+- **Doble clic** en cualquiera de las dos restablece la vista completa
+  (`setZoomRange(null)`).
+- **Minimap2D**: encuadra y centra el tramo del rango; la parte **fuera** del
+  rango se dibuja con opacidad baja (~0.2) como contexto y la de **dentro**
+  resaltada.
+- **DigitalBitmask** no se acota: muestra el valor en `viewTimestamp`.
+- Helpers puros en `src/widgets/zoom-range.ts` (`makeRange`, `isInRange`,
+  `clampRange`, `isFullRange`).
+
 ## Comportamiento por Defecto
 
 - **TimeSeriesChart**: muestra siempre **todo el dataset (t=0..final)**. El zoom
