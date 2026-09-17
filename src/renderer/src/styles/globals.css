@@ -596,6 +596,12 @@ input[type='range']::-moz-range-thumb {
   flex: 1 1 auto;
   min-height: 0;
 }
+/* Card cuyo contenido debe llenar el alto y gestionar su propio scroll. */
+.card__body--fill {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 .card__footer {
   flex-shrink: 0;
   border-top: 1px solid var(--bg-border);
@@ -716,4 +722,36 @@ input[type='range']::-moz-range-thumb {
   transition:
     flex-grow 160ms ease,
     height 160ms ease;
+}
+
+/* El grid llena el alto disponible de la card y hace scroll si no cabe. */
+.widget-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-right: 2px;
+}
+
+/* ============================================================
+   Scroll — fino y estético (Chromium/Electron)
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-border);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }

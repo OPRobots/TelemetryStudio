@@ -20,6 +20,10 @@
 > telemetría ocupa toda la ventana (modo sin vídeo, válido para telemetría
 > capturada sin grabación de vídeo).
 >
+> **Scroll**: la rejilla ocupa el alto disponible de la card "Telemetría" y hace
+> **scroll vertical** cuando los widgets no caben, con una barra **fina** (8px,
+> `::-webkit-scrollbar` con colores del tema) en vez de la scrollbar clásica.
+>
 > **Estado de implementación**: los widgets están implementados como componentes
 > React (no clases) que reciben `frame`/`context` por props desde `WidgetHost`.
 > Cada widget exporta una `WidgetDefinition` (`{ metadata, component }`) y se

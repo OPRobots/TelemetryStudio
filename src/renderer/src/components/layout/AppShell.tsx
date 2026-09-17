@@ -233,7 +233,7 @@ export function AppShell(): React.ReactElement {
                 <span className="card__title">Telemetría</span>
                 <WidgetToolbar open={widgetMenuOpen} onOpenChange={setWidgetMenuOpen} />
               </div>
-              <div className="card__body" style={{ padding: 12 }}>
+              <div className="card__body card__body--fill" style={{ padding: 12 }}>
                 <WidgetHost onRequestAdd={() => setWidgetMenuOpen(true)} />
               </div>
             </div>
