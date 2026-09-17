@@ -424,6 +424,7 @@ Los PoCs se encuentran en `pocs/` como referencia de funcionamiento.
 | PoC 2: Video Sync | `pocs/02-video-sync/` | ✅ Funcional |
 | PoC 3: Video Export | `pocs/03-video-export/` | ✅ Funcional |
 | PoC 4: Packaging | `pocs/04-packaging/` | ✅ Build Linux OK |
+| PoC 5: Emisor de telemetría (STM32) | `pocs/05-telemetry-sender/` | ✅ Firmware de prueba |
 
 Ver `docs/13-POC-TESTS.md` para los 4 PoCs detallados con criterios de éxito.
 

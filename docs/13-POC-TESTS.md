@@ -225,3 +225,21 @@ Para validar el rendimiento bajo carga real:
    - Dropped frames del serial: 0
    - UI responsiveness: < 16ms para clics
 ```
+
+---
+
+## PoC 5: Emisor de telemetría de prueba (STM32) — ✅ Firmware de prueba
+
+Firmware PlatformIO (STM32 + libopencm3) que envía telemetría simulada a 100 Hz
+durante 10 s por UART a 115200 baud, con los 4 tipos de datos que la app sabe
+graficar (numérico multi-serie, bitmask IR de 24 bits, trayectoria figure-8 y una
+FSM de 6 estados).
+
+- Directorio: `pocs/05-telemetry-sender/`
+- Formato: genérico con claves `T:<ms>,campo:valor,...`
+- Uso: `pio run -t upload` y conectar por Serial a 115200 en la app.
+- Pinout y configuración de placa: ver su `README.md`.
+
+> Nota: por Serial los campos se infieren como `number`/`boolean`, así que
+> `ir_sensors` (bitmask) se mostrará en la gráfica; para verlo como LEDs hay que
+> añadir un widget `DigitalBitmask` y seleccionar ese campo.
