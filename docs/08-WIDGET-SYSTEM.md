@@ -43,11 +43,13 @@ Los widgets son componentes visuales que se renderizan en canvas y se redibujan 
 Los cuatro widgets comparten un cursor temporal a través de un store Zustand
 (`src/renderer/src/stores/cursor-store.ts`, `useCursorStore`):
 
-- La **gráfica temporal** publica el timestamp bajo el ratón al hacer hover,
-  mediante la prop `onCursorHover` (y publica `null` al salir con el ratón).
+- Publican el timestamp bajo el ratón al hacer hover (y `null` al salir) la
+  **gráfica temporal** y la **StateTimeline**, mediante la prop `onCursorHover`.
+  Así, mover el ratón sobre cualquiera de ellas desplaza los indicadores del
+  resto (cursor del gráfico, LEDs, minimapa y otras timelines).
 - `WidgetHost` resuelve el **timestamp efectivo** que entrega a todos los widgets
   como prop `viewTimestamp_ms`, con esta prioridad:
-  `hover de la gráfica → context.viewTimestamp_ms (vídeo) → frame.timestamp_ms (streaming) → último frame`.
+  `hover (gráfica o timeline) → context.viewTimestamp_ms (vídeo) → frame.timestamp_ms (streaming) → último frame`.
 - `DigitalBitmask`, `StateTimeline` y `Minimap2D` muestran el valor / estado /
   posición **exactos** en ese timestamp. Sin hover y sin vídeo, muestran el
   último frame disponible.

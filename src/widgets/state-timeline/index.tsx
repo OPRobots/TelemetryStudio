@@ -28,11 +28,34 @@ function clamp(lo: number, value: number, hi: number): number {
 /**
  * Línea de tiempo de estados con indicador del estado actual.
  * El texto, el cursor y la barra reflejan el timestamp visualizado
- * (hover sobre la gráfica / posición del vídeo / último frame).
+ * (hover sobre cualquier widget / posición del vídeo / último frame).
+ * Al pasar el ratón por encima también publica el timestamp bajo el cursor,
+ * igual que la gráfica temporal.
  */
-export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp_ms }: WidgetProps): React.ReactElement {
+export function StateTimeline({
+  config,
+  dataFields,
+  frame,
+  frames,
+  viewTimestamp_ms,
+  onCursorHover,
+}: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
+  // Rango temporal para traducir el hover (x) a timestamp.
+  const hitRef = useRef<{ startMs: number; endMs: number; offsetX: number; timelineWidth: number } | null>(
+    null
+  );
+
+  const publishHover = (clientX: number): void => {
+    const canvas = canvasRef.current;
+    const hit = hitRef.current;
+    if (!canvas || !hit || !onCursorHover) return;
+    const rect = canvas.getBoundingClientRect();
+    const ratio = (clientX - rect.left - hit.offsetX) / hit.timelineWidth;
+    const clamped = Math.min(Math.max(ratio, 0), 1);
+    onCursorHover(hit.startMs + clamped * (hit.endMs - hit.startMs));
+  };
 
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<StateTimelineConfig>) } as StateTimelineConfig;
   // Único origen de verdad: el mapa configurado. Sin entradas, `resolveStateEntry`
@@ -64,6 +87,9 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
     const width = size.width;
     const height = size.height;
     if (width <= 0 || height <= 0) return;
+
+    // Se rehace en cada repintado; si no hay timeline dibujada, el hover no mapea.
+    hitRef.current = null;
 
     canvas.width = Math.max(width * dpr, 1);
     canvas.height = Math.max(height * dpr, 1);
@@ -112,6 +138,8 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
     const startMs = allFrames[0]!.timestamp_ms;
     const endMs = allFrames[allFrames.length - 1]!.timestamp_ms;
     const span = Math.max(endMs - startMs, 1);
+
+    hitRef.current = { startMs, endMs, offsetX, timelineWidth };
 
     // Segmentos de estado a lo largo de todo el dataset.
     let segStartMs = startMs;
@@ -181,7 +209,14 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
     cfg.showLabels,
   ]);
 
-  return <canvas ref={canvasRef} className="h-full w-full" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className="h-full w-full"
+      onMouseMove={(e) => publishHover(e.clientX)}
+      onMouseLeave={() => onCursorHover?.(null)}
+    />
+  );
 }
 
 export const stateTimelineDefinition: WidgetDefinition = {

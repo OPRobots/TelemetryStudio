@@ -194,24 +194,6 @@ export function TimeSeriesChart({
       plugins: [
         {
           hooks: {
-            setCursor: [
-              (u) => {
-                const idx = u.cursor.idx;
-                if (idx == null) {
-                  if (hoveringRef.current) {
-                    hoveringRef.current = false;
-                    lastIdxRef.current = null;
-                    onHoverRef.current?.(null);
-                  }
-                  return;
-                }
-                if (idx === lastIdxRef.current) return;
-                lastIdxRef.current = idx;
-                hoveringRef.current = true;
-                const x = xValuesRef.current[idx];
-                if (x != null) onHoverRef.current?.(x * 1000);
-              },
-            ],
             setSelect: [
               (u) => {
                 if (u.select.width > 0) userZoomRef.current = true;
@@ -226,6 +208,18 @@ export function TimeSeriesChart({
     uplotRef.current = u;
 
     const over = u.over;
+    // El hover real se detecta con eventos de ratón sobre el overlay: el hook
+    // `setCursor` de uPlot también se dispara de forma interna (setData/setScale)
+    // y marcaría un falso "hover" que bloquea el cursor de reproducción.
+    const handleMove = (): void => {
+      const idx = u.cursor.idx;
+      if (idx == null) return;
+      if (idx === lastIdxRef.current) return;
+      lastIdxRef.current = idx;
+      hoveringRef.current = true;
+      const x = xValuesRef.current[idx];
+      if (x != null) onHoverRef.current?.(x * 1000);
+    };
     const handleLeave = (): void => {
       if (!hoveringRef.current) return;
       hoveringRef.current = false;
@@ -237,10 +231,12 @@ export function TimeSeriesChart({
       const x = xValuesRef.current;
       if (x.length > 1) u.setScale('x', { min: x[0], max: x[x.length - 1] });
     };
+    over.addEventListener('mousemove', handleMove);
     over.addEventListener('mouseleave', handleLeave);
     over.addEventListener('dblclick', handleDblClick);
 
     return () => {
+      over.removeEventListener('mousemove', handleMove);
       over.removeEventListener('mouseleave', handleLeave);
       over.removeEventListener('dblclick', handleDblClick);
       u.destroy();
