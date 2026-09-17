@@ -11,17 +11,8 @@ interface StateTimelineConfig {
   showLabels: boolean;
 }
 
-const DEFAULT_STATE_MAP: Record<string, StateEntry> = {
-  '0': { label: 'IDLE', color: '#64748b' },
-  '1': { label: 'RUNNING', color: '#22c55e' },
-  '2': { label: 'TURNING', color: '#eab308' },
-  '3': { label: 'SEARCHING', color: '#06b6d4' },
-  '4': { label: 'LOST', color: '#ef4444' },
-  '5': { label: 'FINISHED', color: '#a855f7' },
-};
-
 const DEFAULT_CONFIG: StateTimelineConfig = {
-  stateMap: DEFAULT_STATE_MAP,
+  stateMap: {},
   barHeight: 26,
   showLabels: true,
 };
@@ -43,7 +34,10 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
   const size = useCanvasSize(canvasRef);
 
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<StateTimelineConfig>) } as StateTimelineConfig;
-  const stateMap = cfg.stateMap && Object.keys(cfg.stateMap).length > 0 ? cfg.stateMap : DEFAULT_STATE_MAP;
+  // Único origen de verdad: el mapa configurado. Sin entradas, `resolveStateEntry`
+  // usa la etiqueta neutra (`S<n>` para números, el propio texto para strings),
+  // igual que el diálogo de configuración.
+  const stateMap = cfg.stateMap ?? {};
   const field = dataFields[0];
   const configKey = JSON.stringify({ showLabels: cfg.showLabels, stateMap });
 
