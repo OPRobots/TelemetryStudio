@@ -1,6 +1,6 @@
 # PoC 05 — STM32 Telemetry Sender
 
-Firmware de prueba para STM32F405RGT6 que envía telemetría simulada a 100 Hz durante 10 segundos por UART (115200 baud). Sirve para validar los 4 tipos de gráficos de OPRobots Telemetry Studio.
+Firmware de prueba para STM32F401CC (WeAct Black Pill) que envía telemetría simulada a 100 Hz durante 10 segundos por UART (115200 baud). Sirve para validar los 4 tipos de gráficos de OPRobots Telemetry Studio.
 
 ## Gráficos probados
 
@@ -47,10 +47,10 @@ pio device monitor             # monitor serial (115200 baud)
 ## Estructura del proyecto
 
 ```
-├── platformio.ini          Configuración PlatformIO (STM32F405RG + libopencm3)
+├── platformio.ini          Configuración PlatformIO (Black Pill STM32F401CC + libopencm3)
 ├── openocd_reset.cfg       Reset config para STLink sin NRST
 ├── include/
-│   ├── config.h            Constantes de clock (168 MHz, 1 kHz SysTick)
+│   ├── config.h            Constantes de clock (84 MHz, 1 kHz SysTick)
 │   ├── setup.h             Declaración de setup()
 │   ├── delay.h             API de timing (ms + µs)
 │   ├── usart.h             Redirección de printf
@@ -81,35 +81,26 @@ gpio_set_af(GPIOA, GPIO_AF7, GPIO9 | GPIO10);
 
 | Placa | USART1 TX/RX | LED |
 |---|---|---|
-| Nucleo-F405RG | PA9/PA10 | PA5 |
-| WeAct Black Pill F405 | PA9/PA10 | PB12 |
-| Generic STM32F405 board | PA9/PA10 | PB12 o PC13 |
+| WeAct Black Pill F401CC | PA9/PA10 | PB12 (firmware) — el LED onboard es PC13 |
+| Generic STM32F401 board | PA9/PA10 | PB12 o PC13 |
 
 ### Clock
 
-El firmware asume **8 MHz HSE** (cristal externo) → PLL a **168 MHz**. Si tu placa usa 25 MHz HSE (como algunas Nucleo), cambiar en `src/setup.c`:
+El firmware usa **25 MHz HSE** (cristal de la Black Pill) → PLL a **84 MHz**. `include/config.h` define `SYSCLK_FREQUENCY_HZ 84000000`, que es lo que usan SysTick (`delay()` en ms) y el contador µs de DWT (`delay_us()`); si cambias el PLL hay que actualizar ambos.
 
 ```c
-// 8 MHz HSE (Black Pill, genérico):
-rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_PLL48_168MHZ]);
-
-// 25 MHz HSE (Nucleo):
-rcc_clock_setup_pll(&rcc_hse_25mhz_3v3[RCC_CLOCK_PLL48_168MHZ]);
+// src/setup.c — actual
+rcc_clock_setup_pll(&rcc_hse_25mhz_3v3[RCC_CLOCK_3V3_84MHZ]);
 ```
 
 ## Board en PlatformIO
 
-El `platformio.ini` usa `board = genericSTM32F405RG`. Si PlatformIO no reconoce tu placa, puedes definir una custom o usar un board similar:
+El `platformio.ini` usa `board = blackpill_f401cc` (WeAct Black Pill F401CCU6, HSE 25 MHz). Si tu placa es otra, cambia el board:
 
 ```ini
-; Opción 1: board genérico (debería funcionar para cualquier F405RG)
-board = genericSTM32F405RG
+; El usado por este PoC:
+board = blackpill_f401cc
 
-; Opción 2: board específico (si PlatformIO lo tiene en su registry)
-board = nucleo_f446re   ; compatible, pero 180 MHz en vez de 168
-
-; Opción 3: board custom en platformio.ini
-board = my_custom_board
-board_build.mcu = stm32f405rgt6
-board_build.f_cpu = 168000000L
+; Alternativa (Nucleo F401RE, placa de evaluación):
+board = nucleo_f401re
 ```

@@ -17,10 +17,10 @@ int main(void) {
   setup();
   telemetry_init();
 
-  printf("\r\n=== OPR Telemetry Test Sender (STM32F405RGT6) ===\r\n");
+  printf("\r\n=== OPR Telemetry Test Sender (STM32F401CC) ===\r\n");
   printf("Sample rate: %d Hz | Duration: %d s | Frames: %d\r\n",
          SAMPLE_RATE_HZ, DURATION_S, TOTAL_FRAMES);
-  printf("Format: T,adc1,adc2,adc3,adc4,ir_sensors,pos_x,pos_y,state\r\n");
+  printf("Format: T:<ms>,adc1:v,...,state:v\r\n");
   printf("--------------------------------------------------\r\n");
 
   uint32_t start = get_clock_ticks();
