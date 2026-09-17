@@ -85,6 +85,33 @@ describe('buildAutoLayoutWidgets', () => {
     expect(widgets[0]!.dataFields).toEqual(['a', 'b']);
   });
 
+  it('creates one StateTimeline per state field', () => {
+    const widgets = buildAutoLayoutWidgets([
+      { name: 'speed', type: 'number' },
+      { name: 'state', type: 'number' },
+      { name: 'state_run', type: 'string' },
+      { name: 'state_debug', type: 'string' },
+      { name: 'mode', type: 'number' },
+    ]);
+
+    const states = widgets.filter((w) => w.type === 'StateTimeline');
+    expect(states.map((w) => w.dataFields[0])).toEqual([
+      'state',
+      'state_run',
+      'state_debug',
+      'mode',
+    ]);
+    expect(states.map((w) => w.label)).toEqual([
+      'Estado',
+      'Estado: run',
+      'Estado: debug',
+      'Estado: mode',
+    ]);
+
+    const chart = widgets.find((w) => w.type === 'TimeSeriesChart');
+    expect(chart?.dataFields).toEqual(['speed']);
+  });
+
   it('creates every widget a full width', () => {
     const widgets = buildAutoLayoutWidgets(FULL_SCHEMA);
     for (const widget of widgets) {

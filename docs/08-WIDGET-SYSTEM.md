@@ -574,7 +574,8 @@ export class Minimap2DRenderer {
 >   valores presentes en el dataset, permite editar etiqueta/color, añadir
 >   valores y restablecer al valor por defecto.
 > - El auto-layout crea **un `StateTimeline` por cada campo de estado**
->   (ver más abajo).
+>   (`state`, `state_*`, `mode`, `status`, `fsm`): etiqueta `Estado` para `state`
+>   y `Estado: <campo>` para el resto (`state_run` → `Estado: run`).
 
 Renderiza una barra horizontal que muestra el estado actual del robot a lo largo del tiempo.
 

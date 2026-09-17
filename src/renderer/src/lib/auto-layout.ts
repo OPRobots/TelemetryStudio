@@ -1,6 +1,9 @@
 import type { FieldSchema } from '@core/types/telemetry';
 import type { WidgetConfig } from '@core/types/layout';
 
+/** Campos que representan un estado (uno o varios): `state`, `state_*`, `mode`, `status`, `fsm`. */
+export const STATE_FIELD_PATTERN = /^(state|state[_-].*|mode|status|fsm)$/i;
+
 let counter = 0;
 
 function makeId(prefix: string): string {
@@ -22,7 +25,8 @@ function findField(schema: FieldSchema[], patterns: RegExp[]): string | undefine
  * - Campos numéricos → una sola TimeSeriesChart con múltiples series
  * - Bitmasks/arrays → DigitalBitmask (todos los bits en una sola fila)
  * - Campos position_x/y (+ heading) → Minimap2D
- * - Campo de estado → StateTimeline
+ * - Cada campo de estado (`state`, `state_*`, `mode`, `status`, `fsm`) → un
+ *   StateTimeline propio
  */
 export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
   if (schema.length === 0) return [];
@@ -38,14 +42,16 @@ export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
   const thetaField = findField(schema, [
     /^(heading|heading[_-]?deg|theta|yaw|angle[_-]?z)$/i,
   ]);
-  const stateField = findField(schema, [/^(state|state[_-]?id|mode|status|fsm)$/i]);
+  const stateFields = schema.filter((s) => STATE_FIELD_PATTERN.test(s.name));
 
   const bitmaskFields = schema
     .filter((s) => s.type === 'bitmask' || s.type === 'array')
     .map((s) => s.name);
 
   const excluded = new Set(
-    [xField, yField, thetaField, stateField, ...bitmaskFields].filter(Boolean) as string[]
+    [xField, yField, thetaField, ...stateFields.map((s) => s.name), ...bitmaskFields].filter(
+      Boolean
+    ) as string[]
   );
 
   const numericFields = schema
@@ -101,14 +107,15 @@ export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
     });
   }
 
-  if (stateField) {
+  for (const state of stateFields) {
+    const suffix = state.name.replace(/^state[_-]/, '');
     widgets.push({
       id: makeId('state'),
       type: 'StateTimeline',
-      label: 'Estado',
+      label: state.name === 'state' ? 'Estado' : `Estado: ${suffix}`,
       width: 12,
       height: 3,
-      dataFields: [stateField],
+      dataFields: [state.name],
       config: {},
       visible: true,
     });

@@ -3,6 +3,7 @@ import type { WidgetConfig } from '@core/types/layout';
 import type { FieldSchema } from '@core/types/telemetry';
 import { useAppStore } from '../../stores/app-store';
 import { useLayoutStore } from '../../stores/layout-store';
+import { STATE_FIELD_PATTERN } from '../../lib/auto-layout';
 
 let addCounter = 0;
 
@@ -14,8 +15,11 @@ function pickFields(widgetType: string, schema: FieldSchema[]): string[] {
     return [x, y, theta].filter(Boolean) as string[];
   }
   if (widgetType === 'StateTimeline') {
-    const state = schema.find((s) => /^(state|state[_-]?id|mode|status)$/i.test(s.name))?.name;
-    return state ? [state] : schema.filter((s) => s.type === 'number').slice(0, 1).map((s) => s.name);
+    const state = schema.find((s) => STATE_FIELD_PATTERN.test(s.name))?.name;
+    if (state) return [state];
+    const text = schema.find((s) => s.type === 'string')?.name;
+    if (text) return [text];
+    return schema.filter((s) => s.type === 'number').slice(0, 1).map((s) => s.name);
   }
   if (widgetType === 'DigitalBitmask') {
     const bits = schema.filter((s) => s.type === 'bitmask' || s.type === 'array').map((s) => s.name);
