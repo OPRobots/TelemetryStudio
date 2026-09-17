@@ -4,7 +4,8 @@
 
 **OPRobots Telemetry Studio** — Aplicación de escritorio multiplataforma para análisis de telemetría de robots de competición con vídeo sincronizado.
 
-- **Stack**: Electron 34, React 19, TypeScript 5.6, uPlot 1.6, Zustand 5, Tailwind CSS 4
+- **Stack**: Electron 34, React 19, TypeScript 5.6, uPlot 1.6, Zustand 5, Tailwind CSS 4, serialport 13
+- **Export**: FFmpeg como sidecar (raw RGBA por stdin)
 - **Build**: electron-vite 2.x, electron-builder 25.x
 - **Tests**: Vitest
 - **Plataformas**: Windows, macOS, Linux (100% offline, portable)
@@ -12,14 +13,13 @@
 ## Arquitectura
 
 ```
-Main Process (Node.js) ←→ Renderer Process (Chromium) ←→ Worker Threads
+Main Process (Node.js) ←→ Renderer Process (Chromium)
 ```
 
-- **Main**: lifecycle, serialport, sesiones, exportación
+- **Main**: lifecycle, serialport, sesiones, exportación de vídeo (FFmpeg sidecar)
 - **Renderer**: UI (React), sincronización vídeo, EventBus, widgets (Canvas 2D + uPlot)
-- **Workers**: exportación de vídeo
 
-Regla estricta: **nunca** importar desde `renderer/` hacia `main/` o `workers/`. Comunicación exclusivamente via IPC.
+Regla estricta: **nunca** importar desde `renderer/` hacia `main/`. Comunicación exclusivamente via IPC.
 
 ## Reglas de Trabajo
 
@@ -76,8 +76,8 @@ feat(widgets): Añade widget TimeSeriesChart con integración uPlot
 
 ### React
 - Functional components solamente (sin class components)
-- Hooks personalizados en `src/renderer/hooks/`
-- Estado global con Zustand stores
+- Hooks personalizados en `src/renderer/src/hooks/`
+- Estado global con Zustand stores (`src/renderer/src/stores/`)
 
 ### Nomenclatura
 
@@ -93,7 +93,8 @@ feat(widgets): Añade widget TimeSeriesChart con integración uPlot
 ### Canvas y Widgets
 - Renderizado con Canvas 2D (no WebGL salvo necesidad)
 - uPlot para gráficas temporales
-- Cada widget implementa `ITelemetryWidget`
+- Cada widget es un componente React que exporta una `WidgetDefinition`
+  (`{ metadata, component }`) y se registra en `src/widgets/register-widgets.ts`
 
 ## Paleta de Colores — Dark Theme
 
@@ -154,8 +155,8 @@ rgba(59,130,246,0.14)  ← Fondos suaves de acento (--accent-soft)
 
 ### Antes de Cada Commit
 ```bash
-npm run verify  # typecheck + tests + build + smoke + e2e (gate completo)
-npm run lint    # Sin errores de ESLint (cuando esté configurado)
+npm run verify  # lint + typecheck + tests + build + smoke + e2e (gate completo)
+npm run lint    # Sin errores de ESLint
 ```
 
 ### Qué Testear
@@ -175,7 +176,6 @@ core/      ← Depende de shared/
 parsers/   ← Depende de core/
 widgets/   ← Depende de core/
 services/  ← Depende de core/ y parsers/
-workers/   ← Depende de core/ y shared/
 renderer/  ← Depende de core/, widgets/, services/, shared/
 main/      ← Depende de shared/ (NO de renderer/)
 preload/   ← Sin dependencias (solo electron API)
@@ -189,7 +189,7 @@ preload/   ← Sin dependencias (solo electron API)
 - **Comparación**: Máximo 2 sesiones simultáneas
 - **Widgets idénticos**: En comparación, si difieren → error explicativo
 - **serialport**: En `dependencies` (NO devDependency)
-- **Serial siempre con vídeo**: Se carga vídeo primero, luego streaming serial
+- **Modo sin vídeo**: se puede analizar telemetría (serial o sesión) sin vídeo cargado
 
 ## Flujo de Trabajo
 
@@ -200,7 +200,7 @@ preload/   ← Sin dependencias (solo electron API)
 1. Cargar session.json → 2. Restaurar todo automáticamente
 
 ### Flujo C — Comparación
-1. Cargar sesión A → 2. Cargar sesión B → 3. Validar widgets idénticos → 4. Interfaz duplicada verticalmente
+1. Cargar sesión A → 2. Cargar sesión B → 3. Validar widgets idénticos → 4. Vista en paralelo (A izquierda / B derecha) con divisor vertical
 
 ## Documentación
 
@@ -236,9 +236,9 @@ npm run typecheck    # Verificar tipos TypeScript
 npm run test         # Ejecutar tests (Vitest)
 npm run test:watch   # Tests en watch mode
 npm run smoke        # Smoke test del renderer en Electron (requiere build)
-npm run e2e          # E2E: Serial→widgets y Vídeo→sync (requiere build)
-npm run verify       # Gate completo: typecheck + tests + build + smoke + e2e
-npm run lint         # ESLint (pendiente configurar)
+npm run e2e          # 11 pruebas e2e (serial, vídeo, comparación, export, widgets...) (requiere build)
+npm run verify       # Gate completo: lint + typecheck + tests + build + smoke + e2e
+npm run lint         # ESLint
 npm run poc:1        # PoC 1: Serial → Widget
 npm run poc:2        # PoC 2: Video Sync
 npm run poc:3        # PoC 3: Video Export
@@ -273,3 +273,4 @@ npm run build:win    # Build Windows (NSIS + portable)
 | PoC 2: Video Sync | ✅ Funcional | `8ee0cd5`, `5f6adde` |
 | PoC 3: Video Export | ✅ Funcional | `ddd9354` |
 | PoC 4: Packaging | ✅ Build Linux OK | `25f1877` |
+| PoC 5: Emisor de telemetría (STM32) | ✅ Firmware de prueba | `920d372`, `2b95b96` |

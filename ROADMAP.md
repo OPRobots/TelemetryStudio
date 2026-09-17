@@ -156,7 +156,7 @@ Implementar la sincronización frame-a-frame entre vídeo MP4 y telemetría, con
 - [x] `src/renderer/components/video/TimelineSlider.tsx`
   - [ ] Slider de seek con preview (seek funcional sin preview)
   - Display de timestamp actual / total
-  - [x] Modo compartido/independiente para comparación
+  - [x] Reproducción siempre simétrica, scroll de widgets y zoom/cursor compartidos en comparación
 - [x] Tests de sincronización:
   - Drift medido en e2e (`e2e:video`)
   - Búsqueda binaria correcta
@@ -226,42 +226,37 @@ Implementar los 4 widgets estándar con registro dinámico, más el sistema de c
   - Canvas 2D con trayectoria X,Y
   - Triángulo rotado para heading
   - Grid de fondo
-  - [ ] Scroll/zoom manual (auto-centrado en el robot)
+  - [x] Encuadre del recorrido completo (escala adaptativa) y zoom al rango seleccionado, atenuando lo que queda fuera
+  - [ ] Pan/zoom manual del minimapa (pendiente)
 - [x] `src/widgets/state-timeline/` — Widget de estados
   - Barra de tiempo con colores por estado
   - Estado actual grande
   - Línea de posición actual
   - Labels de transiciones
 
-### Semana 3: Comparación Side-by-Side
+### Semana 3: Comparación en paralelo
 - [x] `src/core/comparison-manager.ts` — ComparisonManager
   - `startComparison()` — activa modo comparación con validación de widgets
   - `stopComparison()` — desactiva y limpia
-  - `setSyncBarMode()` — toggle barra compartida/independiente
   - `validateWidgetCompatibility()` — valida widgets idénticos entre sesiones
 - [x] `src/renderer/src/components/layout/SplitView.tsx`
-  - Alterna entre vista single y split
-  - En split: apila los paneles verticalmente
-  - Cada mitad tiene su propio VideoPlayer + WidgetHost
-- [x] Integración con VideoSynchronizer #2
-  - Segundo synchronizer (`comparison:frame`, dataset de comparación)
-  - Barra vertical compartida o independiente (toggle)
-- [x] Validación de widgets:
-  - Si sesiones tienen widgets diferentes → error con lista de diferencias
-  - Comparar: tipo, campos, posición, tamaño, configuración
-- [x] Tests de comparación:
-  - Widgets idénticos → comparación activada
-  - Widgets diferentes → error con diferencias listadas
-  - Estado aislado entre synchronizers
+  - A (actual) a la izquierda y B (comparada) a la derecha, con divisor vertical
+  - Cada panel tiene su propio VideoPlayer + WidgetHost
+  - Reproducción siempre simétrica (una barra compartida guiada por el panel con vídeo)
+  - Scroll de widgets sincronizado; cursor y zoom (rango) compartidos
+  - Soporte sin vídeo (placeholder alineado) y cierre de vídeo por panel
+- [x] Integración con VideoSynchronizer #2 (`comparison:frame`, dataset de comparación)
+- [x] Validación de widgets: tipo, campos, tamaño y configuración (si difieren → error con diferencias)
+- [x] Tests de comparación + e2e (`e2e:comparison`, `e2e:comparison-reset`)
 
 ### Validación
 ```bash
 # 4 widgets renderizan correctamente
 # Widgets se redibujan con cada frame de vídeo
-# Comparación side-by-side funciona con 2 sesiones
+# Comparación en paralelo funciona con 2 sesiones
 # Widgets idénticos → activa comparación
 # Widgets diferentes → muestra error
-# Barra compartida/independiente funciona
+# Reproducción, scroll, cursor y zoom sincronizados
 npm run test
 ```
 
@@ -365,12 +360,18 @@ Empaquetado multiplataforma funcional con pipeline de CI/CD.
 Pulido final, testing integral, documentación de usuario.
 
 ### Entregables
-- [x] Tests e2e (harness Electron propio en `scripts/`):
+- [x] Tests e2e (harness Electron propio en `scripts/`, 11 pruebas):
   - App abre correctamente (`smoke`)
   - Serial → widgets (`e2e:serial`)
   - Vídeo + sync (`e2e:video`)
-  - Comparación (`e2e:comparison`)
+  - Comparación en paralelo (`e2e:comparison`)
   - Exportación (`e2e:export`)
+  - Preparación/transcode de vídeo (`e2e:prepare`)
+  - Guardado de sesión (`e2e:save`)
+  - Rejilla de widgets (`e2e:widgets`)
+  - Render de los 4 widgets (`e2e:widget-kinds`)
+  - Zoom compartido (`e2e:zoom`)
+  - Reinicio de captura serial (`e2e:serial-reset`) y reset aislado en comparación (`e2e:comparison-reset`)
   - Nota: se descartó Playwright por el harness Electron propio (más estable y sin dependencias)
 - [x] Documentación de usuario (`README.md`; capturas pendientes)
 - [x] Manejo de errores robusto (banner global de errores; sin crashes)
@@ -426,7 +427,7 @@ Los PoCs se encuentran en `pocs/` como referencia de funcionamiento.
 | PoC 4: Packaging | `pocs/04-packaging/` | ✅ Build Linux OK |
 | PoC 5: Emisor de telemetría (STM32) | `pocs/05-telemetry-sender/` | ✅ Firmware de prueba |
 
-Ver `docs/13-POC-TESTS.md` para los 4 PoCs detallados con criterios de éxito.
+Ver `docs/13-POC-TESTS.md` para los PoCs detallados con criterios de éxito.
 
 ---
 
