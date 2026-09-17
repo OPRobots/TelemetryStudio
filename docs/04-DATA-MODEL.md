@@ -26,6 +26,7 @@ interface TelemetryFrame {
 type TelemetryValue =
   | number          // Escalar: temperatura, velocidad, PID output
   | boolean         // Booleano: LED on/off, sensor trigger
+  | string          // Etiqueta de texto: estados ("RUNNING", "IDLE")
   | number[]        // Array: sensores IR [1,0,1,1,0,1,0,1]
   | Int8Array       // ArrayBuffer view para datos binarios
   | Uint8Array
@@ -33,6 +34,10 @@ type TelemetryValue =
   | Float32Array
   | null;           // Valor no disponible en este frame
 ```
+
+Los campos de tipo `string` son etiquetas de texto (típicamente estados). El parser
+serial los detecta cuando el valor de un campo no es número, booleano ni hexadecimal;
+el `StateTimeline` los usa directamente como etiqueta.
 
 ## TelemetryDataset — Colección de Frames
 
@@ -80,7 +85,7 @@ interface FieldSchema {
   name: string;
 
   /** Tipo de dato */
-  type: 'number' | 'boolean' | 'array' | 'bitmask';
+  type: 'number' | 'boolean' | 'string' | 'array' | 'bitmask';
 
   /** Unidad de medida (opcional) */
   unit?: string;

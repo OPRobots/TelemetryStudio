@@ -133,6 +133,7 @@ interface SessionTelemetry {
  * - "number":   [nombre, "number", unidad?, min?, max?]
  * - "bitmask":  [nombre, "bitmask", bits]
  * - "boolean":  [nombre, "boolean"]
+ * - "string":   [nombre, "string"]
  * - "array":    [nombre, "array", longitud]
  */
 type SessionFieldSchema =
@@ -141,6 +142,7 @@ type SessionFieldSchema =
   | [string, 'number', string, number, number]    // con unidad, min, max
   | [string, 'bitmask', number]                   // con bits
   | [string, 'boolean']
+  | [string, 'string']                            // etiqueta de texto
   | [string, 'array', number];                    // con longitud
 
 /**

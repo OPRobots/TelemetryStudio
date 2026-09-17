@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import type { TelemetryFrame } from '@core/types/telemetry';
 import type { VideoFrameContext } from '@core/types/video';
 
-export type WidgetFieldType = 'number' | 'boolean' | 'array' | 'bitmask';
+export type WidgetFieldType = 'number' | 'boolean' | 'string' | 'array' | 'bitmask';
 
 export type WidgetCategory = 'chart' | 'indicator' | 'spatial' | 'temporal';
 

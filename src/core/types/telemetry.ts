@@ -16,6 +16,7 @@ export interface TelemetryFrame {
 export type TelemetryValue =
   | number
   | boolean
+  | string
   | number[]
   | Int8Array
   | Uint8Array
@@ -44,7 +45,7 @@ export interface TelemetryDataset {
  */
 export interface FieldSchema {
   name: string;
-  type: 'number' | 'boolean' | 'array' | 'bitmask';
+  type: 'number' | 'boolean' | 'string' | 'array' | 'bitmask';
   unit?: string;
   min?: number;
   max?: number;

@@ -37,14 +37,15 @@ const LEGACY_KEYS: Record<string, string | [string, string]> = {
   M: ['motor_left', 'motor_right'],
 };
 
-function parseValue(raw: string): number | boolean | null {
+function parseValue(raw: string): number | boolean | string | null {
   const trimmed = raw.trim();
   if (trimmed.length === 0) return null;
   if (/^(true|false)$/i.test(trimmed)) return trimmed.toLowerCase() === 'true';
   if (/^0x[0-9a-f]+$/i.test(trimmed)) return parseInt(trimmed, 16);
   if (/^-?\d+$/.test(trimmed)) return parseInt(trimmed, 10);
   if (/^-?\d*\.\d+([eE][-+]?\d+)?$/.test(trimmed)) return parseFloat(trimmed);
-  return null;
+  // Cualquier otro token (sin comas) se interpreta como etiqueta de texto.
+  return trimmed;
 }
 
 /**
@@ -126,7 +127,7 @@ export class SerialUARTParser implements ITelemetryParser {
     if (tokens.length < 2) return null;
 
     const tsValue = parseValue(tokens[0]!);
-    if (tsValue === null || typeof tsValue === 'boolean') return null;
+    if (typeof tsValue !== 'number') return null;
     const timestamp_ms = Math.round(tsValue);
 
     const data: Record<string, TelemetryValue> = {};
@@ -199,7 +200,7 @@ export class SerialUARTParser implements ITelemetryParser {
   private assign(
     data: Record<string, TelemetryValue>,
     name: string,
-    value: number | boolean,
+    value: number | boolean | string,
     hexBits: number | null = null
   ): void {
     data[name] = value;
@@ -213,6 +214,13 @@ export class SerialUARTParser implements ITelemetryParser {
           type: 'bitmask',
           bitmaskWidth: hexBits,
           recommendedWidget: 'bitmask',
+          ...known,
+        });
+      } else if (typeof value === 'string') {
+        this.fieldSchemas.set(name, {
+          name,
+          type: 'string',
+          recommendedWidget: 'timeline',
           ...known,
         });
       } else {

@@ -61,6 +61,31 @@ describe('JSONSessionParser', () => {
     expect(lastFrame.data.speed_rpm).toBe(1400);
   });
 
+  it('should parse string state fields', async () => {
+    const json = JSON.stringify({
+      v: 1,
+      name: 'States',
+      telemetry: {
+        schema: [
+          ['state', 'string'],
+          ['speed', 'number'],
+        ],
+        frames: [
+          [0, 'RUNNING', 100],
+          [10, 'IDLE', 200],
+        ],
+      },
+      layout: { widgets: [] },
+    });
+    const buffer = new TextEncoder().encode(json).buffer as ArrayBuffer;
+    const dataset = await parser.parse(buffer, 'states.json');
+
+    expect(dataset.schema[0]?.type).toBe('string');
+    expect(dataset.schema[0]?.recommendedWidget).toBe('timeline');
+    expect(dataset.frames[0]?.data.state).toBe('RUNNING');
+    expect(dataset.frames[1]?.data.state).toBe('IDLE');
+  });
+
   it('should handle missing fields gracefully', async () => {
     const json = JSON.stringify({
       v: 1,

@@ -7,6 +7,7 @@ export const SESSION_VERSION = 1;
  * - "number":   [nombre, "number", unidad?, min?, max?]
  * - "bitmask":  [nombre, "bitmask", bits]
  * - "boolean":  [nombre, "boolean"]
+ * - "string":   [nombre, "string"]
  * - "array":    [nombre, "array", longitud]
  */
 export type SessionFieldSchema =
@@ -15,6 +16,7 @@ export type SessionFieldSchema =
   | [string, 'number', string, number, number]
   | [string, 'bitmask', number]
   | [string, 'boolean']
+  | [string, 'string']
   | [string, 'array', number];
 
 /**
@@ -51,7 +53,7 @@ export interface SessionTelemetry {
   frames: SessionFrameValue[][];
 }
 
-export type SessionFrameValue = number | boolean | number[] | null;
+export type SessionFrameValue = number | boolean | string | number[] | null;
 
 export interface SessionLayout {
   widgets: SessionWidget[];

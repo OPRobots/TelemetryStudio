@@ -74,7 +74,7 @@ export function decodeFieldSchema(schema: SessionFieldSchema[]): FieldSchema[] {
       base.bitmaskWidth = s[2] as number;
     } else if (type === 'array') {
       base.arrayLength = s[2] as number;
-    } else if (type === 'boolean') {
+    } else if (type === 'boolean' || type === 'string') {
       base.recommendedWidget = 'timeline';
     }
     return base;
@@ -93,6 +93,7 @@ export function encodeFieldSchema(schema: FieldSchema[]): SessionFieldSchema[] {
     }
     if (s.type === 'bitmask') return [s.name, 'bitmask', s.bitmaskWidth ?? 8];
     if (s.type === 'boolean') return [s.name, 'boolean'];
+    if (s.type === 'string') return [s.name, 'string'];
     if (s.type === 'array') return [s.name, 'array', s.arrayLength ?? 0];
     return [s.name, 'number'];
   });
@@ -100,7 +101,9 @@ export function encodeFieldSchema(schema: FieldSchema[]): SessionFieldSchema[] {
 
 function toFrameValue(value: TelemetryValue): SessionFrameValue {
   if (value == null) return null;
-  if (typeof value === 'number' || typeof value === 'boolean') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') {
+    return value;
+  }
   if (Array.isArray(value)) return value;
   if (ArrayBuffer.isView(value)) return Array.from(value as unknown as ArrayLike<number>);
   return null;

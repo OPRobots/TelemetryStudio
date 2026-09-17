@@ -9,6 +9,7 @@ import {
   encodeFieldSchema,
 } from '@core/session-codec';
 import type { SessionFile } from '@core/types/session';
+import type { TelemetryDataset } from '@core/types/telemetry';
 
 const SAMPLE_SESSION: SessionFile = {
   v: 1,
@@ -116,6 +117,39 @@ describe('session-codec round-trip', () => {
 
     expect(decoded[1]?.bitmaskWidth).toBe(16);
     expect(decoded[2]?.type).toBe('boolean');
+  });
+
+  it('round-trips string fields and values', () => {
+    const schema = [
+      { name: 'state', type: 'string' as const },
+      { name: 'speed', type: 'number' as const },
+    ];
+    const encoded = encodeFieldSchema(schema);
+    const decoded = decodeFieldSchema(encoded);
+
+    expect(encoded[0]).toEqual(['state', 'string']);
+    expect(decoded[0]?.type).toBe('string');
+    expect(decoded[0]?.recommendedWidget).toBe('timeline');
+
+    const dataset: TelemetryDataset = {
+      id: 'x',
+      name: 'x',
+      schema,
+      frames: [
+        { timestamp_ms: 0, data: { state: 'RUNNING', speed: 1 } },
+        { timestamp_ms: 10, data: { state: 'IDLE', speed: 2 } },
+      ],
+      startTime_ms: 0,
+      endTime_ms: 10,
+      duration_ms: 10,
+      avgSampleRate_hz: 100,
+      frameCount: 2,
+      source: { type: 'serial', port: '', baudRate: 115200 },
+    };
+
+    const telemetry = datasetToSessionTelemetry(dataset);
+    expect(telemetry.frames[0]).toEqual([0, 'RUNNING', 1]);
+    expect(telemetry.frames[1]).toEqual([10, 'IDLE', 2]);
   });
 
   it('should reject invalid JSON', () => {

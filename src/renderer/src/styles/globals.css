@@ -252,6 +252,10 @@ body {
   background: rgba(168, 85, 247, 0.16);
   color: #c4a3f7;
 }
+.badge--string {
+  background: rgba(6, 182, 212, 0.14);
+  color: #67e8f9;
+}
 
 .hint {
   font-size: 11.5px;

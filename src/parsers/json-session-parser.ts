@@ -56,6 +56,8 @@ export class JSONSessionParser implements ITelemetryParser {
         base.bitmaskWidth = arr[2] as number;
       } else if (type === 'array') {
         base.arrayLength = arr[2] as number;
+      } else if (type === 'boolean' || type === 'string') {
+        base.recommendedWidget = 'timeline';
       }
 
       return base;
@@ -66,9 +68,9 @@ export class JSONSessionParser implements ITelemetryParser {
     onProgress?.(50);
 
     const telemetryFrames: TelemetryFrame[] = rawFrames.map((frame) => {
-      const arr = frame as Array<number | boolean | number[] | null>;
+      const arr = frame as Array<number | boolean | string | number[] | null>;
       const [timestamp_ms, ...values] = arr;
-      const data: Record<string, number | boolean | number[] | null> = {};
+      const data: Record<string, number | boolean | string | number[] | null> = {};
 
       fieldNames.forEach((name, i) => {
         data[name] = values[i] ?? null;

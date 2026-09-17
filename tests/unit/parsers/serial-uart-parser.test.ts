@@ -137,6 +137,39 @@ describe('SerialUARTParser', () => {
     expect(schema.find((s) => s.name === 'speed')?.type).toBe('number');
   });
 
+  it('interprets non-numeric keyed values as string labels', () => {
+    const frame = parser.parseLine('T:0,state:RUNNING,speed:100');
+    expect(frame).not.toBeNull();
+    expect(frame!.data.state).toBe('RUNNING');
+    expect(frame!.data.speed).toBe(100);
+
+    const state = parser.getDiscoveredSchema().find((s) => s.name === 'state');
+    expect(state?.type).toBe('string');
+    expect(state?.recommendedWidget).toBe('timeline');
+  });
+
+  it('keeps booleans, numbers and hex out of the string path', () => {
+    const frame = parser.parseLine('T:0,a:true,b:3.5,c:0x0F');
+    expect(frame!.data.a).toBe(true);
+    expect(frame!.data.b).toBe(3.5);
+
+    const schema = parser.getDiscoveredSchema();
+    expect(schema.find((s) => s.name === 'a')?.type).toBe('boolean');
+    expect(schema.find((s) => s.name === 'b')?.type).toBe('number');
+    expect(schema.find((s) => s.name === 'c')?.type).toBe('bitmask');
+  });
+
+  it('parses string columns in CSV but rejects a string timestamp', () => {
+    expect(parser.parseLine('RUNNING,1,2')).toBeNull();
+
+    parser.setCsvFields(['state', 'speed']);
+    const frame = parser.parseLine('0,RUNNING,100');
+    expect(frame).not.toBeNull();
+    expect(frame!.data.state).toBe('RUNNING');
+    expect(frame!.data.speed).toBe(100);
+    expect(parser.getDiscoveredSchema().find((s) => s.name === 'state')?.type).toBe('string');
+  });
+
   it('should ignore malformed tokens but keep valid ones', () => {
     const frame = parser.parseLine('T:0,speed:100,garbage=,battery:50');
     expect(frame).not.toBeNull();
