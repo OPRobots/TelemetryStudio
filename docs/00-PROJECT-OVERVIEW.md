@@ -23,7 +23,7 @@ La aplicación está diseñada para funcionar **100% offline**, sin dependencias
 El vídeo **siempre** es pregrabado. La telemetría llega por serial en vivo y se sincroniza con el vídeo.
 
 1. Cargar vídeo `.mp4` pregrabado (diálogo de archivos)
-2. Conectar serial al robot (USB-UART, 115200 baud por defecto; se puede indicar otro)
+2. Conectar serial al robot (USB-UART, 115200 baud por defecto; el baud se elige de una lista de velocidades estándar)
 3. Streaming de telemetría en vivo desde el microcontrolador (los widgets se
    auto-configuran según los campos descubiertos)
 4. Calibrar la sincronización vídeo-telemetría (anchor point: frame del vídeo = `t=0` de la telemetría)

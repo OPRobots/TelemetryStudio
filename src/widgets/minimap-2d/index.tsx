@@ -8,27 +8,21 @@ interface MinimapConfig {
   fieldX?: string;
   fieldY?: string;
   fieldTheta?: string;
-  /** @deprecated La escala se adapta siempre al recorrido completo. */
-  scale: number;
   trailColor: string;
   robotColor: string;
   robotLength: number;
   robotWidth: number;
   showGrid: boolean;
   gridSize: number;
-  /** @deprecated La trayectoria muestra siempre el recorrido completo. */
-  trailSeconds: number;
 }
 
 const DEFAULT_CONFIG: MinimapConfig = {
-  scale: 60,
   trailColor: '#3b82f6',
   robotColor: '#F2BE22',
   robotLength: 18,
   robotWidth: 11,
   showGrid: true,
   gridSize: 0.5,
-  trailSeconds: 15,
 };
 
 const PAD = 26;

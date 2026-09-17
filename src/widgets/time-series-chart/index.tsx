@@ -11,8 +11,6 @@ interface TimeSeriesConfig {
   yLabel?: string;
   yMin?: number;
   yMax?: number;
-  /** @deprecated La ventana siempre cubre todo el dataset. */
-  windowSeconds?: number;
   maxPoints?: number;
   /** El cursor sigue la posición actual (vídeo/último frame). */
   autoFollow?: boolean;
@@ -28,7 +26,6 @@ const DEFAULT_CONFIG: Required<TimeSeriesConfig> = {
   yLabel: '',
   yMin: 0,
   yMax: 0,
-  windowSeconds: 10,
   maxPoints: 2000,
   autoFollow: true,
   smoothing: 1,

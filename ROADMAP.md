@@ -152,7 +152,7 @@ Implementar la sincronización frame-a-frame entre vídeo MP4 y telemetría, con
 - [x] `src/renderer/components/video/PlaybackControls.tsx`
   - Play/Pause, Skip Forward/Back
   - Speed selector (0.25x, 0.5x, 1x, 2x)
-  - [x] Controles duplicables para comparación (PaneControls)
+  - [x] Controles duplicables para comparación (sustituido por la barra de reproducción compartida)
 - [x] `src/renderer/components/video/TimelineSlider.tsx`
   - [ ] Slider de seek con preview (seek funcional sin preview)
   - Display de timestamp actual / total

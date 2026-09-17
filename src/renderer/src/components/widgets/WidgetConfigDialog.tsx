@@ -115,7 +115,7 @@ export function WidgetConfigDialog({ widget, onClose }: WidgetConfigDialogProps)
               <input
                 type="number"
                 className="dialog-input"
-                value={(config['rows'] as number) ?? 2}
+                value={(config['rows'] as number) ?? 1}
                 onChange={(e) => setConfigValue('rows', Number(e.target.value))}
               />
             </div>
@@ -127,26 +127,7 @@ export function WidgetConfigDialog({ widget, onClose }: WidgetConfigDialogProps)
         )}
 
         {widget.type === 'Minimap2D' && (
-          <div className="dialog-row">
-            <div>
-              <label className="dialog-label">Escala (px/unidad)</label>
-              <input
-                type="number"
-                className="dialog-input"
-                value={(config['scale'] as number) ?? 60}
-                onChange={(e) => setConfigValue('scale', Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="dialog-label">Estela (s)</label>
-              <input
-                type="number"
-                className="dialog-input"
-                value={(config['trailSeconds'] as number) ?? 15}
-                onChange={(e) => setConfigValue('trailSeconds', Number(e.target.value))}
-              />
-            </div>
-          </div>
+          <MinimapOptions config={config} onChange={setConfigValue} />
         )}
 
         <label className="dialog-label">Ancho</label>
@@ -263,6 +244,79 @@ function TimeSeriesOptions({ fields, config, onChange, onColorChange }: TimeSeri
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+interface MinimapOptionsProps {
+  config: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
+}
+
+function MinimapOptions({ config, onChange }: MinimapOptionsProps): React.ReactElement {
+  return (
+    <div className="mt-3">
+      <label className="dialog-checkbox mt-2">
+        <input
+          type="checkbox"
+          checked={(config['showGrid'] as boolean) ?? true}
+          onChange={(e) => onChange('showGrid', e.target.checked)}
+        />
+        <span className="text-xs">Mostrar rejilla</span>
+      </label>
+
+      <div className="dialog-row mt-2">
+        <div>
+          <label className="dialog-label">Tamaño de rejilla</label>
+          <input
+            type="number"
+            step={0.1}
+            className="dialog-input"
+            value={(config['gridSize'] as number) ?? 0.5}
+            onChange={(e) => onChange('gridSize', Number(e.target.value))}
+          />
+        </div>
+      </div>
+
+      <div className="dialog-row mt-2">
+        <div>
+          <label className="dialog-label">Largo del robot</label>
+          <input
+            type="number"
+            className="dialog-input"
+            value={(config['robotLength'] as number) ?? 18}
+            onChange={(e) => onChange('robotLength', Number(e.target.value))}
+          />
+        </div>
+        <div>
+          <label className="dialog-label">Ancho del robot</label>
+          <input
+            type="number"
+            className="dialog-input"
+            value={(config['robotWidth'] as number) ?? 11}
+            onChange={(e) => onChange('robotWidth', Number(e.target.value))}
+          />
+        </div>
+      </div>
+
+      <div className="dialog-row mt-2">
+        <div>
+          <label className="dialog-label">Color de trayectoria</label>
+          <input
+            type="color"
+            value={(config['trailColor'] as string) ?? '#3b82f6'}
+            onChange={(e) => onChange('trailColor', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="dialog-label">Color del robot</label>
+          <input
+            type="color"
+            value={(config['robotColor'] as string) ?? '#F2BE22'}
+            onChange={(e) => onChange('robotColor', e.target.value)}
+          />
+        </div>
+      </div>
     </div>
   );
 }

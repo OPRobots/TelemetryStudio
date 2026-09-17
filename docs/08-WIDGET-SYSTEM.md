@@ -151,8 +151,9 @@ Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, 
   se coloca en la posición de `viewTimestamp_ms`.
 - Con **zoom**: encuadra el tramo del rango y dibuja lo de fuera con opacidad baja (~0.2);
   rejilla adaptativa para que no quede densa.
-- Config: `fieldX`/`fieldY`/`fieldTheta`, `trailColor`, `robotColor`, `robotLength`/`robotWidth`,
-  `showGrid`, `gridSize`. (`scale`/`trailSeconds` quedaron deprecados.)
+- Config: `fieldX`/`fieldY`/`fieldTheta` (derivados de los campos de datos),
+  `trailColor`, `robotColor`, `robotLength`/`robotWidth`, `showGrid`, `gridSize`.
+  El diálogo de configuración expone rejilla, tamaño/colores del robot y color de trayectoria.
 - **Pendiente**: pan/zoom manual dentro del minimapa.
 
 ## Widget 4: StateTimeline (Canvas 2D)

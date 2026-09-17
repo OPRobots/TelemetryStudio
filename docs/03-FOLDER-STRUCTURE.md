@@ -72,7 +72,7 @@ oprobots-telemetry-studio/
 │   │   │   ├── video.ts             # VideoFrameContext, PlaybackState, ExportConfig
 │   │   │   ├── layout.ts            # DashboardLayout, WidgetConfig
 │   │   │   ├── session.ts           # SessionFile, SessionVideo, SessionSync
-│   │   │   ├── comparison.ts        # ComparisonConfig, WidgetCompatibilityResult
+│   │   │   ├── comparison.ts        # WidgetCompatibilityResult
 │   │   │   └── events.ts            # EventMap, todos los tipos de eventos del bus
 │   │   ├── event-bus.ts             # EventBus genérico typed (Pub-Sub)
 │   │   ├── telemetry-store.ts       # Almacén de frames (primario + comparación)
@@ -127,9 +127,8 @@ oprobots-telemetry-studio/
 │   │       │   │   └── SplitView.tsx    # Vista split de comparación
 │   │       │   ├── video/
 │   │       │   │   ├── VideoPlayer.tsx      # Contenedor del elemento video
-│   │       │   │   ├── PlaybackControls.tsx # Play/pause, step, velocidad
-│   │       │   │   ├── PaneControls.tsx     # Controles de un sincronizador concreto
-│   │       │   │   └── TimelineSlider.tsx   # Slider de seek
+│   │   │   │   ├── PlaybackControls.tsx # Play/pause, step, velocidad
+│   │   │   │   └── TimelineSlider.tsx   # Slider de seek
 │   │       │   ├── widgets/
 │   │       │   │   ├── WidgetHost.tsx       # Contenedor dinámico de widgets
 │   │       │   │   ├── WidgetToolbar.tsx    # Añadir widgets (+ Añadir gráfica)

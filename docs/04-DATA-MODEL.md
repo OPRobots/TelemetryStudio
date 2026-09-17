@@ -428,33 +428,13 @@ interface ExportConfig {
 }
 ```
 
-## ComparisonConfig — Configuración de Comparación Side-by-Side
+## WidgetCompatibilityResult — Validación de Compatibilidad de Widgets
+
+La comparación (A izquierda / B derecha, con divisor vertical, reproducción, scroll,
+cursor y zoom sincronizados) exige **widgets idénticos** entre ambas sesiones.
 
 ```typescript
 // src/core/types/comparison.ts
-
-/**
- * Configuración para el modo de comparación side-by-side.
- * Permite ver 2 sesiones simultáneamente, en paralelo (A izquierda / B derecha)
- * con un divisor vertical. Reproducción, scroll, cursor y zoom sincronizados.
- */
-interface ComparisonConfig {
-  /** Si la comparación está activa */
-  enabled: boolean;
-
-  /** Dataset de referencia (sesión A — la que ya está cargada) */
-  referenceDataset: TelemetryDataset | null;
-
-  /** Ruta al vídeo de la sesión de referencia */
-  referenceVideoPath: string | null;
-
-  /** Configuración de sync de la sesión de referencia */
-  referenceSync: SessionSync | null;
-
-  /** Layout de widgets de la sesión de referencia */
-  referenceLayout: SessionLayout | null;
-
-}
 
 /**
  * Resultado de la validación de compatibilidad de widgets entre sesiones.
