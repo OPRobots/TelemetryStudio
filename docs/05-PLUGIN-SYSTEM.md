@@ -13,8 +13,14 @@
 >
 > En CSV posicional, los nombres de columna se configuran con
 > `setCsvFields()` (por defecto `accX…battery`, ver `DEFAULT_CSV_FIELDS`).
-> El tipo de cada campo (`number`/`boolean`) se infiere del valor y se expone vía
-> `getDiscoveredSchema()`, lo que alimenta la auto-configuración de widgets.
+> El tipo de cada campo se infiere del valor y se expone vía
+> `getDiscoveredSchema()`, lo que alimenta la auto-configuración de widgets:
+> `true`/`false` → `boolean`, decimales → `number`, y los literales
+> **hexadecimales** (`0x...`) → `bitmask` (con `bitmaskWidth = 4 × nº de
+> dígitos`). Un campo que primero llega como número se **asciende** a `bitmask`
+> en cuanto aparece un valor hex. El auto-layout crea entonces un
+> `DigitalBitmask` y dimensiona su rejilla al ancho detectado, con **todos los
+> bits en una sola fila** (p. ej. `0x001FFE`, 24 bits → 24 columnas × 1 fila).
 
 El sistema de plugins permite extender la aplicación sin modificar el código core. Existen dos tipos de plugins: **Parsers** (entrada de datos) y **Widgets** (visualización).
 

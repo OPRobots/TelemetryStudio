@@ -61,6 +61,9 @@ La búsqueda del frame más cercano se hace con búsqueda binaria sobre el datas
 - **Minimap2D**: ajusta la escala automáticamente para encuadrar **todo el
   recorrido**, centrado y con márgenes; el triángulo del robot (con orientación)
   se desplaza por la trayectoria según `viewTimestamp_ms`.
+- **DigitalBitmask**: por defecto muestra **todos los bits en una sola fila**
+  (arrays de sensores de línea); el auto-layout y el alta desde el menú fijan
+  `ledsPerRow` al ancho del campo y `rows = 1`.
 - **DigitalBitmask** y **StateTimeline**: se repintan al cambiar de tamaño
   (`ResizeObserver` vía `src/widgets/use-canvas-size.ts`) y escalan su contenido
   proporcionalmente (rejilla de LEDs cuadrada y centrada; barra + etiqueta

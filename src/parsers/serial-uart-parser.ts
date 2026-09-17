@@ -48,6 +48,15 @@ function parseValue(raw: string): number | boolean | null {
 }
 
 /**
+ * Si el token es un literal hexadecimal (`0x...`), devuelve su ancho en bits
+ * (4 por dígito). Se usa para inferir campos de tipo `bitmask`.
+ */
+function hexBitWidth(raw: string): number | null {
+  const match = /^0x([0-9a-f]+)$/i.exec(raw.trim());
+  return match ? match[1]!.length * 4 : null;
+}
+
+/**
  * Parser de telemetría Serial UART.
  *
  * Soporta dos formatos en la misma línea:
@@ -123,8 +132,9 @@ export class SerialUARTParser implements ITelemetryParser {
     const data: Record<string, TelemetryValue> = {};
     for (let i = 1; i < tokens.length; i++) {
       const name = this.csvFields[i - 1] ?? `field_${i}`;
-      const value = parseValue(tokens[i]!);
-      if (value !== null) this.assign(data, name, value);
+      const token = tokens[i]!;
+      const value = parseValue(token);
+      if (value !== null) this.assign(data, name, value, hexBitWidth(token));
     }
 
     if (Object.keys(data).length === 0) return null;
@@ -153,11 +163,12 @@ export class SerialUARTParser implements ITelemetryParser {
         const key = pairMatch[1]!;
         const rawValue = pairMatch[2]!;
         const value = parseValue(rawValue);
+        const hexBits = hexBitWidth(rawValue);
 
         if (key === 'M' && Array.isArray(LEGACY_KEYS.M)) {
           if (value !== null) {
             const [left, right] = LEGACY_KEYS.M;
-            this.assign(data, left!, value);
+            this.assign(data, left!, value, hexBits);
             pendingLegacyKey = right!;
           }
           continue;
@@ -165,12 +176,12 @@ export class SerialUARTParser implements ITelemetryParser {
 
         const mapped = this.mapLegacyKey(key);
         if (value !== null) {
-          this.assign(data, mapped, value);
+          this.assign(data, mapped, value, hexBits);
         }
         pendingLegacyKey = null;
       } else if (pendingLegacyKey) {
         const value = parseValue(token);
-        if (value !== null) this.assign(data, pendingLegacyKey, value);
+        if (value !== null) this.assign(data, pendingLegacyKey, value, hexBitWidth(token));
         pendingLegacyKey = null;
       }
     }
@@ -188,18 +199,40 @@ export class SerialUARTParser implements ITelemetryParser {
   private assign(
     data: Record<string, TelemetryValue>,
     name: string,
-    value: number | boolean
+    value: number | boolean,
+    hexBits: number | null = null
   ): void {
     data[name] = value;
 
-    if (!this.fieldSchemas.has(name)) {
+    const existing = this.fieldSchemas.get(name);
+    if (!existing) {
       const known = KNOWN_FIELDS[name] ?? {};
-      this.fieldSchemas.set(name, {
-        name,
-        type: typeof value === 'boolean' ? 'boolean' : 'number',
-        recommendedWidget: typeof value === 'boolean' ? 'timeline' : 'timeseries',
-        ...known,
-      });
+      if (hexBits != null) {
+        this.fieldSchemas.set(name, {
+          name,
+          type: 'bitmask',
+          bitmaskWidth: hexBits,
+          recommendedWidget: 'bitmask',
+          ...known,
+        });
+      } else {
+        this.fieldSchemas.set(name, {
+          name,
+          type: typeof value === 'boolean' ? 'boolean' : 'number',
+          recommendedWidget: typeof value === 'boolean' ? 'timeline' : 'timeseries',
+          ...known,
+        });
+      }
+      return;
+    }
+
+    // Un valor hexadecimal confirma/asciende el campo a bitmask.
+    if (hexBits != null && existing.type !== 'bitmask') {
+      existing.type = 'bitmask';
+      existing.bitmaskWidth = hexBits;
+      existing.recommendedWidget = 'bitmask';
+    } else if (hexBits != null && existing.type === 'bitmask') {
+      existing.bitmaskWidth = Math.max(existing.bitmaskWidth ?? 0, hexBits);
     }
   }
 

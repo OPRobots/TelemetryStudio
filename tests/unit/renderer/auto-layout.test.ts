@@ -44,6 +44,30 @@ describe('buildAutoLayoutWidgets', () => {
     expect(bitmask!.dataFields).toEqual(['ir_sensors']);
   });
 
+  it('shows every bit in a single row', () => {
+    const wide = buildAutoLayoutWidgets([{ name: 'ir_sensors', type: 'bitmask', bitmaskWidth: 24 }]);
+    expect(wide.find((w) => w.type === 'DigitalBitmask')?.config).toEqual({
+      ledsPerRow: 24,
+      rows: 1,
+    });
+
+    const bits8 = buildAutoLayoutWidgets([{ name: 'flags', type: 'bitmask', bitmaskWidth: 8 }]);
+    expect(bits8.find((w) => w.type === 'DigitalBitmask')?.config).toEqual({
+      ledsPerRow: 8,
+      rows: 1,
+    });
+  });
+
+  it('sizes the single row from an array length when width is unknown', () => {
+    const widgets = buildAutoLayoutWidgets([
+      { name: 'line_sensors', type: 'array', arrayLength: 12 },
+    ]);
+    expect(widgets.find((w) => w.type === 'DigitalBitmask')?.config).toEqual({
+      ledsPerRow: 12,
+      rows: 1,
+    });
+  });
+
   it('creates a StateTimeline for a state field', () => {
     const widgets = buildAutoLayoutWidgets(FULL_SCHEMA);
     const state = widgets.find((w) => w.type === 'StateTimeline');

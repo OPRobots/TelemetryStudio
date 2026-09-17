@@ -104,6 +104,37 @@ describe('SerialUARTParser', () => {
     const frame = parser.parseLine('T:0,ir_sensors:0xAAAA');
     expect(frame).not.toBeNull();
     expect(frame!.data.ir_sensors).toBe(0xaaaa);
+
+    const schema = parser.getDiscoveredSchema();
+    const ir = schema.find((s) => s.name === 'ir_sensors');
+    expect(ir?.type).toBe('bitmask');
+    expect(ir?.bitmaskWidth).toBe(16);
+    expect(ir?.recommendedWidget).toBe('bitmask');
+  });
+
+  it('tracks the widest hex value seen for a bitmask', () => {
+    parser.parseLine('T:0,ir_sensors:0xFF');
+    parser.parseLine('T:10,ir_sensors:0x001FFE');
+    const ir = parser.getDiscoveredSchema().find((s) => s.name === 'ir_sensors');
+    expect(ir?.type).toBe('bitmask');
+    expect(ir?.bitmaskWidth).toBe(24);
+  });
+
+  it('upgrades a field from number to bitmask when hex appears', () => {
+    parser.parseLine('T:0,ir_sensors:255');
+    expect(parser.getDiscoveredSchema()[0]?.type).toBe('number');
+    parser.parseLine('T:10,ir_sensors:0xFF');
+    const ir = parser.getDiscoveredSchema()[0];
+    expect(ir?.type).toBe('bitmask');
+    expect(ir?.bitmaskWidth).toBe(8);
+  });
+
+  it('infers bitmask from hex in CSV columns', () => {
+    parser.setCsvFields(['ir_sensors', 'speed']);
+    parser.parseLine('0,0x0F,100');
+    const schema = parser.getDiscoveredSchema();
+    expect(schema.find((s) => s.name === 'ir_sensors')?.type).toBe('bitmask');
+    expect(schema.find((s) => s.name === 'speed')?.type).toBe('number');
   });
 
   it('should ignore malformed tokens but keep valid ones', () => {

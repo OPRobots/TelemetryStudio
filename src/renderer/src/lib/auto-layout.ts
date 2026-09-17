@@ -20,7 +20,7 @@ function findField(schema: FieldSchema[], patterns: RegExp[]): string | undefine
  * en la rejilla fluida.
  *
  * - Campos numéricos → una sola TimeSeriesChart con múltiples series
- * - Bitmasks/arrays → DigitalBitmask
+ * - Bitmasks/arrays → DigitalBitmask (todos los bits en una sola fila)
  * - Campos position_x/y (+ heading) → Minimap2D
  * - Campo de estado → StateTimeline
  */
@@ -86,6 +86,9 @@ export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
   }
 
   if (bitmaskFields.length > 0) {
+    // Todos los bits en una sola fila (arrays de sensores de línea).
+    const firstBitmask = schema.find((s) => bitmaskFields.includes(s.name));
+    const width = firstBitmask?.bitmaskWidth ?? firstBitmask?.arrayLength ?? 8;
     widgets.push({
       id: makeId('bitmask'),
       type: 'DigitalBitmask',
@@ -93,7 +96,7 @@ export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
       width: 12,
       height: 3,
       dataFields: bitmaskFields,
-      config: {},
+      config: { ledsPerRow: Math.max(width, 1), rows: 1 },
       visible: true,
     });
   }

@@ -41,14 +41,25 @@ export function WidgetToolbar({ open, onOpenChange }: WidgetToolbarProps): React
 
     addCounter += 1;
 
+    const dataFields = pickFields(metadata.name, schema);
+    const config: Record<string, unknown> = { ...metadata.defaultConfig };
+
+    // Los bitmasks van en una sola fila, con tantas columnas como bits.
+    if (metadata.name === 'DigitalBitmask') {
+      const field = schema.find((s) => s.name === dataFields[0]);
+      const width = field?.bitmaskWidth ?? field?.arrayLength ?? dataFields.length ?? 8;
+      config.ledsPerRow = Math.max(width, 1);
+      config.rows = 1;
+    }
+
     const widget: WidgetConfig = {
       id: `widget-${Date.now().toString(36)}-${addCounter}`,
       type: metadata.name,
       label: metadata.displayName,
       width: 12,
       height: metadata.defaultSize.height,
-      dataFields: pickFields(metadata.name, schema),
-      config: { ...metadata.defaultConfig },
+      dataFields,
+      config,
       visible: true,
     };
 

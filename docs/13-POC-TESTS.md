@@ -240,6 +240,6 @@ FSM de 6 estados).
 - Uso: `pio run -t upload` y conectar por Serial a 115200 en la app.
 - Pinout y configuración de placa: ver su `README.md`.
 
-> Nota: por Serial los campos se infieren como `number`/`boolean`, así que
-> `ir_sensors` (bitmask) se mostrará en la gráfica; para verlo como LEDs hay que
-> añadir un widget `DigitalBitmask` y seleccionar ese campo.
+> Nota: `ir_sensors` se envía en hexadecimal (`0x...`), así que el parser lo
+> infiere como `bitmask` y el auto-layout crea el widget `DigitalBitmask`
+> automáticamente con los 24 bits en una sola fila.

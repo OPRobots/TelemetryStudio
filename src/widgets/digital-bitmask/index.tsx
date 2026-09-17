@@ -15,7 +15,7 @@ interface BitmaskConfig {
 
 const DEFAULT_CONFIG: BitmaskConfig = {
   ledsPerRow: 8,
-  rows: 2,
+  rows: 1,
   onColor: '#F2BE22',
   offColor: '#1e293b',
   backgroundColor: '#0a0e17',
