@@ -28,6 +28,10 @@ interface TimeSeriesConfig {
   maxPoints?: number;
   /** El cursor sigue la posición actual (vídeo/último frame). */
   autoFollow?: boolean;
+  /**
+   * Suavizado de las líneas: `> 0` usa una spline cúbica monótona (preserva los
+   * picos, sin sobrepaso); `0` deja segmentos rectos.
+   */
   smoothing?: number;
 }
 
@@ -37,9 +41,9 @@ const DEFAULT_CONFIG: Required<TimeSeriesConfig> = {
   yMin: 0,
   yMax: 0,
   windowSeconds: 10,
-  maxPoints: 800,
+  maxPoints: 2000,
   autoFollow: true,
-  smoothing: 0,
+  smoothing: 1,
 };
 
 interface SampledData {
@@ -144,12 +148,18 @@ export function TimeSeriesChart({
     const cfgLocal = { ...DEFAULT_CONFIG, ...(JSON.parse(configKey) as TimeSeriesConfig) };
     const fieldList = fieldsKey.length > 0 ? fieldsKey.split('|') : [];
 
+    // Spline cúbica monótona: suaviza sin sobrepasar (preserva los picos).
+    const smoothPath = cfgLocal.smoothing > 0 ? uPlot.paths.spline?.() : null;
+
     const series: uPlot.Series[] = [
       { label: 't', value: (_u, v) => (v == null ? '--' : `${(v as number).toFixed(2)}s`) },
       ...fieldList.map((field, i) => ({
         label: field,
         stroke: cfgLocal.colors[i % cfgLocal.colors.length],
         width: 1.6,
+        // Anti-aliasing real: evita el snap a píxel entero del trazo.
+        pxAlign: false,
+        ...(smoothPath ? { paths: smoothPath } : {}),
         points: { show: false },
       })),
     ];
@@ -332,7 +342,8 @@ export const timeSeriesChartDefinition: WidgetDefinition = {
       colors: DEFAULT_SERIES_COLORS,
       yLabel: '',
       autoFollow: true,
-      maxPoints: 800,
+      maxPoints: 2000,
+      smoothing: 1,
     },
     priority: 10,
   },

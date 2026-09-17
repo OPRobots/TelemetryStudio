@@ -58,6 +58,11 @@ La búsqueda del frame más cercano se hace con búsqueda binaria sobre el datas
   restablece la vista completa. El cursor vertical sigue la posición actual
   (`autoFollow`). Las series se muestrean con LTTB usando un **único conjunto de
   índices**, de modo que la X y todas las Y quedan alineadas por índice.
+- **TimeSeriesChart · trazo**: las líneas se dibujan con `pxAlign: false`
+  (anti-aliasing real, sin snap a píxel entero) y, con `smoothing > 0` (por
+  defecto), con una **spline cúbica monótona** (`uPlot.paths.spline`): suaviza
+  los valores cercanos y **no sobrepasa**, por lo que conserva los picos. El
+  checkbox "Suavizar líneas" del diálogo lo controla.
 - **Minimap2D**: ajusta la escala automáticamente para encuadrar **todo el
   recorrido**, centrado y con márgenes; el triángulo del robot (con orientación)
   se desplaza por la trayectoria según `viewTimestamp_ms`.

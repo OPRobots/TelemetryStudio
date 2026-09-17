@@ -207,13 +207,14 @@ function TimeSeriesOptions({ fields, config, onChange, onColorChange }: TimeSeri
 
   return (
     <div className="mt-3">
-      <label className="dialog-label">Ventana visible (segundos)</label>
-      <input
-        type="number"
-        className="dialog-input"
-        value={(config['windowSeconds'] as number) ?? 10}
-        onChange={(e) => onChange('windowSeconds', Number(e.target.value))}
-      />
+      <label className="dialog-checkbox mt-2">
+        <input
+          type="checkbox"
+          checked={((config['smoothing'] as number) ?? 1) > 0}
+          onChange={(e) => onChange('smoothing', e.target.checked ? 1 : 0)}
+        />
+        <span className="text-xs">Suavizar líneas (preserva los picos)</span>
+      </label>
 
       <label className="dialog-checkbox mt-2">
         <input

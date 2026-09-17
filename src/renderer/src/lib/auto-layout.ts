@@ -80,7 +80,7 @@ export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
       width: 12,
       height: 7,
       dataFields: chartFields,
-      config: { autoFollow: true, windowSeconds: 10 },
+      config: { autoFollow: true, smoothing: 1 },
       visible: true,
     });
   }
