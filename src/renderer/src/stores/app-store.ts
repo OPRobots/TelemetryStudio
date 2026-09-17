@@ -64,6 +64,7 @@ interface AppState {
 
   setSerialPorts: (ports: Array<{ path: string; manufacturer?: string; vendorId?: string }>) => void;
   setSerialConnected: (connected: boolean, port?: string | null) => void;
+  setBaudRate: (baudRate: number) => void;
   setSerialError: (error: string | null) => void;
   setStreamState: (state: StreamState) => void;
 
@@ -119,6 +120,7 @@ export const useAppStore = create<AppState>((set) => ({
   setSerialPorts: (ports) => set({ serialPorts: ports }),
   setSerialConnected: (connected, port) =>
     set((s) => ({ serialConnected: connected, serialPort: port ?? s.serialPort })),
+  setBaudRate: (baudRate) => set({ baudRate }),
   setSerialError: (error) => set({ serialError: error }),
   setStreamState: (state) => set({ streamState: state }),
 

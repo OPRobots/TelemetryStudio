@@ -3,7 +3,7 @@
  *
  * Verifica:
  *   1. Con datos llegando, el botón está deshabilitado y explica el motivo.
- *   2. Al cesar los datos y pasar el umbral (10 s), la barra muestra "en reposo"
+ *   2. Al cesar los datos y pasar el umbral (2 s), la barra muestra "en reposo"
  *      y el botón se habilita.
  *   3. Guardar invoca `session:export`.
  *

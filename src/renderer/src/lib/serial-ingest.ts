@@ -49,8 +49,9 @@ class SerialIngestService {
     const result = await window.api.serialOpen(path, baudRate);
     if (result.success) {
       useAppStore.getState().setSerialConnected(true, path);
+      useAppStore.getState().setBaudRate(baudRate);
       useAppStore.getState().setStreamState('streaming');
-      useAppStore.getState().setStatusMessage(`Serial conectado en ${path} @ ${baudRate}`);
+      useAppStore.getState().setStatusMessage('');
     } else {
       useAppStore.getState().setSerialError(result.error ?? 'Error desconocido');
       useAppStore.getState().setStreamState('idle');
@@ -139,7 +140,7 @@ class SerialIngestService {
     if (frames > 0) {
       const dataset = this.parser.buildDataset('Captura Serial');
       useAppStore.getState().setDataset(dataset, schema);
-      useAppStore.getState().setStatusMessage(`Stream finalizado: ${frames} frames`);
+      useAppStore.getState().setStatusMessage('');
     }
 
     useAppStore.getState().setStreamState('stopped');

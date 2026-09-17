@@ -70,7 +70,7 @@ app.whenReady().then(async () => {
   const footer = () => run(`(document.querySelector('footer') || {}).textContent || ''`);
   const framesFromFooter = async () => {
     const text = await footer();
-    const m = /Frames\s+(\d+)/.exec(text);
+    const m = /Muestras\s+(\d+)/.exec(text);
     return m ? Number(m[1]) : -1;
   };
   const chartCanvas = () =>

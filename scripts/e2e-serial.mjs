@@ -156,7 +156,7 @@ app.whenReady().then(async () => {
 
     if (errors.length > 0) console.log('E2E_ERRORS ' + JSON.stringify(errors.slice(0, 20)));
 
-    const framesMatch = /Frames:?\s*(\d+)/.exec(state.footerText);
+    const framesMatch = /Muestras\s*(\d+)/.exec(state.footerText);
     const frameCount = framesMatch ? Number(framesMatch[1]) : 0;
 
     const ok =
