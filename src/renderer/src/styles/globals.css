@@ -703,3 +703,13 @@ input[type='range']::-moz-range-thumb {
 .widget-card:hover .widget-resize--bottom::after {
   opacity: 0.6;
 }
+
+/* ============================================================
+   Widgets — animación de tamaño (transición CSS; sin FLIP de escala)
+   ============================================================ */
+
+.widget-grid .widget-cell {
+  transition:
+    flex-grow 160ms ease,
+    height 160ms ease;
+}

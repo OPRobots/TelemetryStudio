@@ -40,8 +40,17 @@ interface DragState {
   startHeightPx: number;
 }
 
-/** Anima posición y tamaño de los widgets al cambiar (FLIP). */
-function useFlipAnimation(deps: unknown[], gridRef: React.RefObject<HTMLDivElement | null>): void {
+/**
+ * Anima la **posición** de los widgets al cambiar (FLIP solo con translación).
+ * El tamaño se anima por CSS (transición de `flex-grow`/`height`). Mientras se
+ * arrastra (`disabled`) no se aplica ninguna animación para que el tamaño siga
+ * al ratón al instante y no se realimente la medición.
+ */
+function useFlipAnimation(
+  deps: unknown[],
+  gridRef: React.RefObject<HTMLDivElement | null>,
+  disabled: boolean
+): void {
   const prevRects = useRef<Map<string, DOMRect>>(new Map());
 
   useLayoutEffect(() => {
@@ -58,24 +67,21 @@ function useFlipAnimation(deps: unknown[], gridRef: React.RefObject<HTMLDivEleme
       nextRects.set(id, rect);
 
       const prev = prevRects.current.get(id);
-      if (!prev || rect.width === 0 || rect.height === 0) continue;
+      if (!prev || disabled) continue;
 
       const dx = prev.left - rect.left;
       const dy = prev.top - rect.top;
-      const sx = prev.width / rect.width;
-      const sy = prev.height / rect.height;
-
-      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) {
-        continue;
-      }
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
 
       node.style.transition = 'none';
-      node.style.transformOrigin = 'top left';
-      node.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      node.style.transform = `translate(${dx}px, ${dy}px)`;
 
       requestAnimationFrame(() => {
         node.style.transition = 'transform 150ms ease';
         node.style.transform = '';
+        window.setTimeout(() => {
+          node.style.transition = '';
+        }, 170);
       });
     }
 
@@ -123,7 +129,7 @@ export function WidgetHost({
     [widgets, editingId]
   );
 
-  useFlipAnimation([widgets], gridRef);
+  useFlipAnimation([widgets, dragKind], gridRef, dragKind !== null);
 
   const startDrag = useCallback((state: DragState) => {
     dragRef.current = state;
@@ -223,7 +229,8 @@ export function WidgetHost({
     <>
       <div
         ref={gridRef}
-        className="flex flex-col overflow-auto"
+        data-dragging={dragKind !== null}
+        className="widget-grid flex flex-col overflow-auto"
         style={{ position: 'relative', gap: `${GRID_GAP}px` }}
       >
         {rows.map((row, rowIndex) => {
@@ -248,7 +255,7 @@ export function WidgetHost({
                     data-widget-id={widget.id}
                     data-cols={cols}
                     data-rows={rowSpan}
-                    className="min-w-0"
+                    className="widget-cell min-w-0"
                     style={{ flex: `${cols} 1 0`, minWidth: 0, height: heightPx }}
                   >
                     <WidgetWrapper
