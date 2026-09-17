@@ -453,3 +453,71 @@ Ver `docs/13-POC-TESTS.md` para los PoCs detallados con criterios de éxito.
 | macOS notarization rechazada | Baja | Alto | Seguir la guía de Apple exactamente |
 | 2 synchronizers causan lag | Media | Medio | RVFC por synchronizer; probado con 2 vídeos |
 | Widgets diferentes en comparación | Baja | Bajo | Validación estricta + error clarativo |
+
+---
+
+## Fase 10 — Pendientes (post v1.0.0)
+
+> Trabajo restante tras la v1.0.0, en orden de ejecución. Documentado aquí para no
+> perder el plan si se compacta el contexto.
+
+### P10.1 — Limpieza y deuda técnica
+
+- `src/renderer/src/components/widgets/WidgetConfigDialog.tsx`: quitar la sección del
+  Minimap2D ("Escala"/"Estela", claves deprecadas sin efecto) y corregir el default de
+  "Filas" del DigitalBitmask a `?? 1`.
+- `src/widgets/minimap-2d/index.tsx`: eliminar `scale` y `trailSeconds` de `MinimapConfig`
+  y de los defaults.
+- `src/widgets/time-series-chart/index.tsx`: eliminar `windowSeconds` de `TimeSeriesConfig`
+  y de los defaults.
+- Eliminar código muerto: `src/renderer/src/components/video/PaneControls.tsx` y
+  `ComparisonConfig` (`src/core/types/comparison.ts`).
+- `docs/00-PROJECT-OVERVIEW.md`: corregir el baud (es **lista fija** `BAUD_RATES`, no libre).
+- **Aceptación**: `npm run verify` verde; sin imports rotos.
+
+### P10.2 — "Nuevo" en LayoutDialog + capturas del README
+
+- `LayoutDialog.tsx`: botón **"Nuevo"** que parte de un layout vacío
+  (`createEmptyLayout`/`clearWidgets`) y permite nombrar y guardar, sin alterar el layout
+  activo hasta confirmar.
+- README: capturas (análisis, comparación, export, modo sin vídeo) en `docs/assets/`,
+  generadas/extendiendo `scripts/screenshot.mjs`.
+- **Aceptación**: crear layout nuevo sin efectos colaterales; README con ≥3 capturas.
+
+### P10.3 — Performance: redibujo imperativo de widgets (F-05)
+
+Objetivo: reducir el trabajo por frame (menos renders/CPU) **sin perder fluidez visual**.
+
+- **Paso 0 (medir baseline)**: `scripts/e2e-perf.mjs` con N widgets (p. ej. 12) y stream a
+  100 Hz; medir FPS del renderer, nº de renders y uso de CPU/memoria. Guardar la línea base.
+- **Paso 1**: `src/renderer/src/lib/frame-bus.ts` (singleton `setCurrent(frame, context)` +
+  `subscribe(cb)`); `WidgetHost` deja de guardar `frame`/`context` en estado React y publica
+  en el bus.
+- **Paso 2**: extraer el dibujo de cada widget canvas a una función `draw()` en `ref` y
+  redibujar imperativamente al recibir el bus. Aplicar a `DigitalBitmask`, `Minimap2D` y
+  `StateTimeline`; `TimeSeriesChart` adapta `u.setData`/`u.setCursor`.
+- **Paso 3**: el `viewTimestamp` de hover/zoom sigue por el cursor-store (cambia poco); el
+  bus aporta solo el frame/context de vídeo.
+- **Decisión**: comparar antes/después. Se adopta la optimización **si reduce recursos de
+  forma clara y mantiene la fluidez** (≥ objetivo de FPS); si la mejora es marginal o
+  degrada la sensación visual, se revierte.
+- **Riesgo**: coordinar bus + hover + zoom sin romper
+  `e2e:zoom`/`e2e:serial`/`e2e:widget-kinds`.
+- **Aceptación**: `e2e:perf` con mejora medible de recursos y FPS sostenido; `verify` verde.
+
+### P10.4 — Preview del TimelineSlider (tooltip) + pan/zoom del Minimap2D
+
+- **TimelineSlider**: al arrastrar, mostrar un **tooltip con el tiempo** bajo el cursor (sin
+  thumbnail), sin interrumpir la reproducción.
+- **Minimap2D**: **pan** (arrastrar) y **zoom** (rueda) con estado local combinado con el
+  encuadre adaptativo; doble clic resetea. Mantener el rango de zoom resaltado y la
+  atenuación de lo de fuera.
+- **Aceptación**: `e2e:zoom` sigue verde; extensión del e2e para el tooltip/pan.
+
+### P10.5 — Packaging multiplataforma + PoC 4
+
+- **Windows**: build manual de `.exe` (NSIS) + portable; verificar `SerialPort.list()`.
+- **macOS**: build manual de `.dmg`; valorar notarización (hoy `notarize: false`).
+- **PoC 4**: serial en las 3 plataformas empaquetadas.
+- **CI**: activar `.github/workflows/build.yml` cuando exista repo remoto.
+- **Aceptación**: instaladores generados; serial funciona en la app empaquetada.
