@@ -553,6 +553,12 @@ input[type='range']::-moz-range-thumb {
 .u-cursor-y {
   border-color: var(--border-strong);
 }
+/* Selección de rango (zoom) unificada con la de StateTimeline. */
+.uplot .u-select {
+  background: rgba(59, 130, 246, 0.18);
+  border: 1px solid rgba(59, 130, 246, 0.55);
+  box-sizing: border-box;
+}
 
 /* ============================================================
    Cards

@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { valueAt } from '../frame-lookup';
 import { useCanvasSize } from '../use-canvas-size';
 import { lighten, statePalette } from '../color-palette';
+import { makeRange } from '../zoom-range';
 import { collectStateKeys, resolveStateEntry, toStateValue } from './state-entry';
 import type { StateEntry, StateValue } from './state-entry';
 
@@ -39,20 +40,31 @@ export function StateTimeline({
   frames,
   viewTimestamp_ms,
   onCursorHover,
+  zoomRange,
+  onZoomRangeChange,
 }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
-  // Rango temporal para traducir el hover (x) a timestamp.
+  // Rango visible (zoom o dataset completo) para traducir la x a timestamp.
   const hitRef = useRef<{ startMs: number; endMs: number; offsetX: number; timelineWidth: number } | null>(
     null
   );
+  // Selección en curso (arrastrar para hacer zoom).
+  const dragRef = useRef<{ pointerId: number; startX: number } | null>(null);
+  const [selection, setSelection] = useState<{ x0: number; x1: number } | null>(null);
+  const onZoomRef = useRef(onZoomRangeChange);
+  onZoomRef.current = onZoomRangeChange;
+
+  const localX = (clientX: number): number => {
+    const canvas = canvasRef.current;
+    return canvas ? clientX - canvas.getBoundingClientRect().left : 0;
+  };
 
   const publishHover = (clientX: number): void => {
     const canvas = canvasRef.current;
     const hit = hitRef.current;
     if (!canvas || !hit || !onCursorHover) return;
-    const rect = canvas.getBoundingClientRect();
-    const ratio = (clientX - rect.left - hit.offsetX) / hit.timelineWidth;
+    const ratio = (clientX - canvas.getBoundingClientRect().left - hit.offsetX) / hit.timelineWidth;
     const clamped = Math.min(Math.max(ratio, 0), 1);
     onCursorHover(hit.startMs + clamped * (hit.endMs - hit.startMs));
   };
@@ -137,17 +149,24 @@ export function StateTimeline({
     const timelineWidth = Math.max(width - offsetX * 2, 1);
     const startMs = allFrames[0]!.timestamp_ms;
     const endMs = allFrames[allFrames.length - 1]!.timestamp_ms;
-    const span = Math.max(endMs - startMs, 1);
 
-    hitRef.current = { startMs, endMs, offsetX, timelineWidth };
+    // Span visible: el rango de zoom (recortado al dataset) o el dataset completo.
+    const viewStartMs = zoomRange ? Math.max(zoomRange.startMs, startMs) : startMs;
+    const viewEndMs = zoomRange ? Math.min(zoomRange.endMs, endMs) : endMs;
+    const span = Math.max(viewEndMs - viewStartMs, 1);
 
-    // Segmentos de estado a lo largo de todo el dataset.
+    hitRef.current = { startMs: viewStartMs, endMs: viewEndMs, offsetX, timelineWidth };
+
+    // Segmentos de estado (recortados al span visible).
     let segStartMs = startMs;
     let segValue = toStateValue(allFrames[0]!.data[field!]);
     const drawSegment = (fromMs: number, toMs: number, value: StateValue | undefined): void => {
       if (value == null) return;
-      const x1 = offsetX + ((fromMs - startMs) / span) * timelineWidth;
-      const x2 = offsetX + ((toMs - startMs) / span) * timelineWidth;
+      const a = Math.max(fromMs, viewStartMs);
+      const b = Math.min(toMs, viewEndMs);
+      if (b <= a) return;
+      const x1 = offsetX + ((a - viewStartMs) / span) * timelineWidth;
+      const x2 = offsetX + ((b - viewStartMs) / span) * timelineWidth;
       ctx.fillStyle = resolveStateEntry(value, stateMap, stateColors[String(value)]).color;
       ctx.fillRect(x1, timelineY, Math.max(x2 - x1, 1), timelineHeight);
     };
@@ -162,17 +181,19 @@ export function StateTimeline({
     }
     drawSegment(segStartMs, endMs, segValue);
 
-    // Cursor de posición actual (hover / vídeo / último frame).
+    // Cursor de posición actual (solo si cae dentro del span visible).
     const currentMs = viewTimestamp_ms ?? frame?.timestamp_ms ?? startMs;
-    const cursorX = offsetX + ((currentMs - startMs) / span) * timelineWidth;
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cursorX, timelineY - 4);
-    ctx.lineTo(cursorX, timelineY + timelineHeight + 4);
-    ctx.stroke();
+    if (currentMs >= viewStartMs && currentMs <= viewEndMs) {
+      const cursorX = offsetX + ((currentMs - viewStartMs) / span) * timelineWidth;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cursorX, timelineY - 4);
+      ctx.lineTo(cursorX, timelineY + timelineHeight + 4);
+      ctx.stroke();
+    }
 
-    // Etiquetas de transiciones.
+    // Etiquetas de transiciones (dentro del span visible).
     if (cfg.showLabels) {
       ctx.fillStyle = '#94a3b8';
       ctx.font = '10px "JetBrains Mono", monospace';
@@ -185,14 +206,30 @@ export function StateTimeline({
         if (value == null) continue;
         const label = resolveStateEntry(value, stateMap, stateColors[String(value)]).label;
         if (label !== lastLabel) {
-          const x = offsetX + ((allFrames[i]!.timestamp_ms - startMs) / span) * timelineWidth;
-          if (x - lastX > 40) {
-            ctx.fillText(label, x, timelineY + timelineHeight + 4);
-            lastX = x;
+          const t = allFrames[i]!.timestamp_ms;
+          if (t >= viewStartMs && t <= viewEndMs) {
+            const x = offsetX + ((t - viewStartMs) / span) * timelineWidth;
+            if (x - lastX > 40) {
+              ctx.fillText(label, x, timelineY + timelineHeight + 4);
+              lastX = x;
+            }
           }
           lastLabel = label;
         }
       }
+    }
+
+    // Rectángulo de selección de zoom (mismo estilo que el de uPlot:
+    // relleno azul translúcido + borde azul, cubriendo toda la altura).
+    if (selection) {
+      const sx1 = Math.min(selection.x0, selection.x1);
+      const sx2 = Math.max(selection.x0, selection.x1);
+      const rectW = Math.max(sx2 - sx1, 1);
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.18)';
+      ctx.fillRect(sx1, 0, rectW, height);
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.55)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(sx1 + 0.5, 0.5, rectW - 1, height - 1);
     }
   }, [
     frames,
@@ -200,6 +237,8 @@ export function StateTimeline({
     frame,
     field,
     viewTimestamp_ms,
+    zoomRange,
+    selection,
     size.width,
     size.height,
     configKey,
@@ -209,12 +248,54 @@ export function StateTimeline({
     cfg.showLabels,
   ]);
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>): void => {
+    const x = localX(e.clientX);
+    dragRef.current = { pointerId: e.pointerId, startX: x };
+    setSelection({ x0: x, x1: x });
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Pointer no activo (p. ej. eventos sintéticos en tests).
+    }
+  };
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>): void => {
+    if (dragRef.current) {
+      setSelection({ x0: dragRef.current.startX, x1: localX(e.clientX) });
+      return;
+    }
+    publishHover(e.clientX);
+  };
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>): void => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    dragRef.current = null;
+    setSelection(null);
+    const x = localX(e.clientX);
+    const hit = hitRef.current;
+    if (!hit || Math.abs(x - drag.startX) < 6) return;
+    const msAt = (px: number): number => {
+      const ratio = (px - hit.offsetX) / hit.timelineWidth;
+      return hit.startMs + Math.min(Math.max(ratio, 0), 1) * (hit.endMs - hit.startMs);
+    };
+    onZoomRef.current?.(makeRange(msAt(drag.startX), msAt(x)));
+  };
+  const handlePointerLeave = (): void => {
+    if (!dragRef.current) onCursorHover?.(null);
+  };
+  const handleDoubleClick = (): void => {
+    onZoomRef.current?.(null);
+  };
+
   return (
     <canvas
       ref={canvasRef}
       className="h-full w-full"
-      onMouseMove={(e) => publishHover(e.clientX)}
-      onMouseLeave={() => onCursorHover?.(null)}
+      style={{ cursor: 'crosshair' }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerLeave}
+      onDoubleClick={handleDoubleClick}
     />
   );
 }
