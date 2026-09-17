@@ -61,10 +61,12 @@ Prolific PL2303HXA en Windows.
 
 ## P2 — Menor
 
-### 5. macOS Universal Binary con serialport
+### 5. macOS: DMGs por arquitectura (universal descartado)
 
-**Resolución**: prebuilds universales de `@serialport/bindings-cpp` + `mergeASARs`
-y `singleArchFiles: "node_modules/@serialport/**/*.node"`.
+**Decisión**: se publican **dos DMGs** (x64 y arm64), no un binario universal. No es
+necesario: `@serialport/bindings-cpp` trae un prebuild *fat* (`darwin-x64+arm64`) y
+cada DMG usa la rebanada de su arquitectura. Evita el coste de tamaño (~2×) y la
+complejidad de `mergeASARs`/`singleArchFiles` con módulos nativos.
 
 ### 6. LTTB a >1M puntos bloquea el main thread (pendiente)
 
@@ -145,6 +147,6 @@ Mientras convierte se muestra `PrepareVideoDialog` con progreso y opción de can
 | **P0** | ASAR packing bug | `asarUnpack` del tree completo |
 | **P1** | Linux serial permissions | reglas udev + grupo `dialout` |
 | **P1** | RVFC timing | usar `mediaTime` (PTS) |
-| **P2** | macOS universal | `singleArchFiles` para `.node` |
+| **P2** | macOS universal | descartado: DMGs por arquitectura (x64/arm64) |
 | **P2** | LTTB >1M | Worker / ventana visible (pendiente) |
 | **P3** | Windows ARM64 serial | recomendar CP210x |

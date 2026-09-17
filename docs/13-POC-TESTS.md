@@ -65,7 +65,7 @@ disponible.
 - [x] `SerialPort.list()` funciona en la app empaquetada (Linux)
 - [x] Tamaño de paquete < 200 MB (AppImage ~109 MB, deb ~75 MB)
 - [ ] Windows: `.exe` (NSIS) + portable — build manual pendiente
-- [ ] macOS: `.dmg` (universal) — build manual pendiente
+- [ ] macOS: `.dmg` (x64 y arm64) — build manual pendiente
 - [ ] Serial en las 3 plataformas empaquetadas (Windows pendiente)
 
 ---

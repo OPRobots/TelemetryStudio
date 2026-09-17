@@ -42,8 +42,12 @@ linux:
 ```
 
 > Estado: **Linux verificado** (`--dir` arranca; AppImage ~109 MB, deb ~75 MB).
-> Windows (`.exe` + portable) y macOS (`.dmg`) quedan como **build manual** hasta
-> disponer de esas plataformas o de un repo remoto (ver "Pendiente").
+> Windows (`.exe` + portable) y macOS (`x64` y `arm64`) quedan como **build manual**
+> hasta disponer de esas plataformas o de un repo remoto (ver "Pendiente").
+>
+> **macOS**: se generan **dos DMGs** (x64 y arm64), no un binario universal. No es
+> necesario un universal: `@serialport/bindings-cpp` incluye un prebuild *fat*
+> (`darwin-x64+arm64`) y cada DMG usa su rebanada (ver `docs/12-LIMITATIONS.md` #5).
 
 ## Comandos (package.json)
 

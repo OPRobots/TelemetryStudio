@@ -337,7 +337,7 @@ Empaquetado multiplataforma funcional con pipeline de CI/CD.
 - [x] `electron-builder.yml` completo (extraResources de FFmpeg y udev)
 - [x] Build Linux: `AppImage` + `.deb` (PoC 4) y `--dir` verificado en la app de producción
 - [ ] Windows: `.exe` (NSIS) + portable — requiere build manual en Windows
-- [ ] macOS: `.dmg` (universal) — build manual (PoC 4 validó DMG)
+- [ ] macOS: `.dmg` (x64 y arm64) — build manual (PoC 4 validó DMG)
 - [x] `resources/udev/69-oprobots-serial.rules` para Linux
 - [x] `build/entitlements.mac.plist` para macOS
 - [x] `build/icon.png` (placeholder) y `scripts/fetch-ffmpeg.mjs` (sidecar FFmpeg)
