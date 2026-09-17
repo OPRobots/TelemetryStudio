@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { valueAt } from '../frame-lookup';
 import { useCanvasSize } from '../use-canvas-size';
 import { lighten, statePalette } from '../color-palette';
 import { makeRange } from '../zoom-range';
+import { resolveViewTimestamp, useFrameBus } from '../frame-bus';
+import { useWidgetDraw } from '../use-widget-draw';
 import { collectStateKeys, resolveStateEntry, toStateValue } from './state-entry';
 import type { StateEntry, StateValue } from './state-entry';
 
@@ -36,15 +38,15 @@ function clamp(lo: number, value: number, hi: number): number {
 export function StateTimeline({
   config,
   dataFields,
-  frame,
-  frames,
-  viewTimestamp_ms,
+  getFrames,
+  hoverTimestamp_ms,
   onCursorHover,
   zoomRange,
   onZoomRangeChange,
 }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
+  const bus = useFrameBus();
   // Rango visible (zoom o dataset completo) para traducir la x a timestamp.
   const hitRef = useRef<{ startMs: number; endMs: number; offsetX: number; timelineWidth: number } | null>(
     null
@@ -70,30 +72,44 @@ export function StateTimeline({
   };
 
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<StateTimelineConfig>) } as StateTimelineConfig;
-  // Único origen de verdad: el mapa configurado. Sin entradas, `resolveStateEntry`
-  // usa la etiqueta neutra (`S<n>` para números, el propio texto para strings),
-  // igual que el diálogo de configuración.
-  const stateMap = cfg.stateMap ?? {};
   const field = dataFields[0];
-  const configKey = JSON.stringify({ showLabels: cfg.showLabels, stateMap });
-
-  // Color de paleta por estado (matices repartidos → sin colores parecidos).
+  const stateMap = cfg.stateMap ?? {};
   const stateMapKey = Object.keys(stateMap).sort().join('|');
-  const stateColors = useMemo(() => {
-    const keys = collectStateKeys(frames, field, stateMap);
-    const palette = statePalette(keys.length);
-    const byKey: Record<string, string> = {};
-    keys.forEach((key, i) => {
-      byKey[key] = palette[i] ?? palette[0] ?? '#5b8dd9';
-    });
-    return byKey;
-  }, [frames, frames.length, field, stateMapKey]);
 
-  useEffect(() => {
+  const colorsCacheRef = useRef<{ sig: string; colors: Record<string, string> }>({
+    sig: '',
+    colors: {},
+  });
+  // Capa estática (fondo + segmentos + etiquetas), cacheada en un canvas aparte.
+  const baseRef = useRef<{ canvas: HTMLCanvasElement | null; sig: string }>({ canvas: null, sig: '' });
+  const latest = useRef({ getFrames, field, hoverTimestamp_ms, zoomRange, cfg, selection, size });
+  latest.current = { getFrames, field, hoverTimestamp_ms, zoomRange, cfg, selection, size };
+
+  const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    const { getFrames, field, hoverTimestamp_ms, zoomRange, cfg, selection, size } = latest.current;
+    const frames = getFrames();
+    const stateMap = cfg.stateMap ?? {};
+    const stateMapKey = Object.keys(stateMap).sort().join('|');
+    const snapshot = bus?.getSnapshot() ?? { frame: null, context: null };
+    const viewTimestamp = resolveViewTimestamp(frames, hoverTimestamp_ms, snapshot);
+
+    // Color de paleta por estado (cacheado por dataset/config).
+    const colorsSig = `${frames.length}|${field ?? ''}|${stateMapKey}`;
+    if (colorsCacheRef.current.sig !== colorsSig) {
+      const keys = collectStateKeys(frames, field, stateMap);
+      const palette = statePalette(keys.length);
+      const byKey: Record<string, string> = {};
+      keys.forEach((key, i) => {
+        byKey[key] = palette[i] ?? palette[0] ?? '#5b8dd9';
+      });
+      colorsCacheRef.current = { sig: colorsSig, colors: byKey };
+    }
+    const stateColors = colorsCacheRef.current.colors;
 
     const dpr = window.devicePixelRatio || 1;
     const width = size.width;
@@ -107,13 +123,12 @@ export function StateTimeline({
     canvas.height = Math.max(height * dpr, 1);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    ctx.fillStyle = '#0a0e17';
-    ctx.fillRect(0, 0, width, height);
-
-    const sampled = valueAt(frames, field, viewTimestamp_ms);
-    const state = toStateValue(sampled ?? (field ? frame?.data[field] : undefined));
+    const sampled = valueAt(frames, field, viewTimestamp);
+    const state = toStateValue(sampled ?? (field ? snapshot.frame?.data[field] : undefined));
 
     if (state == null) {
+      ctx.fillStyle = '#0a0e17';
+      ctx.fillRect(0, 0, width, height);
       ctx.fillStyle = '#475569';
       ctx.font = '12px Inter, sans-serif';
       ctx.textAlign = 'center';
@@ -122,16 +137,97 @@ export function StateTimeline({
       return;
     }
 
-    const info = resolveStateEntry(state, stateMap, stateColors[String(state)]);
-
     const labelReserve = cfg.showLabels ? LABEL_RESERVE : 0;
     const usableH = Math.max(height - PAD * 2 - labelReserve, 1);
     const timelineHeight = clamp(14, Math.min(cfg.barHeight, usableH * 0.4), 40);
     const timelineY = height - PAD - labelReserve - timelineHeight;
     const labelArea = Math.max(timelineY - PAD, 1);
 
+    const allFrames = frames;
+    const offsetX = 8;
+    const timelineWidth = Math.max(width - offsetX * 2, 1);
+    const startMs = allFrames.length > 0 ? allFrames[0]!.timestamp_ms : 0;
+    const endMs = allFrames.length > 0 ? allFrames[allFrames.length - 1]!.timestamp_ms : 0;
+    const viewStartMs = zoomRange ? Math.max(zoomRange.startMs, startMs) : startMs;
+    const viewEndMs = zoomRange ? Math.min(zoomRange.endMs, endMs) : endMs;
+    const span = Math.max(viewEndMs - viewStartMs, 1);
+
+    // --- Capa estática (fondo + segmentos + etiquetas) ---
+    let base = baseRef.current.canvas;
+    if (!base) {
+      base = document.createElement('canvas');
+      baseRef.current.canvas = base;
+    }
+    const baseSig = `${frames.length}|${field ?? ''}|${stateMapKey}|${
+      zoomRange ? `${viewStartMs}:${viewEndMs}` : 'full'
+    }|${Math.round(width)}x${Math.round(height)}|${cfg.barHeight}|${cfg.showLabels}`;
+    if (baseRef.current.sig !== baseSig) {
+      base.width = Math.max(width * dpr, 1);
+      base.height = Math.max(height * dpr, 1);
+      const bctx = base.getContext('2d');
+      if (bctx) {
+        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        bctx.fillStyle = '#0a0e17';
+        bctx.fillRect(0, 0, width, height);
+
+        if (allFrames.length > 1) {
+          let segStartMs = startMs;
+          let segValue = toStateValue(allFrames[0]!.data[field!]);
+          const drawSegment = (fromMs: number, toMs: number, value: StateValue | undefined): void => {
+            if (value == null) return;
+            const a = Math.max(fromMs, viewStartMs);
+            const b = Math.min(toMs, viewEndMs);
+            if (b <= a) return;
+            const x1 = offsetX + ((a - viewStartMs) / span) * timelineWidth;
+            const x2 = offsetX + ((b - viewStartMs) / span) * timelineWidth;
+            bctx.fillStyle = resolveStateEntry(value, stateMap, stateColors[String(value)]).color;
+            bctx.fillRect(x1, timelineY, Math.max(x2 - x1, 1), timelineHeight);
+          };
+          for (let i = 1; i < allFrames.length; i++) {
+            const value = toStateValue(allFrames[i]!.data[field!]);
+            if (value !== segValue) {
+              drawSegment(segStartMs, allFrames[i]!.timestamp_ms, segValue);
+              segStartMs = allFrames[i]!.timestamp_ms;
+              segValue = value;
+            }
+          }
+          drawSegment(segStartMs, endMs, segValue);
+
+          if (cfg.showLabels) {
+            bctx.fillStyle = '#94a3b8';
+            bctx.font = '10px "JetBrains Mono", monospace';
+            bctx.textAlign = 'center';
+            bctx.textBaseline = 'top';
+            let lastLabel = '';
+            let lastX = -Infinity;
+            for (let i = 0; i < allFrames.length; i++) {
+              const value = toStateValue(allFrames[i]!.data[field!]);
+              if (value == null) continue;
+              const label = resolveStateEntry(value, stateMap, stateColors[String(value)]).label;
+              if (label !== lastLabel) {
+                const t = allFrames[i]!.timestamp_ms;
+                if (t >= viewStartMs && t <= viewEndMs) {
+                  const x = offsetX + ((t - viewStartMs) / span) * timelineWidth;
+                  if (x - lastX > 40) {
+                    bctx.fillText(label, x, timelineY + timelineHeight + 4);
+                    lastX = x;
+                  }
+                }
+                lastLabel = label;
+              }
+            }
+          }
+        }
+      }
+      baseRef.current.sig = baseSig;
+    }
+    ctx.drawImage(base, 0, 0, width, height);
+
+    // --- Dinámico: estado actual, cursor y selección ---
+
     // Estado actual (escala con el alto disponible). El texto se aclara para
     // que siga siendo legible sobre el fondo oscuro aunque el color sea oscuro.
+    const info = resolveStateEntry(state, stateMap, stateColors[String(state)]);
     const stateFont = clamp(14, labelArea * 0.55, 26);
     ctx.fillStyle = lighten(info.color, 0.45);
     ctx.font = `bold ${stateFont}px Inter, sans-serif`;
@@ -142,47 +238,12 @@ export function StateTimeline({
     ctx.fillText(info.label, width / 2, PAD + labelArea / 2);
     ctx.shadowBlur = 0;
 
-    const allFrames = frames;
     if (allFrames.length <= 1) return;
-
-    const offsetX = 8;
-    const timelineWidth = Math.max(width - offsetX * 2, 1);
-    const startMs = allFrames[0]!.timestamp_ms;
-    const endMs = allFrames[allFrames.length - 1]!.timestamp_ms;
-
-    // Span visible: el rango de zoom (recortado al dataset) o el dataset completo.
-    const viewStartMs = zoomRange ? Math.max(zoomRange.startMs, startMs) : startMs;
-    const viewEndMs = zoomRange ? Math.min(zoomRange.endMs, endMs) : endMs;
-    const span = Math.max(viewEndMs - viewStartMs, 1);
 
     hitRef.current = { startMs: viewStartMs, endMs: viewEndMs, offsetX, timelineWidth };
 
-    // Segmentos de estado (recortados al span visible).
-    let segStartMs = startMs;
-    let segValue = toStateValue(allFrames[0]!.data[field!]);
-    const drawSegment = (fromMs: number, toMs: number, value: StateValue | undefined): void => {
-      if (value == null) return;
-      const a = Math.max(fromMs, viewStartMs);
-      const b = Math.min(toMs, viewEndMs);
-      if (b <= a) return;
-      const x1 = offsetX + ((a - viewStartMs) / span) * timelineWidth;
-      const x2 = offsetX + ((b - viewStartMs) / span) * timelineWidth;
-      ctx.fillStyle = resolveStateEntry(value, stateMap, stateColors[String(value)]).color;
-      ctx.fillRect(x1, timelineY, Math.max(x2 - x1, 1), timelineHeight);
-    };
-
-    for (let i = 1; i < allFrames.length; i++) {
-      const value = toStateValue(allFrames[i]!.data[field!]);
-      if (value !== segValue) {
-        drawSegment(segStartMs, allFrames[i]!.timestamp_ms, segValue);
-        segStartMs = allFrames[i]!.timestamp_ms;
-        segValue = value;
-      }
-    }
-    drawSegment(segStartMs, endMs, segValue);
-
     // Cursor de posición actual (solo si cae dentro del span visible).
-    const currentMs = viewTimestamp_ms ?? frame?.timestamp_ms ?? startMs;
+    const currentMs = viewTimestamp ?? snapshot.frame?.timestamp_ms ?? startMs;
     if (currentMs >= viewStartMs && currentMs <= viewEndMs) {
       const cursorX = offsetX + ((currentMs - viewStartMs) / span) * timelineWidth;
       ctx.strokeStyle = '#ffffff';
@@ -191,32 +252,6 @@ export function StateTimeline({
       ctx.moveTo(cursorX, timelineY - 4);
       ctx.lineTo(cursorX, timelineY + timelineHeight + 4);
       ctx.stroke();
-    }
-
-    // Etiquetas de transiciones (dentro del span visible).
-    if (cfg.showLabels) {
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '10px "JetBrains Mono", monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      let lastLabel = '';
-      let lastX = -Infinity;
-      for (let i = 0; i < allFrames.length; i++) {
-        const value = toStateValue(allFrames[i]!.data[field!]);
-        if (value == null) continue;
-        const label = resolveStateEntry(value, stateMap, stateColors[String(value)]).label;
-        if (label !== lastLabel) {
-          const t = allFrames[i]!.timestamp_ms;
-          if (t >= viewStartMs && t <= viewEndMs) {
-            const x = offsetX + ((t - viewStartMs) / span) * timelineWidth;
-            if (x - lastX > 40) {
-              ctx.fillText(label, x, timelineY + timelineHeight + 4);
-              lastX = x;
-            }
-          }
-          lastLabel = label;
-        }
-      }
     }
 
     // Rectángulo de selección de zoom (mismo estilo que el de uPlot:
@@ -231,19 +266,17 @@ export function StateTimeline({
       ctx.lineWidth = 1;
       ctx.strokeRect(sx1 + 0.5, 0.5, rectW - 1, height - 1);
     }
-  }, [
-    frames,
-    frames.length,
-    frame,
+  }, [bus]);
+
+  useWidgetDraw(draw, [
+    getFrames,
     field,
-    viewTimestamp_ms,
+    hoverTimestamp_ms,
     zoomRange,
     selection,
     size.width,
     size.height,
-    configKey,
-    stateMap,
-    stateColors,
+    stateMapKey,
     cfg.barHeight,
     cfg.showLabels,
   ]);

@@ -98,10 +98,10 @@ interface WidgetProps {
   widgetId: string;
   config: Record<string, unknown>;
   dataFields: string[];
-  frame: TelemetryFrame | null;
-  context: VideoFrameContext | null;
-  frames: TelemetryFrame[];
-  viewTimestamp_ms?: number | null;
+  /** Dataset actual del panel (se lee en el momento de dibujar). */
+  getFrames: () => TelemetryFrame[];
+  /** Timestamp bajo el cursor (hover), o `null`. */
+  hoverTimestamp_ms?: number | null;
   onCursorHover?: (timestamp_ms: number | null) => void;
   zoomRange?: ZoomRange | null;
   onZoomRangeChange?: (range: ZoomRange | null) => void;

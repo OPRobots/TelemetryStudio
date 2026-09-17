@@ -113,11 +113,12 @@ arrastrando el asa derecha (presets de ancho) o inferior (filas) y se reordenan
 arrastrando la cabecera. El diálogo de configuración permite además ajustar ancho,
 alto, campos y opciones.
 
-### F-05 — WidgetHost re-renderiza en cada frame (pendiente de optimizar)
+### F-05 — Redibujado de widgets (resuelto)
 
-`WidgetHost` guarda el frame actual en estado de React, provocando un re-render por
-frame. Con pocos widgets es fluido; si el número crece, conviene migrar a
-actualizaciones imperativas por `ref`.
+Resuelto: `WidgetHost` ya no guarda el frame en estado React. Los widgets se
+redibujan imperativamente vía `FrameBus` + `useWidgetDraw` (coalescido por rAF), y
+`StateTimeline`/`Minimap2D` cachean su capa estática. Medido con
+`npm run e2e:perf` (ver ROADMAP P10.3).
 
 ### F-06 — Empaquetado multiplataforma
 

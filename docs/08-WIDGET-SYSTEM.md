@@ -24,15 +24,17 @@
 > **scroll vertical** cuando los widgets no caben, con una barra **fina** (8px,
 > `::-webkit-scrollbar` con colores del tema) en vez de la scrollbar clásica.
 >
-> **Estado de implementación**: los widgets están implementados como componentes
-> React (no clases) que reciben `frame`/`context` por props desde `WidgetHost`.
-> Cada widget exporta una `WidgetDefinition` (`{ metadata, component }`) y se
-> registra en `src/widgets/widget-registry.ts` vía `register-widgets.ts`.
-> `WidgetHost` se suscribe al evento `sync:frame` del EventBus y pasa el frame
-> sincronizado a todos los widgets del layout, junto con `viewTimestamp_ms`
-> (timestamp efectivo del cursor compartido) y `onCursorHover` (publicación del
-> hover). Los 4 widgets son: `TimeSeriesChart` (uPlot multi-serie con LTTB),
-> `DigitalBitmask`, `Minimap2D` y `StateTimeline`.
+> **Estado de implementación**: los widgets son componentes React (no clases).
+> `WidgetHost` mantiene un `FrameBus` por panel (`src/widgets/frame-bus.ts`) que
+> publica el frame/contexto sincronizado; los widgets se suscriben y se redibujan
+> de forma **imperativa** (`src/widgets/use-widget-draw.ts`, coalescido por rAF),
+> sin re-render de React por frame. Cada widget exporta una `WidgetDefinition`
+> (`{ metadata, component }`) y se registra en `src/widgets/widget-registry.ts` vía
+> `register-widgets.ts`. `WidgetHost` entrega a los widgets `getFrames()` (dataset
+> actual), `hoverTimestamp_ms` y `onCursorHover`; cada widget resuelve el timestamp
+> efectivo con `resolveViewTimestamp`. Los 4 widgets son: `TimeSeriesChart` (uPlot
+> multi-serie con LTTB), `DigitalBitmask`, `Minimap2D` y `StateTimeline`.
+> `StateTimeline` y `Minimap2D` cachean su capa estática en un canvas offscreen.
 
 ## Visión General
 
@@ -47,8 +49,9 @@ Los cuatro widgets comparten un cursor temporal a través de un store Zustand
   **gráfica temporal** y la **StateTimeline**, mediante la prop `onCursorHover`.
   Así, mover el ratón sobre cualquiera de ellas desplaza los indicadores del
   resto (cursor del gráfico, LEDs, minimapa y otras timelines).
-- `WidgetHost` resuelve el **timestamp efectivo** que entrega a todos los widgets
-  como prop `viewTimestamp_ms`, con esta prioridad:
+- `WidgetHost` entrega a cada widget el `hoverTimestamp_ms` (store) y el frame
+  actual vía `FrameBus`; cada widget resuelve el **timestamp efectivo** con
+  `resolveViewTimestamp`, con esta prioridad:
   `hover (gráfica o timeline) → context.viewTimestamp_ms (vídeo) → frame.timestamp_ms (streaming) → último frame`.
 - `DigitalBitmask`, `StateTimeline` y `Minimap2D` muestran el valor / estado /
   posición **exactos** en ese timestamp. Sin hover y sin vídeo, muestran el
@@ -90,7 +93,7 @@ todas las timelines (estado **global**, no se persiste en sesión/layout):
   checkbox "Suavizar líneas" del diálogo lo controla.
 - **Minimap2D**: ajusta la escala automáticamente para encuadrar **todo el
   recorrido**, centrado y con márgenes; el triángulo del robot (con orientación)
-  se desplaza por la trayectoria según `viewTimestamp_ms`.
+  se desplaza por la trayectoria según el timestamp visualizado.
 - **DigitalBitmask**: por defecto muestra **todos los bits en una sola fila**
   (arrays de sensores de línea); el auto-layout y el alta desde el menú fijan
   `ledsPerRow` al ancho del campo y `rows = 1`.
@@ -111,13 +114,14 @@ todas las timelines (estado **global**, no se persiste en sesión/layout):
 
 ```
 1. WidgetHost renderiza <definition.component {...WidgetProps} /> por cada widget del layout
-2. El componente dibuja en un useEffect al cambiar frame/frames/viewTimestamp/zoom/…
+2. El widget se suscribe al FrameBus del panel y dibuja imperativamente (useWidgetDraw)
+   al cambiar frame/frames/hover/zoom/tamaño, sin re-render de React por frame
 3. onCursorHover publica el hover y zoomRange/onZoomRangeChange el zoom (compartidos)
 4. Al desmontar se limpian listeners (ResizeObserver, listeners de ratón, uPlot)
 ```
 
-Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, `frame`,
-`context`, `frames`, `viewTimestamp_ms`, `onCursorHover`, `zoomRange`, `onZoomRangeChange`.
+Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, `getFrames`,
+`hoverTimestamp_ms`, `onCursorHover`, `zoomRange`, `onZoomRangeChange`.
 
 ## Widget 1: TimeSeriesChart (uPlot)
 
@@ -148,7 +152,7 @@ Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, 
 `src/widgets/minimap-2d/index.tsx`
 
 - Encuadra **todo el recorrido** con escala adaptativa; el **triángulo** (con orientación)
-  se coloca en la posición de `viewTimestamp_ms`.
+  se coloca en la posición del timestamp visualizado.
 - Con **zoom**: encuadra el tramo del rango y dibuja lo de fuera con opacidad baja (~0.2);
   rejilla adaptativa para que no quede densa.
 - Config: `fieldX`/`fieldY`/`fieldTheta` (derivados de los campos de datos),

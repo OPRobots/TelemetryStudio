@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import type { TelemetryFrame } from '@core/types/telemetry';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { frameAt } from '../frame-lookup';
 import { useCanvasSize } from '../use-canvas-size';
+import { resolveViewTimestamp, useFrameBus } from '../frame-bus';
+import { useWidgetDraw } from '../use-widget-draw';
 
 interface MinimapConfig {
   fieldX?: string;
@@ -33,20 +35,44 @@ const TEXT_HEIGHT = 18;
  * Ajusta la escala para mostrar el recorrido completo, centrado; el triángulo
  * del robot se desplaza por la posición del timestamp visualizado.
  */
-export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms, zoomRange }: WidgetProps): React.ReactElement {
+export function Minimap2D({
+  config,
+  dataFields,
+  getFrames,
+  hoverTimestamp_ms,
+  zoomRange,
+}: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
+  const bus = useFrameBus();
 
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<MinimapConfig>) };
-  const fieldX = cfg.fieldX || dataFields[0] || 'position_x';
-  const fieldY = cfg.fieldY || dataFields[1] || 'position_y';
-  const fieldTheta = cfg.fieldTheta || dataFields[2] || 'heading_deg';
 
-  useEffect(() => {
+  const latest = useRef({ getFrames, dataFields, hoverTimestamp_ms, zoomRange, cfg, size });
+  latest.current = { getFrames, dataFields, hoverTimestamp_ms, zoomRange, cfg, size };
+
+  // BBox cacheada (la parte O(n) al encuadrar la trayectoria).
+  const bboxRef = useRef<{ sig: string; bounds: { minX: number; maxX: number; minY: number; maxY: number } }>({
+    sig: '',
+    bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 },
+  });
+  // Capa estática (fondo + rejilla + trayectoria + inicio), cacheada en un canvas.
+  const baseRef = useRef<{ canvas: HTMLCanvasElement | null; sig: string }>({ canvas: null, sig: '' });
+
+  const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    const { getFrames, dataFields, hoverTimestamp_ms, zoomRange, cfg, size } = latest.current;
+    const frames = getFrames();
+    const fieldX = cfg.fieldX || dataFields[0] || 'position_x';
+    const fieldY = cfg.fieldY || dataFields[1] || 'position_y';
+    const fieldTheta = cfg.fieldTheta || dataFields[2] || 'heading_deg';
+
+    const snapshot = bus?.getSnapshot() ?? { frame: null, context: null };
+    const viewTimestamp = resolveViewTimestamp(frames, hoverTimestamp_ms, snapshot);
 
     const dpr = window.devicePixelRatio || 1;
     const width = size.width;
@@ -56,11 +82,12 @@ export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms,
     canvas.width = Math.max(width * dpr, 1);
     canvas.height = Math.max(height * dpr, 1);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#0a0e17';
-    ctx.fillRect(0, 0, width, height);
 
     // Frame del cursor: timestamp visualizado > frame actual.
-    const cursorFrame = frameAt(frames, viewTimestamp_ms) ?? frame;
+    const cursorFrame = frameAt(frames, viewTimestamp) ?? snapshot.frame;
+
+    const inRange = (f: TelemetryFrame): boolean =>
+      zoomRange == null || (f.timestamp_ms >= zoomRange.startMs && f.timestamp_ms <= zoomRange.endMs);
 
     const bboxFor = (
       include: (f: TelemetryFrame) => boolean
@@ -82,18 +109,23 @@ export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms,
       return { minX: bMinX, maxX: bMaxX, minY: bMinY, maxY: bMaxY };
     };
 
-    const inRange = (f: TelemetryFrame): boolean =>
-      zoomRange == null || (f.timestamp_ms >= zoomRange.startMs && f.timestamp_ms <= zoomRange.endMs);
-
-    // Con zoom, encuadra el tramo seleccionado; si no hay puntos, cae al completo.
-    let bounds = zoomRange ? bboxFor(inRange) : bboxFor(() => true);
-    const hasBounds = Number.isFinite(bounds.minX) && Number.isFinite(bounds.minY);
-    if (!hasBounds && zoomRange) bounds = bboxFor(() => true);
+    // BBox (cacheada por dataset + zoom).
+    const bboxSig = `${frames.length}|${fieldX}|${fieldY}|${
+      zoomRange ? `${zoomRange.startMs}:${zoomRange.endMs}` : 'full'
+    }`;
+    if (bboxRef.current.sig !== bboxSig) {
+      let bounds = zoomRange ? bboxFor(inRange) : bboxFor(() => true);
+      if (!Number.isFinite(bounds.minX) && zoomRange) bounds = bboxFor(() => true);
+      bboxRef.current = { sig: bboxSig, bounds };
+    }
+    const bounds = bboxRef.current.bounds;
     const boundsOk = Number.isFinite(bounds.minX) && Number.isFinite(bounds.minY);
 
     const cx = cursorFrame?.data[fieldX];
     const cy = cursorFrame?.data[fieldY];
     if (!boundsOk && (typeof cx !== 'number' || typeof cy !== 'number')) {
+      ctx.fillStyle = '#0a0e17';
+      ctx.fillRect(0, 0, width, height);
       ctx.fillStyle = '#475569';
       ctx.font = '12px Inter, sans-serif';
       ctx.textAlign = 'center';
@@ -120,88 +152,113 @@ export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms,
     const mapX = (x: number): number => centerX + (x - dataCenterX) * scale;
     const mapY = (y: number): number => centerY - (y - dataCenterY) * scale;
 
-    // Grid en coordenadas de datos. El paso se adapta a la escala para que la
-    // separación en pantalla sea legible aunque haya zoom (múltiplos de gridSize).
-    if (cfg.showGrid && cfg.gridSize > 0) {
-      let step = cfg.gridSize;
-      while (step * scale < 40) step *= 2;
-      ctx.strokeStyle = '#1e293b';
-      ctx.lineWidth = 0.5;
-      const startKx = Math.floor(bMinX / step);
-      const endKx = Math.ceil(bMaxX / step);
-      for (let k = startKx; k <= endKx; k++) {
-        const px = mapX(k * step);
-        ctx.beginPath();
-        ctx.moveTo(px, 0);
-        ctx.lineTo(px, height);
-        ctx.stroke();
-      }
-      const startKy = Math.floor(bMinY / step);
-      const endKy = Math.ceil(bMaxY / step);
-      for (let k = startKy; k <= endKy; k++) {
-        const py = mapY(k * step);
-        ctx.beginPath();
-        ctx.moveTo(0, py);
-        ctx.lineTo(width, py);
-        ctx.stroke();
-      }
+    // --- Capa estática (fondo + rejilla + trayectoria + inicio) ---
+    let base = baseRef.current.canvas;
+    if (!base) {
+      base = document.createElement('canvas');
+      baseRef.current.canvas = base;
     }
+    const baseSig = `${frames.length}|${fieldX}|${fieldY}|${
+      zoomRange ? `${zoomRange.startMs}:${zoomRange.endMs}` : 'full'
+    }|${Math.round(width)}x${Math.round(height)}|${scale.toFixed(3)}|${centerX.toFixed(2)}|${centerY.toFixed(
+      2
+    )}|${dataCenterX.toFixed(3)}|${dataCenterY.toFixed(3)}|${cfg.showGrid}|${cfg.gridSize}|${cfg.trailColor}`;
+    if (baseRef.current.sig !== baseSig) {
+      base.width = Math.max(width * dpr, 1);
+      base.height = Math.max(height * dpr, 1);
+      const bctx = base.getContext('2d');
+      if (bctx) {
+        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        bctx.fillStyle = '#0a0e17';
+        bctx.fillRect(0, 0, width, height);
 
-    // Trayectoria. Con zoom, fuera del rango con opacidad baja (contexto) y
-    // dentro del rango resaltada.
-    const strokeTrail = (include: (f: TelemetryFrame) => boolean, alpha: number): void => {
-      ctx.strokeStyle = cfg.trailColor;
-      ctx.lineWidth = 2;
-      ctx.globalAlpha = alpha;
-      ctx.beginPath();
-      // `penDown` se corta en cada frame excluido: así no se unen los tramos
-      // separados (p. ej. antes y después del rango de zoom) con una cuerda.
-      let penDown = false;
-      for (const f of frames) {
-        const fx = f.data[fieldX];
-        const fy = f.data[fieldY];
-        if (!include(f) || typeof fx !== 'number' || typeof fy !== 'number') {
-          penDown = false;
-          continue;
+        // Grid en coordenadas de datos.
+        if (cfg.showGrid && cfg.gridSize > 0) {
+          let step = cfg.gridSize;
+          while (step * scale < 40) step *= 2;
+          bctx.strokeStyle = '#1e293b';
+          bctx.lineWidth = 0.5;
+          const startKx = Math.floor(bMinX / step);
+          const endKx = Math.ceil(bMaxX / step);
+          for (let k = startKx; k <= endKx; k++) {
+            const px = mapX(k * step);
+            bctx.beginPath();
+            bctx.moveTo(px, 0);
+            bctx.lineTo(px, height);
+            bctx.stroke();
+          }
+          const startKy = Math.floor(bMinY / step);
+          const endKy = Math.ceil(bMaxY / step);
+          for (let k = startKy; k <= endKy; k++) {
+            const py = mapY(k * step);
+            bctx.beginPath();
+            bctx.moveTo(0, py);
+            bctx.lineTo(width, py);
+            bctx.stroke();
+          }
         }
-        const px = mapX(fx);
-        const py = mapY(fy);
-        if (!penDown) {
-          ctx.moveTo(px, py);
-          penDown = true;
-        } else {
-          ctx.lineTo(px, py);
+
+        // Trayectoria.
+        const strokeTrail = (include: (f: TelemetryFrame) => boolean, alpha: number): void => {
+          bctx.strokeStyle = cfg.trailColor;
+          bctx.lineWidth = 2;
+          bctx.globalAlpha = alpha;
+          bctx.beginPath();
+          let penDown = false;
+          for (const f of frames) {
+            const fx = f.data[fieldX];
+            const fy = f.data[fieldY];
+            if (!include(f) || typeof fx !== 'number' || typeof fy !== 'number') {
+              penDown = false;
+              continue;
+            }
+            const px = mapX(fx);
+            const py = mapY(fy);
+            if (!penDown) {
+              bctx.moveTo(px, py);
+              penDown = true;
+            } else {
+              bctx.lineTo(px, py);
+            }
+          }
+          bctx.stroke();
+          bctx.globalAlpha = 1;
+        };
+
+        if (frames.length > 1) {
+          if (zoomRange) {
+            strokeTrail((f) => !inRange(f), 0.2);
+            strokeTrail(inRange, 0.9);
+          } else {
+            strokeTrail(() => true, 0.85);
+          }
+
+          const first = frames.find((f) => {
+            const fx = f.data[fieldX];
+            const fy = f.data[fieldY];
+            return typeof fx === 'number' && typeof fy === 'number';
+          });
+          if (first) {
+            bctx.globalAlpha = zoomRange && !inRange(first) ? 0.35 : 1;
+            bctx.fillStyle = '#22c55e';
+            bctx.beginPath();
+            bctx.arc(
+              mapX(first.data[fieldX] as number),
+              mapY(first.data[fieldY] as number),
+              3,
+              0,
+              Math.PI * 2
+            );
+            bctx.fill();
+            bctx.globalAlpha = 1;
+          }
         }
       }
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    };
-
-    if (frames.length > 1) {
-      if (zoomRange) {
-        strokeTrail((f) => !inRange(f), 0.2);
-        strokeTrail(inRange, 0.9);
-      } else {
-        strokeTrail(() => true, 0.85);
-      }
-
-      // Punto de inicio (resaltado si cae dentro del rango).
-      const first = frames.find((f) => {
-        const fx = f.data[fieldX];
-        const fy = f.data[fieldY];
-        return typeof fx === 'number' && typeof fy === 'number';
-      });
-      if (first) {
-        ctx.globalAlpha = zoomRange && !inRange(first) ? 0.35 : 1;
-        ctx.fillStyle = '#22c55e';
-        ctx.beginPath();
-        ctx.arc(mapX(first.data[fieldX] as number), mapY(first.data[fieldY] as number), 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      }
+      baseRef.current.sig = baseSig;
     }
+    ctx.drawImage(base, 0, 0, width, height);
 
-    // Robot (triángulo rotado) en la posición del cursor.
+    // --- Dinámico: robot y coordenadas del cursor ---
     if (typeof cx === 'number' && typeof cy === 'number') {
       const theta = (cursorFrame?.data[fieldTheta] as number | undefined) ?? 0;
       ctx.save();
@@ -219,24 +276,24 @@ export function Minimap2D({ config, dataFields, frame, frames, viewTimestamp_ms,
       ctx.shadowBlur = 0;
       ctx.restore();
 
-      // Coordenadas del cursor.
       ctx.fillStyle = '#94a3b8';
       ctx.font = '11px "JetBrains Mono", monospace';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
       ctx.fillText(`X: ${cx.toFixed(2)}  Y: ${cy.toFixed(2)}  θ: ${theta.toFixed(1)}°`, 8, 8);
     }
-  }, [
-    frame,
-    frames,
-    frames.length,
-    viewTimestamp_ms,
+  }, [bus]);
+
+  useWidgetDraw(draw, [
+    getFrames,
+    dataFields,
+    hoverTimestamp_ms,
     zoomRange,
     size.width,
     size.height,
-    fieldX,
-    fieldY,
-    fieldTheta,
+    cfg.fieldX,
+    cfg.fieldY,
+    cfg.fieldTheta,
     cfg.trailColor,
     cfg.robotColor,
     cfg.robotLength,

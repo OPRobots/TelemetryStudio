@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { downsampleLTTB } from '@core/lttb';
 import type { TelemetryFrame } from '@core/types/telemetry';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { seriesPalette } from '../color-palette';
+import { useFrameBus } from '../frame-bus';
+import { useWidgetDraw } from '../use-widget-draw';
 
 interface TimeSeriesConfig {
   colors?: string[];
@@ -16,7 +18,7 @@ interface TimeSeriesConfig {
   autoFollow?: boolean;
   /**
    * Suavizado de las líneas: `> 0` usa una spline cúbica monótona (preserva los
-   * picos, sin sobrepaso); `0` deja segmentos rectos.
+   * picos, sin sobrepasar); `0` deja segmentos rectos.
    */
   smoothing?: number;
 }
@@ -97,16 +99,15 @@ function nearestIndex(sorted: number[], target: number): number {
 export function TimeSeriesChart({
   config,
   dataFields,
-  frame,
-  context,
-  frames,
-  viewTimestamp_ms,
+  getFrames,
+  hoverTimestamp_ms,
   onCursorHover,
   zoomRange,
   onZoomRangeChange,
 }: WidgetProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const uplotRef = useRef<uPlot | null>(null);
+  const bus = useFrameBus();
 
   const hoveringRef = useRef(false);
   const userZoomPendingRef = useRef(false);
@@ -119,15 +120,83 @@ export function TimeSeriesChart({
 
   const fieldsKey = dataFields.join('|');
   const configKey = JSON.stringify(config ?? {});
-  const cfg = { ...DEFAULT_CONFIG, ...(config as TimeSeriesConfig) };
   const fields = dataFields.length > 0 ? dataFields : [];
-  const maxPoints = cfg.maxPoints;
 
-  const sampled = useMemo(
-    () => buildSampledData(frames, fields, maxPoints),
-    // `frames.length` fuerza el recálculo al crecer el dataset en streaming.
-    [frames, frames.length, fieldsKey, maxPoints]
-  );
+  const latest = useRef({ getFrames, fields, fieldsKey, config, hoverTimestamp_ms, zoomRange });
+  latest.current = { getFrames, fields, fieldsKey, config, hoverTimestamp_ms, zoomRange };
+
+  const sampledRef = useRef<{ sig: string; data: SampledData | null }>({ sig: '', data: null });
+  const scaleSigRef = useRef<string>('');
+
+  const draw = useCallback(() => {
+    const u = uplotRef.current;
+    if (!u) return;
+
+    const { getFrames, fields, fieldsKey, config, hoverTimestamp_ms, zoomRange } = latest.current;
+    const frames = getFrames();
+    const cfgLocal = { ...DEFAULT_CONFIG, ...(config as TimeSeriesConfig) };
+
+    const sig = `${frames.length}|${fieldsKey}|${cfgLocal.maxPoints}`;
+    if (sampledRef.current.sig !== sig) {
+      sampledRef.current = { sig, data: buildSampledData(frames, fields, cfgLocal.maxPoints) };
+    }
+
+    const sampled = sampledRef.current.data;
+    if (!sampled) {
+      xValuesRef.current = [];
+      u.setData([new Float64Array(0)]);
+      return;
+    }
+
+    // Datos: solo se vuelcan cuando cambia el dataset (firma).
+    const dataChanged = xValuesRef.current !== sampled.x;
+    if (dataChanged) {
+      xValuesRef.current = sampled.x;
+      u.setData([sampled.x, ...sampled.series] as uPlot.AlignedData);
+    }
+
+    // Escalas: solo al cambiar datos, zoom o rango Y (no pisa el arrastre de zoom).
+    const xRange = zoomRange ? `${zoomRange.startMs}:${zoomRange.endMs}` : 'full';
+    const scaleSig = `${sig}|${cfgLocal.yMin}:${cfgLocal.yMax}|${xRange}`;
+    if (scaleSigRef.current !== scaleSig) {
+      scaleSigRef.current = scaleSig;
+      if (cfgLocal.yMin !== cfgLocal.yMax) {
+        u.setScale('y', { min: cfgLocal.yMin, max: cfgLocal.yMax });
+      }
+      if (zoomRange) {
+        u.setScale('x', { min: zoomRange.startMs / 1000, max: zoomRange.endMs / 1000 });
+      } else if (sampled.x.length > 1) {
+        u.setScale('x', { min: sampled.x[0], max: sampled.x[sampled.x.length - 1] });
+      } else {
+        const only = sampled.x[0] ?? 0;
+        u.setScale('x', { min: only - 1, max: only + 1 });
+      }
+    }
+
+    // Cursor a la posición actual (no pisar el hover del usuario).
+    if (cfgLocal.autoFollow && !hoveringRef.current) {
+      const x = xValuesRef.current;
+      if (x.length > 0) {
+        const snapshot = bus?.getSnapshot();
+        const currentMs =
+          hoverTimestamp_ms ?? snapshot?.context?.viewTimestamp_ms ?? snapshot?.frame?.timestamp_ms;
+        if (currentMs != null) {
+          const idx = nearestIndex(x, currentMs / 1000);
+          if (idx >= 0) {
+            u.setCursor({ left: u.valToPos(x[idx]!, 'x'), top: 0 }, false);
+          }
+        }
+      }
+    }
+  }, [bus]);
+
+  const schedule = useWidgetDraw(draw, [
+    getFrames,
+    fieldsKey,
+    configKey,
+    hoverTimestamp_ms,
+    zoomRange,
+  ]);
 
   // Crear / recrear uPlot cuando cambian los campos o la configuración.
   useEffect(() => {
@@ -220,6 +289,10 @@ export function TimeSeriesChart({
       ],
     };
 
+    // Al recrear, forzar volcado de datos y escalas.
+    sampledRef.current = { sig: '', data: null };
+    scaleSigRef.current = '';
+
     const u = new uPlot(opts, [new Float64Array(0)], containerRef.current);
     uplotRef.current = u;
 
@@ -258,50 +331,6 @@ export function TimeSeriesChart({
     };
   }, [fieldsKey, configKey]);
 
-  // Volcar datos al gráfico (solo cuando cambia el dataset muestreado).
-  useEffect(() => {
-    const u = uplotRef.current;
-    if (!u) return;
-
-    if (!sampled) {
-      xValuesRef.current = [];
-      u.setData([new Float64Array(0)]);
-      return;
-    }
-
-    xValuesRef.current = sampled.x;
-    u.setData([sampled.x, ...sampled.series] as uPlot.AlignedData);
-
-    // Escala Y fija si el usuario la definió.
-    if (cfg.yMin !== cfg.yMax) {
-      u.setScale('y', { min: cfg.yMin, max: cfg.yMax });
-    }
-
-    // Rango X: el zoom compartido, o el dataset completo (t=0..final).
-    if (zoomRange) {
-      u.setScale('x', { min: zoomRange.startMs / 1000, max: zoomRange.endMs / 1000 });
-    } else if (sampled.x.length > 1) {
-      u.setScale('x', { min: sampled.x[0], max: sampled.x[sampled.x.length - 1] });
-    } else {
-      const only = sampled.x[0] ?? 0;
-      u.setScale('x', { min: only - 1, max: only + 1 });
-    }
-  }, [sampled, cfg.yMin, cfg.yMax, zoomRange]);
-
-  // Mover el cursor a la posición actual (no pisar el hover del usuario).
-  useEffect(() => {
-    const u = uplotRef.current;
-    if (!u || !cfg.autoFollow || hoveringRef.current) return;
-    const x = xValuesRef.current;
-    if (x.length === 0) return;
-    const currentMs = viewTimestamp_ms ?? context?.viewTimestamp_ms ?? frame?.timestamp_ms;
-    if (currentMs == null) return;
-    const idx = nearestIndex(x, currentMs / 1000);
-    if (idx >= 0) {
-      u.setCursor({ left: u.valToPos(x[idx]!, 'x'), top: 0 }, false);
-    }
-  }, [sampled, viewTimestamp_ms, frame, context, cfg.autoFollow]);
-
   // Redimensionar con el contenedor.
   useEffect(() => {
     if (!containerRef.current) return;
@@ -309,11 +338,12 @@ export function TimeSeriesChart({
       const rect = entries[0]?.contentRect;
       if (rect && uplotRef.current) {
         uplotRef.current.setSize({ width: Math.max(rect.width, 50), height: Math.max(rect.height, 50) });
+        schedule();
       }
     });
     ro.observe(containerRef.current);
     return () => ro.disconnect();
-  }, []);
+  }, [schedule]);
 
   return (
     <div

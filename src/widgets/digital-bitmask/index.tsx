@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { valueAt } from '../frame-lookup';
 import { useCanvasSize } from '../use-canvas-size';
+import { resolveViewTimestamp, useFrameBus } from '../frame-bus';
+import { useWidgetDraw } from '../use-widget-draw';
 
 interface BitmaskConfig {
   ledsPerRow: number;
@@ -54,18 +56,32 @@ function toBitmask(value: unknown): number | null {
  * Matriz de LEDs para bitmasks (ej. sensores IR).
  * Muestra el valor del timestamp visualizado (hover/vídeo/último frame).
  */
-export function DigitalBitmask({ config, dataFields, frame, frames, viewTimestamp_ms }: WidgetProps): React.ReactElement {
+export function DigitalBitmask({
+  config,
+  dataFields,
+  getFrames,
+  hoverTimestamp_ms,
+}: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
+  const bus = useFrameBus();
 
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<BitmaskConfig>) };
   const field = dataFields[0];
 
-  useEffect(() => {
+  const latest = useRef({ getFrames, field, hoverTimestamp_ms, cfg, size });
+  latest.current = { getFrames, field, hoverTimestamp_ms, cfg, size };
+
+  const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    const { getFrames, field, hoverTimestamp_ms, cfg, size } = latest.current;
+    const frames = getFrames();
+    const snapshot = bus?.getSnapshot() ?? { frame: null, context: null };
+    const viewTimestamp = resolveViewTimestamp(frames, hoverTimestamp_ms, snapshot);
 
     const dpr = window.devicePixelRatio || 1;
     const width = size.width;
@@ -79,8 +95,8 @@ export function DigitalBitmask({ config, dataFields, frame, frames, viewTimestam
     ctx.fillStyle = cfg.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    const sampled = valueAt(frames, field, viewTimestamp_ms);
-    const value = sampled ?? (field ? frame?.data[field] : null);
+    const sampled = valueAt(frames, field, viewTimestamp);
+    const value = sampled ?? (field ? snapshot.frame?.data[field] : null);
     const bitmask = toBitmask(value);
     const totalBits = cfg.ledsPerRow * cfg.rows;
 
@@ -144,11 +160,12 @@ export function DigitalBitmask({ config, dataFields, frame, frames, viewTimestam
       const hex = bitmask.toString(16).toUpperCase().padStart(Math.ceil(totalBits / 4), '0');
       ctx.fillText(`0x${hex}`, width / 2, height - 4);
     }
-  }, [
-    frames,
-    frame,
+  }, [bus]);
+
+  useWidgetDraw(draw, [
+    getFrames,
     field,
-    viewTimestamp_ms,
+    hoverTimestamp_ms,
     size.width,
     size.height,
     cfg.ledsPerRow,

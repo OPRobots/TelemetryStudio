@@ -87,6 +87,8 @@ npm run test         # Tests unitarios e integración (Vitest)
 npm run lint         # ESLint
 npm run smoke        # Smoke test del renderer
 npm run e2e          # 12 pruebas e2e (serial, vídeo, comparación, export, widgets, layouts...)
+npm run e2e:perf     # Medición de rendimiento (standalone; stream y vídeo)
+npm run screenshots  # Regenera las capturas de docs/assets
 npm run verify       # Gate completo (lint + typecheck + tests + build + smoke + e2e)
 ```
 

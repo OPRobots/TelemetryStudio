@@ -46,9 +46,10 @@ clear();
 - `hoverTimestamp_ms` — timestamp bajo el cursor (lo publican TimeSeriesChart y StateTimeline).
 - `zoomRange: { startMs, endMs } | null` — rango de zoom global entre timelines.
 
-`WidgetHost` resuelve el timestamp efectivo (`hover → vídeo → frame → último frame`) y
-lo reparte como `viewTimestamp_ms`; también reparte `zoomRange`/`onCursorHover`. Ver
-`docs/08-WIDGET-SYSTEM.md`.
+`WidgetHost` entrega a cada widget el `hoverTimestamp_ms` y el frame actual vía
+`FrameBus` (por panel); cada widget resuelve el timestamp efectivo (`hover → vídeo →
+frame → último frame`) con `resolveViewTimestamp`. También reparte
+`zoomRange`/`onCursorHover`. Ver `docs/08-WIDGET-SYSTEM.md`.
 
 ## ComparisonManager
 

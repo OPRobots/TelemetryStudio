@@ -484,26 +484,31 @@ Ver `docs/13-POC-TESTS.md` para los PoCs detallados con criterios de éxito.
   generadas/extendiendo `scripts/screenshot.mjs`.
 - **Aceptación**: crear layout nuevo sin efectos colaterales; README con ≥3 capturas.
 
-### P10.3 — Performance: redibujo imperativo de widgets (F-05)
+### P10.3 — Performance: redibujo imperativo de widgets (F-05) ✅
 
-Objetivo: reducir el trabajo por frame (menos renders/CPU) **sin perder fluidez visual**.
+Objetivo: reducir el trabajo por frame sin perder fluidez. **Implementado y medido.**
 
-- **Paso 0 (medir baseline)**: `scripts/e2e-perf.mjs` con N widgets (p. ej. 12) y stream a
-  100 Hz; medir FPS del renderer, nº de renders y uso de CPU/memoria. Guardar la línea base.
-- **Paso 1**: `src/renderer/src/lib/frame-bus.ts` (singleton `setCurrent(frame, context)` +
-  `subscribe(cb)`); `WidgetHost` deja de guardar `frame`/`context` en estado React y publica
-  en el bus.
-- **Paso 2**: extraer el dibujo de cada widget canvas a una función `draw()` en `ref` y
-  redibujar imperativamente al recibir el bus. Aplicar a `DigitalBitmask`, `Minimap2D` y
-  `StateTimeline`; `TimeSeriesChart` adapta `u.setData`/`u.setCursor`.
-- **Paso 3**: el `viewTimestamp` de hover/zoom sigue por el cursor-store (cambia poco); el
-  bus aporta solo el frame/context de vídeo.
-- **Decisión**: comparar antes/después. Se adopta la optimización **si reduce recursos de
-  forma clara y mantiene la fluidez** (≥ objetivo de FPS); si la mejora es marginal o
-  degrada la sensación visual, se revierte.
-- **Riesgo**: coordinar bus + hover + zoom sin romper
-  `e2e:zoom`/`e2e:serial`/`e2e:widget-kinds`.
-- **Aceptación**: `e2e:perf` con mejora medible de recursos y FPS sostenido; `verify` verde.
+- `src/widgets/frame-bus.ts`: `FrameBus` por `WidgetHost` (por contexto; evita cross-talk
+  entre paneles de comparación). El host deja de guardar `frame`/`context` en estado React.
+- `src/widgets/use-widget-draw.ts`: agenda `draw()` coalescido por `requestAnimationFrame`.
+- Widgets canvas (`DigitalBitmask`, `Minimap2D`, `StateTimeline`, `TimeSeriesChart`) dibujan
+  imperativamente. `WidgetProps` pasa `getFrames()` y `hoverTimestamp_ms`; el timestamp
+  efectivo se resuelve con `resolveViewTimestamp`.
+- **Capa estática cacheada** en canvas offscreen (fondo+segmentos+etiquetas en la timeline;
+  bbox+rejilla+trayectoria en el minimapa); por frame solo se repinta la parte dinámica.
+- `scripts/e2e-perf.mjs` (`npm run e2e:perf`, **standalone**): modo `stream` (20 widgets) y
+  `video` (50k frames).
+
+Resultados (1440×900, display 144 Hz):
+
+| Escenario | Baseline | Solo bus (B) | B + cache (C) |
+|---|---|---|---|
+| Stream 100 Hz, 20 widgets | 4.5 % CPU · 144 fps | 4.5 % · 144 fps | 4.6 % · 144 fps |
+| Stream 400 Hz, 20 widgets | 6.4 % · **9 fps** (p95 118 ms) | 6.9 % · **96 fps** (p95 14 ms) | 7.0 % · 94 fps |
+| Vídeo, 50k frames, 5 widgets | 1.9 % CPU · 144 fps | 1.85 % · 144 fps | **0.7 % (−58 %)** · 144 fps |
+
+Conclusión: el bus elimina el re-render por frame (fluidez a alta frecuencia); el cacheo
+elimina el redibujado O(n) por frame (menos CPU con datasets grandes). Se adopta.
 
 ### P10.4 — Preview del TimelineSlider (tooltip) + pan/zoom del Minimap2D
 

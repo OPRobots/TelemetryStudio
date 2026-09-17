@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { widgetRegistry } from '@widgets/widget-registry';
 import { telemetryStore } from '@core/telemetry-store';
-import type { TelemetryFrame } from '@core/types/telemetry';
-import type { VideoFrameContext } from '@core/types/video';
+import { FrameBus, FrameBusContext } from '@widgets/frame-bus';
 import { useEventListener } from '../../hooks/useEventListener';
 import { useLayoutStore } from '../../stores/layout-store';
 import { useAppStore } from '../../stores/app-store';
@@ -111,8 +110,6 @@ export function WidgetHost({
   const zoomRange = useCursorStore((s) => s.zoomRange);
   const setZoomRange = useCursorStore((s) => s.setZoomRange);
 
-  const [frame, setFrame] = useState<TelemetryFrame | null>(null);
-  const [context, setContext] = useState<VideoFrameContext | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dragKind, setDragKind] = useState<DragKind | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
@@ -120,26 +117,27 @@ export function WidgetHost({
   const gridRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
 
+  // Bus de frames por panel: los widgets se redibujan sin re-render React.
+  const frameBusRef = useRef<FrameBus | null>(null);
+  if (frameBusRef.current === null) frameBusRef.current = new FrameBus();
+  const frameBus = frameBusRef.current;
+
   useEventListener(eventName, ({ frame: f, context: c }) => {
-    setFrame(f);
-    setContext(c);
+    frameBus.update(f, c);
   });
 
   useEventListener('data:streaming-frame', ({ frame: f }) => {
     const hasVideo = primary && !useAppStore.getState().videoSrc;
-    if (hasVideo) setFrame(f);
+    if (hasVideo) frameBus.update(f, frameBus.getSnapshot().context);
   });
 
-  const frames =
-    dataset === 'comparison' ? telemetryStore.getComparisonFrames() : telemetryStore.getAllFrames();
-
-  // Timestamp efectivo: hover de la gráfica > vídeo > último frame.
-  const viewTimestamp = useMemo<number | null>(() => {
-    if (hoverTimestamp != null) return hoverTimestamp;
-    if (context?.viewTimestamp_ms != null) return context.viewTimestamp_ms;
-    if (frame?.timestamp_ms != null) return frame.timestamp_ms;
-    return frames.length > 0 ? frames[frames.length - 1]!.timestamp_ms : null;
-  }, [hoverTimestamp, context, frame, frames]);
+  const getFrames = useCallback(
+    () =>
+      dataset === 'comparison'
+        ? telemetryStore.getComparisonFrames()
+        : telemetryStore.getAllFrames(),
+    [dataset]
+  );
 
   // Limpia hover y zoom al cambiar de dataset o al desmontar el panel.
   useEffect(() => {
@@ -260,7 +258,7 @@ export function WidgetHost({
   const rows = packWidgetRows(visibleWidgets);
 
   return (
-    <>
+    <FrameBusContext.Provider value={frameBus}>
       <div
         ref={gridRef}
         data-dragging={dragKind !== null}
@@ -355,10 +353,8 @@ export function WidgetHost({
                           widgetId={widget.id}
                           config={widget.config}
                           dataFields={widget.dataFields}
-                          frame={frame}
-                          context={context}
-                          frames={frames}
-                          viewTimestamp_ms={viewTimestamp}
+                          getFrames={getFrames}
+                          hoverTimestamp_ms={hoverTimestamp}
                           onCursorHover={setHoverTimestamp}
                           zoomRange={zoomRange}
                           onZoomRangeChange={setZoomRange}
@@ -384,6 +380,6 @@ export function WidgetHost({
       {editingWidget && (
         <WidgetConfigDialog widget={editingWidget} onClose={() => setEditingId(null)} />
       )}
-    </>
+    </FrameBusContext.Provider>
   );
 }

@@ -26,6 +26,7 @@
     "e2e:serial-reset": "node scripts/run-electron.mjs scripts/e2e-serial-reset.mjs",
     "e2e:comparison-reset": "node scripts/run-electron.mjs scripts/e2e-comparison-reset.mjs",
     "e2e:layouts": "node scripts/run-electron.mjs scripts/e2e-layouts.mjs",
+    "e2e:perf": "node scripts/run-electron.mjs scripts/e2e-perf.mjs",
     "e2e": "npm run e2e:serial && npm run e2e:video && npm run e2e:comparison && npm run e2e:export && npm run e2e:prepare && npm run e2e:save && npm run e2e:widgets && npm run e2e:widget-kinds && npm run e2e:zoom && npm run e2e:serial-reset && npm run e2e:comparison-reset && npm run e2e:layouts",
     "screenshots": "node scripts/run-electron.mjs scripts/screenshots.mjs",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run smoke && npm run e2e",

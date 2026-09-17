@@ -1,6 +1,5 @@
 import type { ComponentType } from 'react';
 import type { TelemetryFrame } from '@core/types/telemetry';
-import type { VideoFrameContext } from '@core/types/video';
 import type { ZoomRange } from './zoom-range';
 
 export type WidgetFieldType = 'number' | 'boolean' | 'string' | 'array' | 'bitmask';
@@ -49,16 +48,19 @@ export interface WidgetProps {
   widgetId: string;
   config: Record<string, unknown>;
   dataFields: string[];
-  frame: TelemetryFrame | null;
-  context: VideoFrameContext | null;
-  /** Dataset completo del panel (primario o comparación). */
-  frames: TelemetryFrame[];
+  /**
+   * Devuelve el dataset completo del panel (primario o comparación) en el
+   * momento de dibujar. Es una función (no el array) para que el widget lea
+   * siempre los frames actuales sin que el host re-renderice por frame.
+   */
+  getFrames: () => TelemetryFrame[];
 
   /**
-   * Timestamp efectivo a visualizar (ms): hover sobre la gráfica temporal >
-   * posición del vídeo > último frame disponible. `null` si no hay datos.
+   * Timestamp bajo el cursor (hover) del usuario, o `null`. El widget resuelve
+   * el timestamp efectivo con `resolveViewTimestamp` (hover > vídeo > frame),
+   * leyendo los frames del vídeo/streaming desde el `FrameBus` del panel.
    */
-  viewTimestamp_ms?: number | null;
+  hoverTimestamp_ms?: number | null;
 
   /**
    * Publica el timestamp bajo el cursor de una gráfica (hover) o `null` al
