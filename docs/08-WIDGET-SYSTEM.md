@@ -561,6 +561,21 @@ export class Minimap2DRenderer {
 
 ## Widget 4: StateTimeline (Máquina de Estados)
 
+> **Estado actual (implementación en `src/widgets/state-timeline/`)**:
+> - El campo de estado (`dataFields[0]`) admite **número/booleano o string**. Si el
+>   valor es un string (`state:RUNNING`), se usa **directamente como etiqueta**.
+> - `config.stateMap` mapea `String(valor) → { label, color }` y permite
+>   **renombrar y recolorear** cada estado (clave numérica `"1"` o por nombre
+>   `"RUNNING"`). Para valores sin entrada se usa un valor por defecto
+>   determinista (`S<n>` para números; el propio texto, con color por hash, para
+>   strings). La lógica pura vive en `state-entry.ts`
+>   (`toStateValue`, `resolveStateEntry`, `defaultStateEntry`).
+> - El diálogo de configuración incluye una sección **"Estados"** que detecta los
+>   valores presentes en el dataset, permite editar etiqueta/color, añadir
+>   valores y restablecer al valor por defecto.
+> - El auto-layout crea **un `StateTimeline` por cada campo de estado**
+>   (ver más abajo).
+
 Renderiza una barra horizontal que muestra el estado actual del robot a lo largo del tiempo.
 
 ```typescript

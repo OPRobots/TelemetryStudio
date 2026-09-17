@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react';
 import type { WidgetConfig } from '@core/types/layout';
 import { ROW_UNIT, WIDTH_PRESETS } from '@core/types/layout';
+import { telemetryStore } from '@core/telemetry-store';
 import { useLayoutStore } from '../../stores/layout-store';
 import { useAppStore } from '../../stores/app-store';
 import { clampHeight } from '../../lib/widget-layout';
 import { DEFAULT_SERIES_COLORS } from '@widgets/time-series-chart';
+import { resolveStateEntry, toStateValue } from '@widgets/state-timeline/state-entry';
+import type { StateEntry, StateValue } from '@widgets/state-timeline/state-entry';
 
 interface WidgetConfigDialogProps {
   widget: WidgetConfig;
@@ -113,6 +116,10 @@ export function WidgetConfigDialog({ widget, onClose }: WidgetConfigDialogProps)
               />
             </div>
           </div>
+        )}
+
+        {widget.type === 'StateTimeline' && (
+          <StateTimelineOptions field={fields[0]} config={config} onChange={setConfigValue} />
         )}
 
         {widget.type === 'Minimap2D' && (
@@ -251,6 +258,137 @@ function TimeSeriesOptions({ fields, config, onChange, onColorChange }: TimeSeri
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Interpreta una clave del stateMap como número si lo parece, si no texto. */
+function parseStateKey(key: string): StateValue {
+  return /^-?\d+(?:\.\d+)?$/.test(key.trim()) ? Number(key) : key;
+}
+
+/** Valores de estado distintos presentes en el dataset para un campo. */
+function detectStateKeys(field: string | undefined): string[] {
+  if (!field) return [];
+  const frames = telemetryStore.getAllFrames();
+  const seen = new Set<string>();
+  for (const frame of frames) {
+    const value = toStateValue(frame.data[field]);
+    if (value == null) continue;
+    seen.add(String(value));
+    if (seen.size >= 64) break;
+  }
+  return Array.from(seen);
+}
+
+/** Ordena claves: números ascendentes primero, luego textos. */
+function sortStateKeys(keys: string[]): string[] {
+  return [...keys].sort((a, b) => {
+    const na = Number(a);
+    const nb = Number(b);
+    const aNum = a.trim() !== '' && Number.isFinite(na);
+    const bNum = b.trim() !== '' && Number.isFinite(nb);
+    if (aNum && bNum) return na - nb;
+    if (aNum) return -1;
+    if (bNum) return 1;
+    return a.localeCompare(b);
+  });
+}
+
+interface StateTimelineOptionsProps {
+  field: string | undefined;
+  config: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
+}
+
+function StateTimelineOptions({ field, config, onChange }: StateTimelineOptionsProps): React.ReactElement {
+  const [refresh, setRefresh] = useState(0);
+  const [newKey, setNewKey] = useState('');
+  const stateMap = (config['stateMap'] as Record<string, StateEntry>) ?? {};
+
+  const keys = useMemo(() => {
+    const set = new Set<string>(detectStateKeys(field));
+    for (const key of Object.keys(stateMap)) set.add(key);
+    return sortStateKeys(Array.from(set));
+  }, [field, stateMap, refresh]);
+
+  const updateEntry = (key: string, patch: Partial<StateEntry>): void => {
+    const current = stateMap[key] ?? resolveStateEntry(parseStateKey(key), stateMap);
+    onChange('stateMap', { ...stateMap, [key]: { ...current, ...patch } });
+  };
+
+  const resetEntry = (key: string): void => {
+    const next = { ...stateMap };
+    delete next[key];
+    onChange('stateMap', next);
+  };
+
+  const addEntry = (): void => {
+    const key = newKey.trim();
+    if (key.length === 0) return;
+    updateEntry(key, resolveStateEntry(parseStateKey(key), stateMap));
+    setNewKey('');
+  };
+
+  return (
+    <div className="mt-3">
+      <label className="dialog-label">Estados ({keys.length})</label>
+      {keys.length === 0 && (
+        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+          Sin estados detectados. Carga datos o añade un valor manualmente.
+        </span>
+      )}
+      <div className="flex flex-col gap-1">
+        {keys.map((key) => {
+          const entry = resolveStateEntry(parseStateKey(key), stateMap);
+          const customized = key in stateMap;
+          return (
+            <div key={key} className="flex items-center gap-2">
+              <span className="w-20 truncate font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
+                {key}
+              </span>
+              <input
+                className="dialog-input"
+                style={{ flex: 1 }}
+                value={entry.label}
+                onChange={(e) => updateEntry(key, { label: e.target.value })}
+              />
+              <input
+                type="color"
+                value={/^#[0-9a-f]{6}$/i.test(entry.color) ? entry.color : '#64748b'}
+                onChange={(e) => updateEntry(key, { color: e.target.value })}
+              />
+              <button
+                type="button"
+                className="toolbar-button toolbar-button--compact"
+                disabled={!customized}
+                title="Restablecer"
+                onClick={() => resetEntry(key)}
+              >
+                ↺
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <div className="dialog-row mt-2">
+        <input
+          className="dialog-input"
+          placeholder="valor (p. ej. RUNNING)"
+          value={newKey}
+          onChange={(e) => setNewKey(e.target.value)}
+        />
+        <button type="button" className="toolbar-button toolbar-button--compact" onClick={addEntry}>
+          Añadir
+        </button>
+        <button
+          type="button"
+          className="toolbar-button toolbar-button--compact"
+          onClick={() => setRefresh((n) => n + 1)}
+        >
+          Detectar
+        </button>
+      </div>
     </div>
   );
 }

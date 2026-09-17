@@ -2,11 +2,8 @@ import { useEffect, useRef } from 'react';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { valueAt } from '../frame-lookup';
 import { useCanvasSize } from '../use-canvas-size';
-
-interface StateEntry {
-  label: string;
-  color: string;
-}
+import { resolveStateEntry, toStateValue } from './state-entry';
+import type { StateEntry, StateValue } from './state-entry';
 
 interface StateTimelineConfig {
   stateMap: Record<string, StateEntry>;
@@ -34,18 +31,6 @@ const LABEL_RESERVE = 16;
 
 function clamp(lo: number, value: number, hi: number): number {
   return Math.max(lo, Math.min(value, hi));
-}
-
-function colorForValue(value: number, map: Record<string, StateEntry>): StateEntry {
-  if (map[String(value)]) return map[String(value)];
-  const hue = (value * 67) % 360;
-  return { label: `S${value}`, color: `hsl(${hue}, 70%, 55%)` };
-}
-
-function toStateNumber(value: unknown): number | undefined {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'boolean') return value ? 1 : 0;
-  return undefined;
 }
 
 /**
@@ -81,7 +66,7 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
     ctx.fillRect(0, 0, width, height);
 
     const sampled = valueAt(frames, field, viewTimestamp_ms);
-    const state = toStateNumber(sampled ?? (field ? frame?.data[field] : undefined));
+    const state = toStateValue(sampled ?? (field ? frame?.data[field] : undefined));
 
     if (state == null) {
       ctx.fillStyle = '#475569';
@@ -92,7 +77,7 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
       return;
     }
 
-    const info = colorForValue(state, stateMap);
+    const info = resolveStateEntry(state, stateMap);
 
     const labelReserve = cfg.showLabels ? LABEL_RESERVE : 0;
     const usableH = Math.max(height - PAD * 2 - labelReserve, 1);
@@ -122,17 +107,17 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
 
     // Segmentos de estado a lo largo de todo el dataset.
     let segStartMs = startMs;
-    let segValue = toStateNumber(allFrames[0]!.data[field!]);
-    const drawSegment = (fromMs: number, toMs: number, value: number | undefined): void => {
+    let segValue = toStateValue(allFrames[0]!.data[field!]);
+    const drawSegment = (fromMs: number, toMs: number, value: StateValue | undefined): void => {
       if (value == null) return;
       const x1 = offsetX + ((fromMs - startMs) / span) * timelineWidth;
       const x2 = offsetX + ((toMs - startMs) / span) * timelineWidth;
-      ctx.fillStyle = colorForValue(value, stateMap).color;
+      ctx.fillStyle = resolveStateEntry(value, stateMap).color;
       ctx.fillRect(x1, timelineY, Math.max(x2 - x1, 1), timelineHeight);
     };
 
     for (let i = 1; i < allFrames.length; i++) {
-      const value = toStateNumber(allFrames[i]!.data[field!]);
+      const value = toStateValue(allFrames[i]!.data[field!]);
       if (value !== segValue) {
         drawSegment(segStartMs, allFrames[i]!.timestamp_ms, segValue);
         segStartMs = allFrames[i]!.timestamp_ms;
@@ -160,9 +145,9 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
       let lastLabel = '';
       let lastX = -Infinity;
       for (let i = 0; i < allFrames.length; i++) {
-        const value = toStateNumber(allFrames[i]!.data[field!]);
+        const value = toStateValue(allFrames[i]!.data[field!]);
         if (value == null) continue;
-        const label = colorForValue(value, stateMap).label;
+        const label = resolveStateEntry(value, stateMap).label;
         if (label !== lastLabel) {
           const x = offsetX + ((allFrames[i]!.timestamp_ms - startMs) / span) * timelineWidth;
           if (x - lastX > 40) {
@@ -197,7 +182,7 @@ export const stateTimelineDefinition: WidgetDefinition = {
     description: 'Máquina de estados del robot a lo largo del tiempo',
     icon: 'activity',
     category: 'temporal',
-    acceptedFieldTypes: ['number', 'boolean'],
+    acceptedFieldTypes: ['number', 'boolean', 'string'],
     minSize: { width: 6, height: 2 },
     defaultSize: { width: 16, height: 3 },
     defaultConfig: { ...DEFAULT_CONFIG },
