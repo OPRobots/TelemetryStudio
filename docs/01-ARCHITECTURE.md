@@ -138,7 +138,7 @@ Responsabilidades exclusivas del Renderer:
 - EventBus / Pub-Sub para distribución de frames a widgets
 - Renderizado de widgets (Canvas 2D + uPlot) — 2 sets en comparación
 - ComparisonManager — gestiona 2 contextos de sesión simultáneos
-- SplitView — duplica la interfaz verticalmente para comparación
+- SplitView — interfaz en paralelo (A izquierda / B derecha) con divisor vertical para comparación
 - Captura de frames para exportación (OffscreenCanvas + VideoEncoder)
 
 ### Worker Threads
@@ -193,17 +193,15 @@ Tareas pesadas delegadas a Workers para no bloquear la UI:
    c. Carga segundo vídeo en HTMLVideoElement #2
    d. Crea segundo VideoSynchronizer para vídeo B
    e. Clona widgets de sesión A para sesión B (mismos tipos, campos, configs)
-4. UI → SplitView duplica el panel verticalmente:
-   ┌─────────────────────────────────┐
-   │  Sesión A: VideoPlayer + Widgets │
-   ├─────────────────────────────────┤
-   │  Sesión B: VideoPlayer + Widgets │
-   └─────────────────────────────────┘
-5. Ambos synchronizers corren independientemente
-6. Barra vertical compartida por defecto:
-   - Mover la barra en A → se mueve también en B
-   - Toggle "Sync" → permite mover cada barra independientemente
-7. Comparación finalizada → ComparisonManager.clear()
+4. UI → SplitView duplica el panel en paralelo (divisor vertical):
+   ┌──────────────────┬──────────────────┐
+   │ Sesión A (actual)│ Sesión B (comp.) │
+   │ Vídeo + Widgets  │ Vídeo + Widgets  │
+   └──────────────────┴──────────────────┘
+5. Reproducción siempre simétrica: la barra compartida mueve ambos synchronizers
+6. Scroll de widgets sincronizado; cursor (hover) y zoom (rango) compartidos
+7. Sesiones sin vídeo: placeholder alineado con el panel que sí lo tiene
+8. Comparación finalizada → ComparisonManager.clear()
 ```
 
 ## Flujo de Exportación — Contenido para Redes Sociales

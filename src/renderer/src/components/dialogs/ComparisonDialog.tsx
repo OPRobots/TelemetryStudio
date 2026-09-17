@@ -72,7 +72,7 @@ export function ComparisonDialog({ onClose }: ComparisonDialogProps): React.Reac
         </h3>
 
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-          Se cargará la segunda sesión en un panel inferior. Los widgets deben ser idénticos
+          Se cargará la segunda sesión en el panel derecho. Los widgets deben ser idénticos
           (tipo, campos, posición, tamaño y configuración).
         </p>
 

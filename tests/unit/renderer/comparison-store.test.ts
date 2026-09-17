@@ -9,7 +9,7 @@ describe('comparison-store', () => {
   it('starts inactive', () => {
     const state = useComparisonStore.getState();
     expect(state.active).toBe(false);
-    expect(state.sharedBar).toBe(true);
+    expect(state.referenceName).toBeNull();
   });
 
   it('activates a comparison', () => {
@@ -27,7 +27,6 @@ describe('comparison-store', () => {
 
   it('stops and resets', () => {
     useComparisonStore.getState().start('B', '/b.mp4');
-    useComparisonStore.getState().setSharedBar(false);
     useComparisonStore.getState().setDifferences(['x']);
     useComparisonStore.getState().stop();
 
@@ -35,12 +34,5 @@ describe('comparison-store', () => {
     expect(state.active).toBe(false);
     expect(state.referenceName).toBeNull();
     expect(state.differences).toEqual([]);
-  });
-
-  it('toggles the shared bar', () => {
-    useComparisonStore.getState().setSharedBar(false);
-    expect(useComparisonStore.getState().sharedBar).toBe(false);
-    useComparisonStore.getState().setSharedBar(true);
-    expect(useComparisonStore.getState().sharedBar).toBe(true);
   });
 });

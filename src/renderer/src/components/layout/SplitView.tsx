@@ -7,7 +7,6 @@ import { useAppStore } from '../../stores/app-store';
 import { useComparisonStore } from '../../stores/comparison-store';
 import { useLayoutStore } from '../../stores/layout-store';
 import { VideoPlayer } from '../video/VideoPlayer';
-import { PaneControls } from '../video/PaneControls';
 import { WidgetHost } from '../widgets/WidgetHost';
 import { Splitter } from './Splitter';
 
@@ -15,19 +14,20 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function SharedControls(): React.ReactElement {
+/** Barra de reproducción compartida: mueve ambos sincronizadores en paralelo. */
+function SharedControls({ driver }: { driver: VideoSynchronizer }): React.ReactElement {
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
     const id = window.setInterval(() => {
-      setTime(videoSynchronizer.currentTime);
-      setDuration(videoSynchronizer.duration);
-      setPlaying(videoSynchronizer.isPlaying);
+      setTime(driver.currentTime);
+      setDuration(driver.duration);
+      setPlaying(driver.isPlaying);
     }, 150);
     return () => window.clearInterval(id);
-  }, []);
+  }, [driver]);
 
   const toggle = (): void => {
     if (playing) {
@@ -91,7 +91,8 @@ interface PaneProps {
   eventName: 'sync:frame' | 'comparison:frame';
   dataset: 'primary' | 'comparison';
   primary: boolean;
-  showControls: boolean;
+  /** Muestra un hueco del alto del vídeo cuando este panel no tiene vídeo. */
+  placeholder: boolean;
   fps?: number | null;
   style?: React.CSSProperties;
 }
@@ -104,40 +105,56 @@ function Pane({
   eventName,
   dataset,
   primary,
-  showControls,
+  placeholder,
   fps = null,
   style,
 }: PaneProps): React.ReactElement {
+  const hasVideo = !!src;
+  const videoAreaStyle: React.CSSProperties = { flex: '0 0 auto', height: '44%' };
+
   return (
     <div className="card" style={style}>
       <div className="card__header">
         <span className="card__title">{label}</span>
         <span className="card__subtitle">{subtitle}</span>
       </div>
-      <div
-        className="card__body"
-        style={{ flex: '0 0 auto', height: '44%', backgroundColor: '#05070b' }}
-      >
-        <VideoPlayer synchronizer={synchronizer} src={src} primary={primary} fps={fps} />
-      </div>
-      {showControls && (
-        <div className="card__footer">
-          <PaneControls synchronizer={synchronizer} />
+
+      {hasVideo ? (
+        <div className="card__body" style={{ ...videoAreaStyle, backgroundColor: '#05070b' }}>
+          <VideoPlayer synchronizer={synchronizer} src={src} primary={primary} fps={fps} />
         </div>
-      )}
+      ) : placeholder ? (
+        <div
+          className="card__body flex items-center justify-center"
+          style={{ ...videoAreaStyle, backgroundColor: '#05070b', color: 'var(--text-disabled)' }}
+        >
+          <span className="text-xs">Sin vídeo</span>
+        </div>
+      ) : null}
+
       <div
-        className="card__body"
-        style={{ flex: '1 1 auto', minHeight: 0, padding: 12, borderTop: '1px solid var(--bg-border)' }}
+        className="card__body card__body--fill"
+        style={{
+          padding: 12,
+          ...(hasVideo || placeholder ? { borderTop: '1px solid var(--bg-border)' } : {}),
+        }}
       >
-        <WidgetHost eventName={eventName} dataset={dataset} primary={primary} />
+        <WidgetHost
+          eventName={eventName}
+          dataset={dataset}
+          primary={primary}
+          scrollGroup="comparison"
+        />
       </div>
     </div>
   );
 }
 
 /**
- * Vista de comparación side-by-side: dos paneles apilados con vídeo y widgets.
- * Los widgets son idénticos (validados por ComparisonManager); solo cambia el dato.
+ * Vista de comparación en paralelo: A (actual) a la izquierda y B (comparada)
+ * a la derecha, separadas por un divisor vertical. Los widgets son idénticos
+ * (validados por ComparisonManager); el scroll y el cursor/zoom están
+ * sincronizados entre ambos paneles.
  */
 export function SplitView(): React.ReactElement {
   const primarySrc = useAppStore((s) => s.videoSrc);
@@ -145,32 +162,34 @@ export function SplitView(): React.ReactElement {
   const referenceSrc = useComparisonStore((s) => s.referenceVideoSrc);
   const referenceFps = useComparisonStore((s) => s.referenceFps);
   const referenceName = useComparisonStore((s) => s.referenceName);
-  const sharedBar = useComparisonStore((s) => s.sharedBar);
-  const setSharedBar = useComparisonStore((s) => s.setSharedBar);
   const stopStore = useComparisonStore((s) => s.stop);
 
   const panels = useLayoutStore((s) => s.panels);
   const setPanels = useLayoutStore((s) => s.setPanels);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState(600);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(900);
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = rowRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
-      const h = entries[0]?.contentRect.height;
-      if (h) setContainerHeight(h);
+      const w = entries[0]?.contentRect.width;
+      if (w) setContainerWidth(w);
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  const paneAHeight = clamp(
-    Math.round(panels.comparisonRatio * containerHeight),
-    160,
-    Math.max(160, containerHeight - 220)
+  const paneAWidth = clamp(
+    Math.round(panels.comparisonRatio * containerWidth),
+    280,
+    Math.max(280, containerWidth - 280)
   );
+
+  const hasAnyVideo = !!primarySrc || !!referenceSrc;
+  // La barra compartida la guía el panel que sí tiene vídeo.
+  const driver = primarySrc ? videoSynchronizer : comparisonSynchronizer;
 
   const exit = (): void => {
     comparisonManager.stopComparison();
@@ -178,74 +197,63 @@ export function SplitView(): React.ReactElement {
   };
 
   return (
-    <div ref={containerRef} className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-3 flex items-center justify-between gap-3 px-1">
         <span className="section-label" style={{ marginBottom: 0 }}>
           Comparación · A (actual) vs B ({referenceName ?? 'sin nombre'})
         </span>
-        <div className="flex items-center gap-3">
-          <label className="dialog-checkbox">
-            <input
-              type="checkbox"
-              checked={sharedBar}
-              onChange={(e) => {
-                setSharedBar(e.target.checked);
-                comparisonManager.setSyncBarMode(e.target.checked);
-              }}
-            />
-            <span className="text-xs">Barra compartida</span>
-          </label>
-          <button className="toolbar-button toolbar-button--compact" onClick={exit}>
-            Salir
-          </button>
-        </div>
+        <button className="toolbar-button toolbar-button--compact" onClick={exit}>
+          Salir
+        </button>
       </div>
 
-      {sharedBar && (
+      {hasAnyVideo && (
         <div className="card" style={{ flexShrink: 0, marginBottom: 12 }}>
           <div className="card__header">
             <span className="card__title">Reproducción</span>
           </div>
-          <SharedControls />
+          <SharedControls driver={driver} />
         </div>
       )}
 
-      <Pane
-        label="Panel A"
-        subtitle="Sesión actual"
-        src={primarySrc}
-        synchronizer={videoSynchronizer}
-        eventName="sync:frame"
-        dataset="primary"
-        primary
-        showControls={!sharedBar}
-        fps={primaryFps}
-        style={{ height: paneAHeight, flexShrink: 0 }}
-      />
+      <div ref={rowRef} className="flex min-h-0 flex-1">
+        <Pane
+          label="Panel A"
+          subtitle="Sesión actual"
+          src={primarySrc}
+          synchronizer={videoSynchronizer}
+          eventName="sync:frame"
+          dataset="primary"
+          primary
+          placeholder={!primarySrc && !!referenceSrc}
+          fps={primaryFps}
+          style={{ width: paneAWidth, flexShrink: 0, minHeight: 0 }}
+        />
 
-      <Splitter
-        orientation="horizontal"
-        value={panels.comparisonRatio}
-        min={0.3}
-        max={0.7}
-        unit="ratio"
-        label="Alto del panel A"
-        onChange={(v) => setPanels({ comparisonRatio: v })}
-        onReset={() => setPanels({ comparisonRatio: DEFAULT_PANELS.comparisonRatio })}
-      />
+        <Splitter
+          orientation="vertical"
+          value={panels.comparisonRatio}
+          min={0.3}
+          max={0.7}
+          unit="ratio"
+          label="Ancho del panel A"
+          onChange={(v) => setPanels({ comparisonRatio: v })}
+          onReset={() => setPanels({ comparisonRatio: DEFAULT_PANELS.comparisonRatio })}
+        />
 
-      <Pane
-        label="Panel B"
-        subtitle={referenceName ?? 'Referencia'}
-        src={referenceSrc}
-        synchronizer={comparisonSynchronizer}
-        eventName="comparison:frame"
-        dataset="comparison"
-        primary={false}
-        showControls={!sharedBar}
-        fps={referenceFps}
-        style={{ flex: '1 1 auto', minHeight: 0 }}
-      />
+        <Pane
+          label="Panel B"
+          subtitle={referenceName ?? 'Referencia'}
+          src={referenceSrc}
+          synchronizer={comparisonSynchronizer}
+          eventName="comparison:frame"
+          dataset="comparison"
+          primary={false}
+          placeholder={!referenceSrc && !!primarySrc}
+          fps={referenceFps}
+          style={{ flex: '1 1 auto', minWidth: 0, minHeight: 0 }}
+        />
+      </div>
     </div>
   );
 }

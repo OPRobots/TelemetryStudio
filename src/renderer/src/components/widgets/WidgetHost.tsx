@@ -15,6 +15,7 @@ import {
   rowsFromPixels,
   snapWidthToPreset,
 } from '../../lib/widget-layout';
+import { propagateScroll, registerScrollElement } from '../../lib/widget-scroll-sync';
 
 const GRID_GAP = 12;
 
@@ -27,6 +28,8 @@ interface WidgetHostProps {
   primary?: boolean;
   /** Abre el selector de widgets (estado vacío). */
   onRequestAdd?: () => void;
+  /** Grupo de sincronización de scroll (p. ej. ambos paneles de comparación). */
+  scrollGroup?: string;
 }
 
 type DragKind = 'reorder' | 'width' | 'height';
@@ -95,6 +98,7 @@ export function WidgetHost({
   dataset = 'primary',
   primary = true,
   onRequestAdd,
+  scrollGroup,
 }: WidgetHostProps): React.ReactElement {
   const widgets = useLayoutStore((s) => s.widgets);
   const removeWidget = useLayoutStore((s) => s.removeWidget);
@@ -146,6 +150,13 @@ export function WidgetHost({
       setZoomRange(null);
     };
   }, [dataset, eventName, setHoverTimestamp, setZoomRange]);
+
+  // Registra la rejilla en el grupo de scroll (comparación).
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !scrollGroup || widgets.length === 0) return;
+    return registerScrollElement(scrollGroup, el);
+  }, [scrollGroup, widgets.length]);
 
   const editingWidget = useMemo(
     () => widgets.find((w) => w.id === editingId) ?? null,
@@ -255,6 +266,7 @@ export function WidgetHost({
         data-dragging={dragKind !== null}
         className="widget-grid flex flex-col overflow-auto"
         style={{ position: 'relative', gap: `${GRID_GAP}px` }}
+        onScroll={scrollGroup ? (e) => propagateScroll(e.currentTarget) : undefined}
       >
         {rows.map((row, rowIndex) => {
           const used = row.reduce((sum, w) => sum + Math.min(Math.max(w.width, 3), 12), 0);

@@ -39,7 +39,6 @@ export interface EventMap {
   // === Comparison ===
   'comparison:start': { referenceSession: SessionFile; referenceDataset: TelemetryDataset };
   'comparison:stop': {};
-  'comparison:sync-mode-change': { sharedBar: boolean };
   'comparison:widget-mismatch': { differences: string[] };
 
   // === Export ===

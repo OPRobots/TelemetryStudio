@@ -348,16 +348,6 @@ class ComparisonManager {
   }
 
   /**
-   * Cambia el modo de sincronización de la barra vertical.
-   *
-   * @param shared - true = barra compartida, false = barras independientes
-   */
-  setSyncBarMode(shared: boolean): void {
-    this.sharedVerticalBar = shared;
-    eventBus.emit('comparison:sync-mode-change', { sharedBar: shared });
-  }
-
-  /**
    * Valida que los widgets de dos sesiones sean idénticos.
    * Compara: tipo, campos, posición, tamaño, configuración.
    */

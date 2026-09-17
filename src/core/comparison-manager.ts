@@ -11,7 +11,6 @@ import { sessionToDataset } from './session-codec';
 export class ComparisonManager {
   private active = false;
   private referenceSession: SessionFile | null = null;
-  private sharedVerticalBar = true;
 
   startComparison(
     reference: SessionFile,
@@ -49,11 +48,6 @@ export class ComparisonManager {
     this.active = false;
 
     eventBus.emit('comparison:stop', {});
-  }
-
-  setSyncBarMode(shared: boolean): void {
-    this.sharedVerticalBar = shared;
-    eventBus.emit('comparison:sync-mode-change', { sharedBar: shared });
   }
 
   private validateWidgetCompatibility(
@@ -109,10 +103,6 @@ export class ComparisonManager {
 
   get isActive(): boolean {
     return this.active;
-  }
-
-  get isSharedBar(): boolean {
-    return this.sharedVerticalBar;
   }
 
   get currentReference(): SessionFile | null {

@@ -43,18 +43,19 @@ El vídeo **siempre** es pregrabado. La telemetría llega por serial en vivo y s
 
 1. Cargar sesión A como referencia (desde Flujo A o B)
 2. Cargar sesión B (nueva sesión serial o另一sesión guardada)
-3. La interfaz se duplica verticalmente:
+3. La interfaz se duplica en paralelo, con un divisor vertical:
 
 ```
-┌─────────────────────────────────┐
-│  Sesión A: Vídeo + Widgets      │
-├─────────────────────────────────┤
-│  Sesión B: Vídeo + Widgets      │
-└─────────────────────────────────┘
+┌──────────────────┬──────────────────┐
+│ Sesión A (actual)│ Sesión B (comp.) │
+│  Vídeo + Widgets │  Vídeo + Widgets │
+└──────────────────┴──────────────────┘
 ```
 
-4. Ambos vídeos y gráficas sincronizados al mismo tiempo
-5. Barra vertical compartida por defecto (con opción para desincronizar)
+4. Ambos vídeos y gráficas sincronizados al mismo tiempo (reproducción y
+   navegación **siempre simétricas**)
+5. Scroll de widgets sincronizado entre A y B; el cursor (hover) y el **zoom**
+   (rango de timestamps) también son compartidos
 6. Los widgets deben ser idénticos en ambas sesiones; si difieren → error explicativo
 7. Ideal para comparar runs con diferentes configuraciones de parámetros
 
@@ -69,7 +70,7 @@ La funcionalidad de exportación de vídeo genera archivos MP4/WebM con los grá
 - **Alta frecuencia**: Soporte para datos de 100 Hz a 1 kHz.
 - **Sesiones portables**: Formato `.json` compacto + `.mp4` para intercambio y reanálisis
 - **Sincronización frame-a-frame**: `requestVideoFrameCallback` con drift < 1 frame.
-- **Comparación**: Máximo 2 sesiones simultáneas, interfaz duplicada verticalmente.
+- **Comparación**: Máximo 2 sesiones simultáneas, interfaz en paralelo (A izquierda / B derecha) con divisor vertical.
 - **Exportación para redes**: MP4/WebM con gráficos superpuestos (WebCodecs + Worker).
 
 ## Arquitectura Modular (4 Pilares)

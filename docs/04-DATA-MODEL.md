@@ -225,7 +225,7 @@ interface LayoutPanels {
   inspectorVisible: boolean;
   /** Proporción de alto del vídeo respecto a la columna (0.15–0.8) */
   videoRatio: number;
-  /** Proporción de alto del panel A en comparación (0.3–0.7) */
+  /** Proporción de ancho del panel A en comparación (0.3–0.7) */
   comparisonRatio: number;
 }
 
@@ -436,7 +436,8 @@ interface ExportConfig {
 
 /**
  * Configuración para el modo de comparación side-by-side.
- * Permite ver 2 sesiones simultáneamente con interfaz duplicada verticalmente.
+ * Permite ver 2 sesiones simultáneamente, en paralelo (A izquierda / B derecha)
+ * con un divisor vertical. Reproducción, scroll, cursor y zoom sincronizados.
  */
 interface ComparisonConfig {
   /** Si la comparación está activa */
@@ -454,10 +455,6 @@ interface ComparisonConfig {
   /** Layout de widgets de la sesión de referencia */
   referenceLayout: SessionLayout | null;
 
-  /** Si la barra vertical está sincronizada entre ambas sesiones */
-  /** true = mover la barra en A se mueve también en B */
-  /** false = cada sesión tiene su propia barra */
-  sharedVerticalBar: boolean;
 }
 
 /**

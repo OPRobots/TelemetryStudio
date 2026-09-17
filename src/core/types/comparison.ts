@@ -9,7 +9,6 @@ export interface ComparisonConfig {
   referenceVideoPath: string | null;
   referenceSync: { offset_ms: number; anchor: [number, number] | null; rate: number } | null;
   referenceLayout: { widgets: import('./session').SessionWidget[] } | null;
-  sharedVerticalBar: boolean;
 }
 
 /**
