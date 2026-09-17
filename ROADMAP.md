@@ -510,14 +510,14 @@ Resultados (1440×900, display 144 Hz):
 Conclusión: el bus elimina el re-render por frame (fluidez a alta frecuencia); el cacheo
 elimina el redibujado O(n) por frame (menos CPU con datasets grandes). Se adopta.
 
-### P10.4 — Preview del TimelineSlider (tooltip) + pan/zoom del Minimap2D
+### P10.4 — Preview del TimelineSlider (tooltip) + pan/zoom del Minimap2D ✅
 
-- **TimelineSlider**: al arrastrar, mostrar un **tooltip con el tiempo** bajo el cursor (sin
-  thumbnail), sin interrumpir la reproducción.
-- **Minimap2D**: **pan** (arrastrar) y **zoom** (rueda) con estado local combinado con el
-  encuadre adaptativo; doble clic resetea. Mantener el rango de zoom resaltado y la
-  atenuación de lo de fuera.
-- **Aceptación**: `e2e:zoom` sigue verde; extensión del e2e para el tooltip/pan.
+- **TimelineSlider**: tooltip con el **tiempo absoluto** (`mm:ss.mmm`) bajo el cursor y al
+  arrastrar; formateo compartido en `lib/time-format.ts`.
+- **Minimap2D**: **pan** (arrastrar) y **zoom** (rueda hacia el cursor, 0.5x–20x) con vista
+  local no persistida; doble clic resetea solo la vista local. El `zoomRange` compartido se
+  mantiene (resaltado y atenuación de lo de fuera).
+- **Aceptación**: `e2e:video` valida el tooltip; `e2e:zoom` valida rueda/pan/reset. Verdes.
 
 ### P10.5 — Packaging multiplataforma + PoC 4
 

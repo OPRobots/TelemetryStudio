@@ -3,20 +3,9 @@ import { useAppStore } from '../../stores/app-store';
 import { useEventListener } from '../../hooks/useEventListener';
 import { videoSynchronizer } from '@core/video-synchronizer';
 import { alignHere, resetSync } from '../../lib/sync-actions';
+import { formatTime } from '../../lib/time-format';
 
 const SPEEDS = [0.25, 0.5, 1, 2];
-
-function formatTime(seconds: number): string {
-  if (!Number.isFinite(seconds)) return '00:00.000';
-  const sign = seconds < 0 ? '-' : '';
-  const abs = Math.abs(seconds);
-  const m = Math.floor(abs / 60);
-  const s = Math.floor(abs % 60);
-  const ms = Math.floor((abs % 1) * 1000);
-  return `${sign}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms
-    .toString()
-    .padStart(3, '0')}`;
-}
 
 export function PlaybackControls(): React.ReactElement {
   const isPlaying = useAppStore((s) => s.isPlaying);

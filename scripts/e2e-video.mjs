@@ -162,6 +162,25 @@ app.whenReady().then(async () => {
       return { telemetryTimeMs: m ? Number(m[1]) : -1 };
     })()`);
 
+    // Tooltip del TimelineSlider: relativo al anchor → en el borde izquierdo
+    // (t=anchor, justo tras alinear en 1.0s) debe mostrar 00:00.000.
+    await win.webContents.executeJavaScript(`(() => {
+      const wrap = document.querySelector('.timeline-slider-wrap');
+      if (!wrap) return false;
+      const r = wrap.getBoundingClientRect();
+      wrap.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true, cancelable: true,
+        clientX: r.left, clientY: r.top + r.height / 2,
+        pointerId: 1, pointerType: 'mouse',
+      }));
+      return true;
+    })()`);
+    await new Promise((r) => setTimeout(r, 200));
+    const tooltip = await win.webContents.executeJavaScript(`(() => {
+      const tip = document.querySelector('.timeline-tooltip');
+      return { found: !!tip, text: tip ? tip.textContent.trim() : '' };
+    })()`);
+
     // Cerrar el vídeo desde el botón del header
     await win.webContents.executeJavaScript(`(() => {
       const b = document.querySelector('button[title="Cerrar vídeo"]');
@@ -183,6 +202,7 @@ app.whenReady().then(async () => {
           ...videoInfo,
           ...syncState,
           aligned,
+          tooltip,
           scrubTime,
           prepareCalls,
           stepDelta,
@@ -200,6 +220,7 @@ app.whenReady().then(async () => {
     const footerOk = syncState.footerText.includes('mock_video.mp4');
     const prepareOk = prepareCalls >= 1;
     const closedOk = closed.videos === 0 && closed.footerText.includes('sin cargar');
+    const tooltipOk = tooltip.found && tooltip.text === '00:00.000';
 
     const ok =
       durationOk &&
@@ -211,6 +232,7 @@ app.whenReady().then(async () => {
       footerOk &&
       prepareOk &&
       closedOk &&
+      tooltipOk &&
       errors.length === 0;
     console.log(ok ? 'E2E_VIDEO_OK' : 'E2E_VIDEO_FAIL');
 

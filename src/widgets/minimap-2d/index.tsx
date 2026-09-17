@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { TelemetryFrame } from '@core/types/telemetry';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { frameAt } from '../frame-lookup';
@@ -29,6 +29,13 @@ const DEFAULT_CONFIG: MinimapConfig = {
 
 const PAD = 26;
 const TEXT_HEIGHT = 18;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 20;
+const ZOOM_STEP = 1.1;
+
+function clampZoom(value: number): number {
+  return Math.min(Math.max(value, MIN_ZOOM), MAX_ZOOM);
+}
 
 /**
  * Minimapa 2D de trayectoria (X, Y, heading).
@@ -58,6 +65,16 @@ export function Minimap2D({
   });
   // Capa estática (fondo + rejilla + trayectoria + inicio), cacheada en un canvas.
   const baseRef = useRef<{ canvas: HTMLCanvasElement | null; sig: string }>({ canvas: null, sig: '' });
+  // Vista local (zoom/pan manuales), independiente de cada widget.
+  const viewRef = useRef({ zoom: 1, panX: 0, panY: 0 });
+  const mappingRef = useRef<{
+    scale: number;
+    centerX: number;
+    centerY: number;
+    dataCenterX: number;
+    dataCenterY: number;
+  } | null>(null);
+  const panRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -149,8 +166,14 @@ export function Minimap2D({
     const centerY = PAD + TEXT_HEIGHT + availH / 2;
     const dataCenterX = (bMinX + bMaxX) / 2;
     const dataCenterY = (bMinY + bMaxY) / 2;
-    const mapX = (x: number): number => centerX + (x - dataCenterX) * scale;
-    const mapY = (y: number): number => centerY - (y - dataCenterY) * scale;
+
+    // Vista local: el encuadre adaptativo base + zoom/pan del usuario.
+    const view = viewRef.current;
+    const cxScreen = centerX + view.panX;
+    const cyScreen = centerY + view.panY;
+    const mapX = (x: number): number => cxScreen + (x - dataCenterX) * scale * view.zoom;
+    const mapY = (y: number): number => cyScreen - (y - dataCenterY) * scale * view.zoom;
+    mappingRef.current = { scale, centerX, centerY, dataCenterX, dataCenterY };
 
     // --- Capa estática (fondo + rejilla + trayectoria + inicio) ---
     let base = baseRef.current.canvas;
@@ -162,7 +185,9 @@ export function Minimap2D({
       zoomRange ? `${zoomRange.startMs}:${zoomRange.endMs}` : 'full'
     }|${Math.round(width)}x${Math.round(height)}|${scale.toFixed(3)}|${centerX.toFixed(2)}|${centerY.toFixed(
       2
-    )}|${dataCenterX.toFixed(3)}|${dataCenterY.toFixed(3)}|${cfg.showGrid}|${cfg.gridSize}|${cfg.trailColor}`;
+    )}|${dataCenterX.toFixed(3)}|${dataCenterY.toFixed(3)}|${view.zoom}|${view.panX.toFixed(
+      2
+    )}|${view.panY.toFixed(2)}|${cfg.showGrid}|${cfg.gridSize}|${cfg.trailColor}`;
     if (baseRef.current.sig !== baseSig) {
       base.width = Math.max(width * dpr, 1);
       base.height = Math.max(height * dpr, 1);
@@ -284,7 +309,7 @@ export function Minimap2D({
     }
   }, [bus]);
 
-  useWidgetDraw(draw, [
+  const schedule = useWidgetDraw(draw, [
     getFrames,
     dataFields,
     hoverTimestamp_ms,
@@ -302,7 +327,76 @@ export function Minimap2D({
     cfg.gridSize,
   ]);
 
-  return <canvas ref={canvasRef} className="h-full w-full" />;
+  // Rueda: zoom hacia el cursor (listener no pasivo para no hacer scroll).
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const onWheel = (e: WheelEvent): void => {
+      const m = mappingRef.current;
+      if (!m) return;
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+      const view = viewRef.current;
+      const nextZoom = clampZoom(view.zoom * (e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP));
+      if (nextZoom === view.zoom) return;
+      // Punto de datos bajo el cursor (antes) para mantenerlo fijo al hacer zoom.
+      const dx = (sx - (m.centerX + view.panX)) / (m.scale * view.zoom) + m.dataCenterX;
+      const dy = m.dataCenterY - (sy - (m.centerY + view.panY)) / (m.scale * view.zoom);
+      const nextCxScreen = sx - (dx - m.dataCenterX) * m.scale * nextZoom;
+      const nextCyScreen = sy + (dy - m.dataCenterY) * m.scale * nextZoom;
+      viewRef.current = {
+        zoom: nextZoom,
+        panX: nextCxScreen - m.centerX,
+        panY: nextCyScreen - m.centerY,
+      };
+      schedule();
+    };
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', onWheel);
+  }, [schedule]);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>): void => {
+    panRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Pointer no activo (p. ej. eventos sintéticos en tests).
+    }
+  };
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>): void => {
+    const pan = panRef.current;
+    if (!pan) return;
+    viewRef.current = {
+      ...viewRef.current,
+      panX: viewRef.current.panX + (e.clientX - pan.x),
+      panY: viewRef.current.panY + (e.clientY - pan.y),
+    };
+    pan.x = e.clientX;
+    pan.y = e.clientY;
+    schedule();
+  };
+  const handlePointerUp = (): void => {
+    panRef.current = null;
+  };
+  const handleDoubleClick = (): void => {
+    viewRef.current = { zoom: 1, panX: 0, panY: 0 };
+    schedule();
+  };
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="h-full w-full"
+      style={{ cursor: 'grab' }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onDoubleClick={handleDoubleClick}
+    />
+  );
 }
 
 export const minimap2dDefinition: WidgetDefinition = {

@@ -75,3 +75,14 @@ RVFC no está disponible nativamente.
 
 Sin vídeo cargado, `VideoSynchronizer` no tiene elemento adjunto y los widgets usan el
 último frame (o el hover) como timestamp. Ver `docs/08-WIDGET-SYSTEM.md`.
+
+## Controles de reproducción
+
+`src/renderer/src/components/video/`:
+
+- **`TimelineSlider`** — slider de seek. Al pasar el ratón por encima (o al arrastrar)
+  muestra un **tooltip con el tiempo relativo al anchor** (`mm:ss.mmm`, empieza en `00:00.000`
+  al inicio alineado) bajo el cursor.
+- **`PlaybackControls`** — play/pausa, step ±1 frame, velocidad (0.25x–2x), tiempo
+  relativo al anchor, `t` de telemetría, **Alinear aquí** y **Reset**.
+- El formateo de tiempo vive en `src/renderer/src/lib/time-format.ts` (`formatTime`).

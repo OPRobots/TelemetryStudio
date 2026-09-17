@@ -167,6 +167,57 @@ app.whenReady().then(async () => {
 
     const chartDriven = await snap();
 
+    // Minimap2D: zoom con rueda, pan arrastrando y doble clic para reset local.
+    const miniSnap = () =>
+      run(`(() => {
+        const cells = Array.from(document.querySelectorAll('[data-widget-id]'));
+        const mini = cells.find((c) => c.textContent.includes('Minimap2D'));
+        const c = mini && mini.querySelector('canvas');
+        return c ? c.toDataURL() : '';
+      })()`);
+    const miniCanvas = `(() => {
+      const cells = Array.from(document.querySelectorAll('[data-widget-id]'));
+      const mini = cells.find((c) => c.textContent.includes('Minimap2D'));
+      return mini ? mini.querySelector('canvas') : null;
+    })()`;
+
+    const miniBefore = await miniSnap();
+    await run(`(() => {
+      const c = ${miniCanvas};
+      const r = c.getBoundingClientRect();
+      c.dispatchEvent(new WheelEvent('wheel', {
+        bubbles: true, cancelable: true, deltaY: -120,
+        clientX: r.left + r.width * 0.5, clientY: r.top + r.height * 0.5,
+      }));
+      return true;
+    })()`);
+    await wait(300);
+    const miniWheel = await miniSnap();
+
+    await run(`(() => {
+      const c = ${miniCanvas};
+      const r = c.getBoundingClientRect();
+      const y = r.top + r.height * 0.5;
+      const ev = (type, x) => new PointerEvent(type, {
+        bubbles: true, cancelable: true, clientX: x, clientY: y,
+        pointerId: 1, pointerType: 'mouse', buttons: type === 'pointerup' ? 0 : 1,
+      });
+      c.dispatchEvent(ev('pointerdown', r.left + r.width * 0.4));
+      c.dispatchEvent(ev('pointermove', r.left + r.width * 0.6));
+      c.dispatchEvent(ev('pointerup', r.left + r.width * 0.6));
+      return true;
+    })()`);
+    await wait(300);
+    const miniPan = await miniSnap();
+
+    await run(`(() => {
+      const c = ${miniCanvas};
+      c.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      return true;
+    })()`);
+    await wait(300);
+    const miniReset = await miniSnap();
+
     const result = {
       ok: before.ok && zoomed.ok && reset.ok && chartDriven.ok,
       chartZoomed: before.chart !== zoomed.chart,
@@ -178,6 +229,10 @@ app.whenReady().then(async () => {
       chartDragChart: reset.chart !== chartDriven.chart,
       chartDragState: reset.state !== chartDriven.state,
       chartDragMinimap: reset.mini !== chartDriven.mini,
+      // Pan/zoom manual del Minimap2D.
+      miniWheelZoomed: miniBefore !== miniWheel,
+      miniPanned: miniWheel !== miniPan,
+      miniViewReset: miniPan !== miniReset,
     };
     console.log('E2E_ZOOM ' + JSON.stringify(result));
     if (errors.length > 0) console.log('E2E_ZOOM_ERRORS ' + JSON.stringify(errors.slice(0, 10)));
@@ -191,6 +246,9 @@ app.whenReady().then(async () => {
       result.minimapReset &&
       result.chartDragState &&
       result.chartDragMinimap &&
+      result.miniWheelZoomed &&
+      result.miniPanned &&
+      result.miniViewReset &&
       errors.length === 0;
     console.log(ok ? 'E2E_ZOOM_OK' : 'E2E_ZOOM_FAIL');
 

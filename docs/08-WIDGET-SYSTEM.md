@@ -158,7 +158,9 @@ Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, 
 - Config: `fieldX`/`fieldY`/`fieldTheta` (derivados de los campos de datos),
   `trailColor`, `robotColor`, `robotLength`/`robotWidth`, `showGrid`, `gridSize`.
   El diálogo de configuración expone rejilla, tamaño/colores del robot y color de trayectoria.
-- **Pendiente**: pan/zoom manual dentro del minimapa.
+- **Pan/zoom manual** (vista local, no persistida): **rueda** = zoom hacia el cursor
+  (0.5x–20x); **arrastrar** = desplazar; **doble clic** = reset de la vista. Es
+  independiente por widget y no toca el `zoomRange` temporal compartido.
 
 ## Widget 4: StateTimeline (Canvas 2D)
 

@@ -274,4 +274,4 @@ npm run build:win    # Build Windows (NSIS + portable)
 | PoC 3: Video Export | ✅ Funcional | `ddd9354` |
 | PoC 4: Packaging | ✅ Build Linux OK | `25f1877` |
 | PoC 5: Emisor de telemetría (STM32) | ✅ Firmware de prueba | `920d372`, `2b95b96` |
-| Fase 10: Pendientes (post v1.0.0) | 🟡 En curso (P10.1–P10.3 hechos) | `443918d` |
+| Fase 10: Pendientes (post v1.0.0) | 🟡 En curso (P10.1–P10.4 hechos) | `443918d` |
