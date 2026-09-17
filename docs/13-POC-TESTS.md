@@ -44,8 +44,8 @@ Los PoCs validan que el stack funciona antes de construir la app completa. Viven
 
 **Implementación final (real)**: el renderer compone cada frame en un **canvas** y
 lo envía como **raw RGBA** por IPC al Main Process, que ejecuta **FFmpeg**
-(`libx264 -crf 18 -preset fast`) leyendo de `stdin`. Se descartó WebCodecs/Muxer
-JS por su fragilidad en entornos sin GPU.
+(`libx264 -crf 18 -preset fast`) leyendo de `stdin`. Es robusto aunque no haya GPU
+disponible.
 
 **Criterios**
 - [x] Se generan los frames del rango sin drops relevantes

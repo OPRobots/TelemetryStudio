@@ -314,7 +314,7 @@ Pipeline de exportación de vídeo con gráficos superpuestos para crear conteni
   - Campo para nombre de sesión (overlay)
   - Barra de progreso
 - [x] Exportación con **FFmpeg** empaquetado como sidecar (raw RGBA por stdin)
-  - Se eligió FFmpeg directo en lugar de WebCodecs/Mediabunny (más robusto, validado en PoC 3)
+  - FFmpeg directo: robusto y portable, validado en el PoC 3
 - [x] Test unitario de argumentos + test de integración con FFmpeg real (MP4 + ffprobe)
 - [x] E2E de exportación (composición del renderer + envío de frames)
 
@@ -448,10 +448,8 @@ Ver `docs/13-POC-TESTS.md` para los PoCs detallados con criterios de éxito.
 
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |---|---|---|---|
-| `serialport` falla en packaging | Alta | Crítico | PoC 4 primero; fallback a Web Serial API |
-| WebCodecs no soportado en Electron | Media | Bajo | Resuelto: fallback a raw RGBA + FFmpeg libx264 (PoC 3) |
-| LTTB bloquea UI con >1M puntos | Media | Medio | Ejecutar en Worker Thread |
-| macOS notarization rechazada | Baja | Alto | Seguir guía Apple exactamente |
-| encodeQueueSize overflow | Media | Medio | Check `> 2` antes de encode (P1) |
-| 2 synchronizers causan lag | Media | Medio | Throttle RVFC callback; test con 2 vídeos 1080p30 |
+| `serialport` falla en packaging | Alta | Crítico | PoC 4 primero |
+| LTTB bloquea UI con >1M puntos | Media | Medio | Worker / muestrear solo la ventana visible (pendiente) |
+| macOS notarization rechazada | Baja | Alto | Seguir la guía de Apple exactamente |
+| 2 synchronizers causan lag | Media | Medio | RVFC por synchronizer; probado con 2 vídeos |
 | Widgets diferentes en comparación | Baja | Bajo | Validación estricta + error clarativo |

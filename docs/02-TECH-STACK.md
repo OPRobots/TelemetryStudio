@@ -5,7 +5,7 @@
 | Criterio | Electron 34 | Tauri 2.x | Veredicto |
 |---|---|---|---|
 | `serialport` (C++ native module) | Funciona con `electron-rebuild` | Sin binding Rust maduro; USB/serial parcial y variable por plataforma | **Electron** |
-| Parsing binario C/C++ (SRAM dumps) | Node.js `Buffer` + `DataView` + Worker Threads | Requiere sidecar C++ o FFI Rust | **Electron** |
+| Parsing binario C/C++ | Node.js `Buffer` + `DataView` | Requiere sidecar C++ o FFI Rust | **Electron** |
 | Exportación de vídeo | FFmpeg sidecar; codecs consistentes | Depende del WebView del SO (WebKitGTK en Linux = codecs limitados) | **Electron** |
 | Bundle size | ~109 MB AppImage (Chromium embebido) | ~10 MB | Tauri |
 | RAM idle | ~250 MB | ~80 MB | Tauri |

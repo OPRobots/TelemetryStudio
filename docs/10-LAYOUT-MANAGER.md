@@ -2,76 +2,29 @@
 
 ## Visión General
 
-El LayoutManager permite guardar y cargar esquemas de pantalla completos en JSON. Cada layout define qué widgets están activos, su posición, configuración, y la distribución del panel de vídeo.
+Un **layout** describe la disposición del dashboard: la lista de widgets (tipo,
+campos, tamaño y configuración) y las proporciones de los paneles. Los layouts
+predefinidos y los guardados por el usuario se persisten en
+`app.getPath('userData')/layouts/`.
 
 ## Estructura JSON de un Layout
 
 ```json
 {
   "version": 1,
-  "name": "Siguelíneas - Entrenamiento",
-  "description": "Layout para análisis de robots Siguelíneas con IR sensors y PID",
-  "createdAt": "2026-08-15T10:30:00Z",
-  "modifiedAt": "2026-08-15T14:22:00Z",
-  "videoPanel": {
-    "x": 0,
-    "y": 0,
-    "width": 12,
-    "height": 8,
-    "showOverlays": true,
-    "overlays": [
-      {
-        "type": "speed",
-        "position": { "x": 20, "y": 460 },
-        "dataField": "speed_rpm",
-        "style": { "fontSize": 18, "color": "#22d3ee" }
-      }
-    ]
-  },
+  "name": "Siguelíneas",
+  "description": "IR sensors + PWM + estados",
+  "createdAt": "2026-01-01T00:00:00Z",
+  "modifiedAt": "2026-01-01T00:00:00Z",
   "widgets": [
     {
-      "id": "widget-ir-sensors",
+      "id": "w-ir",
       "type": "DigitalBitmask",
-      "label": "IR Sensors",
-      "width": 6,
-      "height": 4,
-      "dataFields": ["ir_sensors"],
-      "config": {
-        "ledsPerRow": 8,
-        "rows": 2,
-        "onColor": "#22d3ee"
-      },
-      "visible": true
-    },
-    {
-      "id": "widget-pid-chart",
-      "type": "TimeSeriesChart",
-      "label": "PID Output",
-      "width": 6,
-      "height": 6,
-      "dataFields": ["motor_left", "motor_right"],
-      "config": {
-        "colors": ["#22d3ee", "#4ade80"],
-        "yLabel": "PWM",
-        "yMin": -1000,
-        "yMax": 1000
-      },
-      "visible": true
-    },
-    {
-      "id": "widget-state",
-      "type": "StateTimeline",
-      "label": "Robot State",
+      "label": "Sensores IR",
       "width": 12,
       "height": 3,
-      "dataFields": ["state"],
-      "config": {
-        "stateMap": {
-          "0": { "label": "IDLE", "color": "#64748b" },
-          "1": { "label": "FOLLOWING", "color": "#22c55e" },
-          "2": { "label": "TURNING", "color": "#eab308" }
-        }
-      },
+      "dataFields": ["ir_sensors"],
+      "config": { "ledsPerRow": 24, "rows": 1 },
       "visible": true
     }
   ],
@@ -83,235 +36,59 @@ El LayoutManager permite guardar y cargar esquemas de pantalla completos en JSON
   },
   "global": {
     "theme": "dark",
-    "units": {
-      "speed": "rpm",
-      "distance": "m",
-      "angle": "deg"
-    },
+    "units": { "speed": "rpm", "distance": "m", "angle": "deg" },
     "showGrid": true,
-    "snapToGrid": true,
+    "snapToGrid": false,
     "gridSize": 40
   }
 }
 ```
 
-## Implementación del Layout Manager
+- `width` (columnas de 12) y `height` (filas de 40 px) definen el tamaño en la rejilla
+  fluida. El **orden** de `widgets` es el de colocación (no hay x/y).
+- `panels.comparisonRatio` es el **ancho** del panel A en comparación.
+
+## Layout Manager
+
+`src/services/layout-manager.ts` (`layoutManager` singleton y `createEmptyLayout`).
+Usa un `LayoutPersistence` (adaptador) para no depender de `electron`.
 
 ```typescript
-// src/services/layout-manager.ts
+BUILT_IN_LAYOUTS: DashboardLayout[]      // Siguelíneas, Micromouse
+createEmptyLayout(name, description?): DashboardLayout
 
-import { ipcRenderer } from 'electron';
-import type { DashboardLayout, WidgetConfig } from '@core/types/layout';
-import { eventBus } from '@core/event-bus';
-
-/**
- * Layouts predefinidos para cada disciplina de robótica.
- */
-const BUILT_IN_LAYOUTS: DashboardLayout[] = [
-  {
-    version: 1,
-    name: 'Siguelíneas',
-    description: 'IR sensors + PID + State para robots Siguelíneas',
-    createdAt: '2026-01-01T00:00:00Z',
-    modifiedAt: '2026-01-01T00:00:00Z',
-    videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: true, overlays: [] },
-    widgets: [
-      { id: 'w1', type: 'DigitalBitmask', label: 'IR Sensors', width: 12, height: 4, dataFields: ['ir_sensors'], config: {}, visible: true },
-      { id: 'w2', type: 'TimeSeriesChart', label: 'PID Output', width: 12, height: 6, dataFields: ['motor_left', 'motor_right'], config: {}, visible: true },
-      { id: 'w3', type: 'StateTimeline', label: 'State', width: 12, height: 3, dataFields: ['state'], config: {}, visible: true },
-    ],
-    global: { theme: 'dark', units: { speed: 'rpm', distance: 'm', angle: 'deg' }, showGrid: true, snapToGrid: true, gridSize: 40 },
-  },
-  {
-    version: 1,
-    name: 'Micromouse',
-    description: 'Minimap 2D + Velocity para robots Micromouse',
-    createdAt: '2026-01-01T00:00:00Z',
-    modifiedAt: '2026-01-01T00:00:00Z',
-    videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: true, overlays: [] },
-    widgets: [
-      { id: 'w1', type: 'Minimap2D', label: 'Maze Path', width: 12, height: 8, dataFields: ['position_x', 'position_y', 'heading_deg'], config: {}, visible: true },
-      { id: 'w2', type: 'TimeSeriesChart', label: 'Speed', width: 12, height: 4, dataFields: ['speed_rpm'], config: {}, visible: true },
-    ],
-    global: { theme: 'dark', units: { speed: 'cm/s', distance: 'cm', angle: 'deg' }, showGrid: true, snapToGrid: true, gridSize: 40 },
-  },
-];
-
-class LayoutManager {
-  private currentLayout: DashboardLayout | null = null;
-  private savedLayouts: DashboardLayout[] = [];
-
-  constructor() {
-    this.loadSavedLayouts();
-  }
-
-  /**
-   * Obtiene todos los layouts disponibles (built-in + guardados).
-   */
-  getAllLayouts(): DashboardLayout[] {
-    return [...BUILT_IN_LAYOUTS, ...this.savedLayouts];
-  }
-
-  /**
-   * Obtiene el layout actual.
-   */
-  getCurrentLayout(): DashboardLayout | null {
-    return this.currentLayout;
-  }
-
-  /**
-   * Carga un layout y lo establece como actual.
-   */
-  loadLayout(layout: DashboardLayout): void {
-    this.currentLayout = { ...layout };
-    eventBus.emit('ui:layout-load', { layout: this.currentLayout });
-  }
-
-  /**
-   * Guarda el layout actual en disco.
-   */
-  async saveLayout(name?: string): Promise<void> {
-    if (!this.currentLayout) return;
-
-    const layoutToSave: DashboardLayout = {
-      ...this.currentLayout,
-      name: name ?? this.currentLayout.name,
-      modifiedAt: new Date().toISOString(),
-    };
-
-    // Guardar en disco via IPC
-    await ipcRenderer.invoke('layout:save', layoutToSave);
-
-    // Actualizar en la lista local
-    const existingIdx = this.savedLayouts.findIndex(l => l.name === layoutToSave.name);
-    if (existingIdx >= 0) {
-      this.savedLayouts[existingIdx] = layoutToSave;
-    } else {
-      this.savedLayouts.push(layoutToSave);
-    }
-
-    this.currentLayout = layoutToSave;
-  }
-
-  /**
-   * Crea un layout nuevo a partir del layout actual.
-   */
-  createNew(name: string, description?: string): DashboardLayout {
-    const newLayout: DashboardLayout = {
-      version: 1,
-      name,
-      description,
-      createdAt: new Date().toISOString(),
-      modifiedAt: new Date().toISOString(),
-      videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: true, overlays: [] },
-      widgets: [],
-      global: { theme: 'dark', units: { speed: 'rpm', distance: 'm', angle: 'deg' }, showGrid: true, snapToGrid: true, gridSize: 40 },
-    };
-
-    this.currentLayout = newLayout;
-    return newLayout;
-  }
-
-  /**
-   * Añade un widget al layout actual.
-   */
-  addWidget(config: WidgetConfig): void {
-    if (!this.currentLayout) return;
-    this.currentLayout.widgets.push(config);
-    this.currentLayout.modifiedAt = new Date().toISOString();
-    eventBus.emit('ui:widget-add', { widgetConfig: config });
-  }
-
-  /**
-   * Elimina un widget del layout actual.
-   */
-  removeWidget(widgetId: string): void {
-    if (!this.currentLayout) return;
-    this.currentLayout.widgets = this.currentLayout.widgets.filter(w => w.id !== widgetId);
-    this.currentLayout.modifiedAt = new Date().toISOString();
-    eventBus.emit('ui:widget-remove', { widgetId });
-  }
-
-  /**
-   * Actualiza un widget del layout actual.
-   */
-  updateWidget(widgetId: string, updates: Partial<WidgetConfig>): void {
-    if (!this.currentLayout) return;
-    const widget = this.currentLayout.widgets.find(w => w.id === widgetId);
-    if (widget) {
-      Object.assign(widget, updates);
-      this.currentLayout.modifiedAt = new Date().toISOString();
-      eventBus.emit('ui:widget-update', { widgetId, config: updates });
-    }
-  }
-
-  /**
-   * Elimina un layout guardado.
-   */
-  async deleteLayout(name: string): Promise<void> {
-    await ipcRenderer.invoke('layout:delete', name);
-    this.savedLayouts = this.savedLayouts.filter(l => l.name !== name);
-  }
-
-  /**
-   * Carga layouts guardados del disco.
-   */
-  private async loadSavedLayouts(): Promise<void> {
-    try {
-      this.savedLayouts = await ipcRenderer.invoke('layout:loadAll') ?? [];
-    } catch {
-      this.savedLayouts = [];
-    }
-  }
-}
-
-export const layoutManager = new LayoutManager();
+layoutManager.getCurrentLayout(): DashboardLayout | null
+layoutManager.getSavedLayouts(): DashboardLayout[]
+layoutManager.getBuiltInLayouts(): DashboardLayout[]
+layoutManager.loadLayout(name): void
+layoutManager.saveLayout(name?): Promise<void>
+layoutManager.deleteLayout(name): Promise<void>
+layoutManager.refreshSavedLayouts(): Promise<void>
+layoutManager.addWidget(widget) / removeWidget(id) / updateWidget(id, patch)
+layoutManager.replaceWidgets(widgets)
 ```
 
-## Servicio de Persistencia en Main Process
+Los layouts built-in vienen **sin campos asignados** (`dataFields: []`): al cargarlos,
+los widgets se muestran vacíos hasta que el usuario elige campos (o hasta que el
+auto-layout los rellene).
 
-```typescript
-// src/main/ipc-handlers.ts (añadido)
+## Store del renderer
 
-import { readFile, writeFile, readdir, unlink } from 'fs/promises';
-import { join } from 'path';
-import { app } from 'electron';
+`src/renderer/src/stores/layout-store.ts` (`useLayoutStore`) mantiene el estado en vivo
+(`widgets`, `panels`, `layoutName`) y las acciones: `setLayout`, `addWidget`,
+`removeWidget`, `updateWidget`, `replaceWidgets`, `clearWidgets`, `moveWidget`,
+`setWidgetWidth`, `setWidgetHeight`, `setPanels`.
 
-const LAYOUTS_DIR = join(app.getPath('userData'), 'layouts');
+La lógica de rejilla (snap de ancho/alto, empaquetado en filas) vive en
+`src/renderer/src/lib/widget-layout.ts` (`packWidgetRows`, `snapWidthToPreset`,
+`columnsFromPixels`, `rowsFromPixels`, `clampHeight`).
 
-async function ensureLayoutsDir(): Promise<void> {
-  const { mkdir } = await import('fs/promises');
-  await mkdir(LAYOUTS_DIR, { recursive: true });
-}
+## Persistencia en Main Process
 
-// Registrar handlers
-ipcMain.handle('layout:save', async (_event, layout: DashboardLayout) => {
-  await ensureLayoutsDir();
-  const filename = `${layout.name.replace(/[^a-zA-Z0-9-_]/g, '_')}.json`;
-  await writeFile(join(LAYOUTS_DIR, filename), JSON.stringify(layout, null, 2));
-});
+`src/main/ipc-handlers.ts`:
 
-ipcMain.handle('layout:loadAll', async () => {
-  await ensureLayoutsDir();
-  const files = await readdir(LAYOUTS_DIR);
-  const layouts: DashboardLayout[] = [];
+- `layout:save`, `layout:loadAll`, `layout:delete`.
 
-  for (const file of files) {
-    if (!file.endsWith('.json')) continue;
-    try {
-      const content = await readFile(join(LAYOUTS_DIR, file), 'utf-8');
-      layouts.push(JSON.parse(content));
-    } catch (error) {
-      console.error(`Failed to load layout ${file}:`, error);
-    }
-  }
-
-  return layouts;
-});
-
-ipcMain.handle('layout:delete', async (_event, name: string) => {
-  await ensureLayoutsDir();
-  const filename = `${name.replace(/[^a-zA-Z0-9-_]/g, '_')}.json`;
-  await unlink(join(LAYOUTS_DIR, filename)).catch(() => {});
-});
-```
+Almacenamiento: `app.getPath('userData')/layouts/`. La UI de gestión es
+`LayoutDialog` (listar/cargar/guardar/eliminar; para "nuevo" se guarda con un nombre
+nuevo — no hay botón dedicado, **pendiente**).
