@@ -4,19 +4,7 @@ import 'uplot/dist/uPlot.min.css';
 import { downsampleLTTB } from '@core/lttb';
 import type { TelemetryFrame } from '@core/types/telemetry';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
-
-export const DEFAULT_SERIES_COLORS = [
-  '#3b82f6',
-  '#F2BE22',
-  '#22c55e',
-  '#ef4444',
-  '#a855f7',
-  '#06b6d4',
-  '#f97316',
-  '#14b8a6',
-  '#e879f9',
-  '#84cc16',
-];
+import { seriesPalette } from '../color-palette';
 
 interface TimeSeriesConfig {
   colors?: string[];
@@ -36,7 +24,7 @@ interface TimeSeriesConfig {
 }
 
 const DEFAULT_CONFIG: Required<TimeSeriesConfig> = {
-  colors: DEFAULT_SERIES_COLORS,
+  colors: [],
   yLabel: '',
   yMin: 0,
   yMax: 0,
@@ -148,6 +136,10 @@ export function TimeSeriesChart({
     const cfgLocal = { ...DEFAULT_CONFIG, ...(JSON.parse(configKey) as TimeSeriesConfig) };
     const fieldList = fieldsKey.length > 0 ? fieldsKey.split('|') : [];
 
+    // Sin colores configurados, paleta de series (viva) según el nº de series.
+    const palette =
+      cfgLocal.colors.length > 0 ? cfgLocal.colors : seriesPalette(fieldList.length);
+
     // Spline cúbica monótona: suaviza sin sobrepasar (preserva los picos).
     const smoothPath = cfgLocal.smoothing > 0 ? uPlot.paths.spline?.() : null;
 
@@ -155,7 +147,7 @@ export function TimeSeriesChart({
       { label: 't', value: (_u, v) => (v == null ? '--' : `${(v as number).toFixed(2)}s`) },
       ...fieldList.map((field, i) => ({
         label: field,
-        stroke: cfgLocal.colors[i % cfgLocal.colors.length],
+        stroke: palette[i % palette.length],
         width: 1.6,
         // Anti-aliasing real: evita el snap a píxel entero del trazo.
         pxAlign: false,
@@ -339,7 +331,6 @@ export const timeSeriesChartDefinition: WidgetDefinition = {
     minSize: { width: 6, height: 4 },
     defaultSize: { width: 12, height: 6 },
     defaultConfig: {
-      colors: DEFAULT_SERIES_COLORS,
       yLabel: '',
       autoFollow: true,
       maxPoints: 2000,

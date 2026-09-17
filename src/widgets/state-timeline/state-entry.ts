@@ -1,3 +1,6 @@
+import type { TelemetryFrame } from '@core/types/telemetry';
+import { hslToHex } from '../color-palette';
+
 export interface StateEntry {
   label: string;
   color: string;
@@ -26,40 +29,78 @@ export function hashHue(text: string): number {
   return Math.abs(hash) % 360;
 }
 
-function hslToHex(h: number, s: number, l: number): string {
-  const sN = s / 100;
-  const lN = l / 100;
-  const k = (n: number): number => (n + h / 30) % 12;
-  const a = sN * Math.min(lN, 1 - lN);
-  const f = (n: number): number =>
-    lN - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  const toHex = (x: number): string => Math.round(x * 255).toString(16).padStart(2, '0');
-  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+/** Color por defecto (poco saturado) para un valor sin color asignado. */
+function derivedColor(value: StateValue): string {
+  const hue =
+    typeof value === 'number' ? (((value * 67) % 360) + 360) % 360 : hashHue(value);
+  return hslToHex(hue, 54, 50);
 }
 
-/** Entrada por defecto para un estado sin configurar. */
-export function defaultStateEntry(value: StateValue): StateEntry {
-  if (typeof value === 'number') {
-    const hue = (((value * 67) % 360) + 360) % 360;
-    return { label: `S${value}`, color: hslToHex(hue, 70, 55) };
-  }
-  return { label: value, color: hslToHex(hashHue(value), 70, 55) };
+/**
+ * Entrada por defecto para un estado sin configurar. Si se pasa `color`
+ * (p. ej. de la paleta automática) se usa ese; si no, se deriva del valor.
+ */
+export function defaultStateEntry(value: StateValue, color?: string): StateEntry {
+  return {
+    label: typeof value === 'number' ? `S${value}` : value,
+    color: color ?? derivedColor(value),
+  };
 }
 
 /**
  * Resuelve etiqueta y color de un estado. El `stateMap` (clave = valor como
  * texto) permite renombrar y recolorear; si no hay entrada, se usa el valor
- * por defecto (etiqueta = el propio string, o `S<n>` para números).
+ * por defecto (`fallbackColor` de la paleta, o derivado del valor).
  */
 export function resolveStateEntry(
   value: StateValue,
-  map: Record<string, StateEntry>
+  map: Record<string, StateEntry>,
+  fallbackColor?: string
 ): StateEntry {
-  const fallback = defaultStateEntry(value);
+  const fallback = defaultStateEntry(value, fallbackColor);
   const entry = map[String(value)];
   if (!entry) return fallback;
   return {
     label: entry.label && entry.label.length > 0 ? entry.label : fallback.label,
     color: entry.color && entry.color.length > 0 ? entry.color : fallback.color,
   };
+}
+
+/** Ordena claves de estado: números ascendentes primero, luego textos. */
+export function sortStateKeys(keys: string[]): string[] {
+  return [...keys].sort((a, b) => {
+    const na = Number(a);
+    const nb = Number(b);
+    const aNum = a.trim() !== '' && Number.isFinite(na);
+    const bNum = b.trim() !== '' && Number.isFinite(nb);
+    if (aNum && bNum) return na - nb;
+    if (aNum) return -1;
+    if (bNum) return 1;
+    return a.localeCompare(b);
+  });
+}
+
+/**
+ * Claves de estado de un gráfico en **orden de aparición**: valores distintos
+ * presentes en el dataset (hasta 64) más las claves ya configuradas. Este orden
+ * define qué color de paleta recibe cada estado; al ser de aparición (no
+ * ordenado), añadir estados nuevos **no recolorea** los existentes.
+ * Para mostrar la lista, usar `sortStateKeys`.
+ */
+export function collectStateKeys(
+  frames: TelemetryFrame[],
+  field: string | undefined,
+  stateMap: Record<string, StateEntry>
+): string[] {
+  const seen = new Set<string>();
+  if (field) {
+    for (const frame of frames) {
+      const value = toStateValue(frame.data[field]);
+      if (value == null) continue;
+      seen.add(String(value));
+      if (seen.size >= 64) break;
+    }
+  }
+  for (const key of Object.keys(stateMap)) seen.add(key);
+  return Array.from(seen);
 }

@@ -3,8 +3,11 @@ import {
   toStateValue,
   resolveStateEntry,
   defaultStateEntry,
+  collectStateKeys,
+  sortStateKeys,
   hashHue,
 } from '@widgets/state-timeline/state-entry';
+import type { TelemetryFrame } from '@core/types/telemetry';
 
 describe('state-entry', () => {
   it('normalizes telemetry values to state values', () => {
@@ -49,5 +52,35 @@ describe('state-entry', () => {
     const map = { '1': { label: 'FOLLOWING', color: '#00ff00' } };
     expect(resolveStateEntry(1, map).label).toBe('FOLLOWING');
     expect(resolveStateEntry(1, map).color).toBe('#00ff00');
+  });
+
+  it('uses the provided fallback color when there is no entry', () => {
+    expect(defaultStateEntry(1, '#abcdef').color).toBe('#abcdef');
+    expect(resolveStateEntry(1, {}, '#abcdef').color).toBe('#abcdef');
+    expect(resolveStateEntry('RUNNING', {}, '#abcdef').color).toBe('#abcdef');
+  });
+
+  it('sorts numeric keys before text ones', () => {
+    expect(sortStateKeys(['RUNNING', '2', '10', 'IDLE'])).toEqual([
+      '2',
+      '10',
+      'IDLE',
+      'RUNNING',
+    ]);
+  });
+
+  it('collects distinct state keys from frames and config', () => {
+    const frames: TelemetryFrame[] = [
+      { timestamp_ms: 0, data: { state: 2 } },
+      { timestamp_ms: 1, data: { state: 1 } },
+      { timestamp_ms: 2, data: { state: 'RUNNING' } },
+      { timestamp_ms: 3, data: { state: 1 } },
+    ];
+    // Orden de aparición (define el color); los estados nuevos se añaden al final.
+    expect(collectStateKeys(frames, 'state', {})).toEqual(['2', '1', 'RUNNING']);
+    expect(
+      collectStateKeys(frames, 'state', { DEBUG: { label: 'd', color: '#000000' } })
+    ).toEqual(['2', '1', 'RUNNING', 'DEBUG']);
+    expect(collectStateKeys([], 'state', {})).toEqual([]);
   });
 });

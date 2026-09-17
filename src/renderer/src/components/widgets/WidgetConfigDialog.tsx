@@ -5,8 +5,12 @@ import { telemetryStore } from '@core/telemetry-store';
 import { useLayoutStore } from '../../stores/layout-store';
 import { useAppStore } from '../../stores/app-store';
 import { clampHeight } from '../../lib/widget-layout';
-import { DEFAULT_SERIES_COLORS } from '@widgets/time-series-chart';
-import { resolveStateEntry, toStateValue } from '@widgets/state-timeline/state-entry';
+import { seriesPalette, statePalette } from '@widgets/color-palette';
+import {
+  collectStateKeys,
+  resolveStateEntry,
+  sortStateKeys,
+} from '@widgets/state-timeline/state-entry';
 import type { StateEntry, StateValue } from '@widgets/state-timeline/state-entry';
 
 interface WidgetConfigDialogProps {
@@ -87,7 +91,7 @@ export function WidgetConfigDialog({ widget, onClose }: WidgetConfigDialogProps)
             fields={fields}
             config={config}
             onColorChange={(idx, color) => {
-              const colors = [...((config['colors'] as string[]) ?? DEFAULT_SERIES_COLORS)];
+              const colors = [...((config['colors'] as string[]) ?? seriesPalette(fields.length))];
               colors[idx] = color;
               setConfigValue('colors', colors);
             }}
@@ -210,7 +214,8 @@ interface TimeSeriesOptionsProps {
 }
 
 function TimeSeriesOptions({ fields, config, onChange, onColorChange }: TimeSeriesOptionsProps): React.ReactElement {
-  const colors = (config['colors'] as string[]) ?? DEFAULT_SERIES_COLORS;
+  const palette = seriesPalette(Math.max(fields.length, 1));
+  const colors = (config['colors'] as string[]) ?? palette;
 
   return (
     <div className="mt-3">
@@ -250,7 +255,7 @@ function TimeSeriesOptions({ fields, config, onChange, onColorChange }: TimeSeri
                 </span>
                 <input
                   type="color"
-                  value={colors[i % colors.length] ?? DEFAULT_SERIES_COLORS[i % DEFAULT_SERIES_COLORS.length]}
+                  value={colors[i] ?? palette[i] ?? '#5b8dd9'}
                   onChange={(e) => onColorChange(i, e.target.value)}
                 />
               </div>
@@ -267,34 +272,6 @@ function parseStateKey(key: string): StateValue {
   return /^-?\d+(?:\.\d+)?$/.test(key.trim()) ? Number(key) : key;
 }
 
-/** Valores de estado distintos presentes en el dataset para un campo. */
-function detectStateKeys(field: string | undefined): string[] {
-  if (!field) return [];
-  const frames = telemetryStore.getAllFrames();
-  const seen = new Set<string>();
-  for (const frame of frames) {
-    const value = toStateValue(frame.data[field]);
-    if (value == null) continue;
-    seen.add(String(value));
-    if (seen.size >= 64) break;
-  }
-  return Array.from(seen);
-}
-
-/** Ordena claves: números ascendentes primero, luego textos. */
-function sortStateKeys(keys: string[]): string[] {
-  return [...keys].sort((a, b) => {
-    const na = Number(a);
-    const nb = Number(b);
-    const aNum = a.trim() !== '' && Number.isFinite(na);
-    const bNum = b.trim() !== '' && Number.isFinite(nb);
-    if (aNum && bNum) return na - nb;
-    if (aNum) return -1;
-    if (bNum) return 1;
-    return a.localeCompare(b);
-  });
-}
-
 interface StateTimelineOptionsProps {
   field: string | undefined;
   config: Record<string, unknown>;
@@ -306,15 +283,22 @@ function StateTimelineOptions({ field, config, onChange }: StateTimelineOptionsP
   const [newKey, setNewKey] = useState('');
   const stateMap = (config['stateMap'] as Record<string, StateEntry>) ?? {};
 
-  const keys = useMemo(() => {
-    const set = new Set<string>(detectStateKeys(field));
-    for (const key of Object.keys(stateMap)) set.add(key);
-    return sortStateKeys(Array.from(set));
-  }, [field, stateMap, refresh]);
+  const colorKeys = useMemo(
+    () => collectStateKeys(telemetryStore.getAllFrames(), field, stateMap),
+    // `refresh` fuerza redetección con datos recién llegados.
+    [field, stateMap, refresh]
+  );
+  // Misma paleta que el widget → los colores por defecto coinciden. El color se
+  // asigna por orden de aparición (estable); la lista se muestra ordenada.
+  const palette = statePalette(colorKeys.length);
+  const colorByKey: Record<string, string> = {};
+  colorKeys.forEach((key, i) => {
+    colorByKey[key] = palette[i] ?? palette[0] ?? '#5b8dd9';
+  });
+  const displayKeys = useMemo(() => sortStateKeys(colorKeys), [colorKeys]);
 
-  const updateEntry = (key: string, patch: Partial<StateEntry>): void => {
-    const current = stateMap[key] ?? resolveStateEntry(parseStateKey(key), stateMap);
-    onChange('stateMap', { ...stateMap, [key]: { ...current, ...patch } });
+  const updateEntry = (key: string, base: StateEntry, patch: Partial<StateEntry>): void => {
+    onChange('stateMap', { ...stateMap, [key]: { ...base, ...patch } });
   };
 
   const resetEntry = (key: string): void => {
@@ -326,21 +310,22 @@ function StateTimelineOptions({ field, config, onChange }: StateTimelineOptionsP
   const addEntry = (): void => {
     const key = newKey.trim();
     if (key.length === 0) return;
-    updateEntry(key, resolveStateEntry(parseStateKey(key), stateMap));
+    const base = resolveStateEntry(parseStateKey(key), stateMap);
+    onChange('stateMap', { ...stateMap, [key]: base });
     setNewKey('');
   };
 
   return (
     <div className="mt-3">
-      <label className="dialog-label">Estados ({keys.length})</label>
-      {keys.length === 0 && (
+      <label className="dialog-label">Estados ({displayKeys.length})</label>
+      {displayKeys.length === 0 && (
         <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Sin estados detectados. Carga datos o añade un valor manualmente.
         </span>
       )}
       <div className="flex flex-col gap-1">
-        {keys.map((key) => {
-          const entry = resolveStateEntry(parseStateKey(key), stateMap);
+        {displayKeys.map((key) => {
+          const entry = resolveStateEntry(parseStateKey(key), stateMap, colorByKey[key]);
           const customized = key in stateMap;
           return (
             <div key={key} className="flex items-center gap-2">
@@ -351,12 +336,12 @@ function StateTimelineOptions({ field, config, onChange }: StateTimelineOptionsP
                 className="dialog-input"
                 style={{ flex: 1 }}
                 value={entry.label}
-                onChange={(e) => updateEntry(key, { label: e.target.value })}
+                onChange={(e) => updateEntry(key, entry, { label: e.target.value })}
               />
               <input
                 type="color"
                 value={/^#[0-9a-f]{6}$/i.test(entry.color) ? entry.color : '#64748b'}
-                onChange={(e) => updateEntry(key, { color: e.target.value })}
+                onChange={(e) => updateEntry(key, entry, { color: e.target.value })}
               />
               <button
                 type="button"

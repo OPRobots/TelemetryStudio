@@ -73,6 +73,15 @@ La búsqueda del frame más cercano se hace con búsqueda binaria sobre el datas
   (`ResizeObserver` vía `src/widgets/use-canvas-size.ts`) y escalan su contenido
   proporcionalmente (rejilla de LEDs cuadrada y centrada; barra + etiqueta
   proporcionales al alto), en lugar de estirar el bitmap.
+- **Paleta automática de colores** (`src/widgets/color-palette.ts`): cuando no
+  hay colores configurados, los colores se asignan con **matiz por ángulo áureo**
+  (estable por índice → no hay dos parecidos y no "bailan" al aparecer series o
+  estados nuevos). Hay dos variantes:
+  - `seriesPalette`: para las **líneas** del TimeSeriesChart; mantiene la paleta
+    base viva original y extiende con tonos vivos si hay más series.
+  - `statePalette`: para los **bloques** del StateTimeline; tonos **más
+    oscuros**, porque un bloque de color claro resulta pesado.
+  El widget y el diálogo usan la misma paleta, así que los colores coinciden.
 
 ## Ciclo de Vida de un Widget
 

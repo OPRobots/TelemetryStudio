@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { valueAt } from '../frame-lookup';
 import { useCanvasSize } from '../use-canvas-size';
-import { resolveStateEntry, toStateValue } from './state-entry';
+import { lighten, statePalette } from '../color-palette';
+import { collectStateKeys, resolveStateEntry, toStateValue } from './state-entry';
 import type { StateEntry, StateValue } from './state-entry';
 
 interface StateTimelineConfig {
@@ -41,6 +42,18 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
   const field = dataFields[0];
   const configKey = JSON.stringify({ showLabels: cfg.showLabels, stateMap });
 
+  // Color de paleta por estado (matices repartidos → sin colores parecidos).
+  const stateMapKey = Object.keys(stateMap).sort().join('|');
+  const stateColors = useMemo(() => {
+    const keys = collectStateKeys(frames, field, stateMap);
+    const palette = statePalette(keys.length);
+    const byKey: Record<string, string> = {};
+    keys.forEach((key, i) => {
+      byKey[key] = palette[i] ?? palette[0] ?? '#5b8dd9';
+    });
+    return byKey;
+  }, [frames, frames.length, field, stateMapKey]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -71,7 +84,7 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
       return;
     }
 
-    const info = resolveStateEntry(state, stateMap);
+    const info = resolveStateEntry(state, stateMap, stateColors[String(state)]);
 
     const labelReserve = cfg.showLabels ? LABEL_RESERVE : 0;
     const usableH = Math.max(height - PAD * 2 - labelReserve, 1);
@@ -79,9 +92,10 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
     const timelineY = height - PAD - labelReserve - timelineHeight;
     const labelArea = Math.max(timelineY - PAD, 1);
 
-    // Estado actual (escala con el alto disponible).
+    // Estado actual (escala con el alto disponible). El texto se aclara para
+    // que siga siendo legible sobre el fondo oscuro aunque el color sea oscuro.
     const stateFont = clamp(14, labelArea * 0.55, 26);
-    ctx.fillStyle = info.color;
+    ctx.fillStyle = lighten(info.color, 0.45);
     ctx.font = `bold ${stateFont}px Inter, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -106,7 +120,7 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
       if (value == null) return;
       const x1 = offsetX + ((fromMs - startMs) / span) * timelineWidth;
       const x2 = offsetX + ((toMs - startMs) / span) * timelineWidth;
-      ctx.fillStyle = resolveStateEntry(value, stateMap).color;
+      ctx.fillStyle = resolveStateEntry(value, stateMap, stateColors[String(value)]).color;
       ctx.fillRect(x1, timelineY, Math.max(x2 - x1, 1), timelineHeight);
     };
 
@@ -141,7 +155,7 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
       for (let i = 0; i < allFrames.length; i++) {
         const value = toStateValue(allFrames[i]!.data[field!]);
         if (value == null) continue;
-        const label = resolveStateEntry(value, stateMap).label;
+        const label = resolveStateEntry(value, stateMap, stateColors[String(value)]).label;
         if (label !== lastLabel) {
           const x = offsetX + ((allFrames[i]!.timestamp_ms - startMs) / span) * timelineWidth;
           if (x - lastX > 40) {
@@ -162,6 +176,7 @@ export function StateTimeline({ config, dataFields, frame, frames, viewTimestamp
     size.height,
     configKey,
     stateMap,
+    stateColors,
     cfg.barHeight,
     cfg.showLabels,
   ]);
