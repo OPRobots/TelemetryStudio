@@ -282,6 +282,16 @@ export class SerialUARTParser implements ITelemetryParser {
     return this.frames.length;
   }
 
+  /**
+   * Vacía los frames acumulados (p. ej. al detectar el inicio de una nueva
+   * transmisión) conservando el schema descubierto y los nombres CSV, para no
+   * perder los campos ni rehacer el auto-layout.
+   */
+  resetFrames(): void {
+    this.frames = [];
+    this.streamComplete = false;
+  }
+
   destroy(): void {
     this.frames = [];
     this.fieldSchemas.clear();

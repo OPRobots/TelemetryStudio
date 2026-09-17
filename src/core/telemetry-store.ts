@@ -107,6 +107,13 @@ export class TelemetryStore {
     eventBus.emit('comparison:stop', {});
   }
 
+  /** Vacía solo el dataset primario (no toca el de comparación). */
+  clearPrimary(): void {
+    this.primaryFrames = [];
+    this.primaryDataset = null;
+    this.primarySorted = true;
+  }
+
   clear(): void {
     this.primaryFrames = [];
     this.primaryDataset = null;

@@ -3,7 +3,9 @@ import { telemetryStore } from '@core/telemetry-store';
 import { eventBus } from '@core/event-bus';
 import { useAppStore } from '../stores/app-store';
 import { useLayoutStore } from '../stores/layout-store';
+import { useCursorStore } from '../stores/cursor-store';
 import { buildAutoLayoutWidgets } from './auto-layout';
+import { STALE_TRANSMISSION_MS } from './session-save-status';
 
 /**
  * Gestiona la ingesta de telemetría Serial en el renderer:
@@ -65,7 +67,7 @@ class SerialIngestService {
   private reset(): void {
     this.parser.destroy();
     this.parser = new SerialUARTParser();
-    telemetryStore.clear();
+    telemetryStore.clearPrimary();
     this.autoLayoutApplied = false;
     useAppStore.getState().setDataset(null, []);
     useAppStore.getState().setFrameCount(0);
@@ -74,12 +76,32 @@ class SerialIngestService {
   }
 
   private onLine(line: string): void {
+    const store = useAppStore.getState();
+    const now = Date.now();
+    const prevDataAt = store.lastDataAt;
+
     const frame = this.parser.parseLine(line);
     if (!frame) return;
 
+    // Nueva captura: si ya había datos y esta llegada implica una nueva
+    // transmisión (tras estar "en reposo" ≥ STALE_TRANSMISSION_MS, o porque el
+    // timestamp vuelve a 0), se descarta lo anterior y se vuelve a plotear
+    // desde el principio, conservando layout y schema.
+    const resumed =
+      prevDataAt != null &&
+      (now - prevDataAt >= STALE_TRANSMISSION_MS || frame.timestamp_ms === 0);
+    if (resumed) {
+      telemetryStore.clearPrimary();
+      this.parser.resetFrames();
+      this.parser.parseLine(line); // deja este frame en el parser ya limpio
+      store.setFrameCount(1);
+      useCursorStore.getState().clear();
+      useCursorStore.getState().clearZoom();
+    }
+
     telemetryStore.addFrame(frame);
     eventBus.emit('data:streaming-frame', { frame });
-    useAppStore.getState().setLastDataAt(Date.now());
+    store.setLastDataAt(now);
 
     const count = this.parser.frameCount;
     if (count % 5 === 0) {

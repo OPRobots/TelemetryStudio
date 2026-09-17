@@ -19,7 +19,7 @@ export function SaveSessionDialog({ onClose }: SaveSessionDialogProps): React.Re
 
   // Tick para que el estado se actualice solo al cumplirse el umbral de inactividad
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    const id = window.setInterval(() => setNow(Date.now()), 500);
     return () => window.clearInterval(id);
   }, []);
 

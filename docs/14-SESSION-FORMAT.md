@@ -406,11 +406,20 @@ export function datasetToSession(
 > **Cuándo se puede guardar**: se guarda con los datos capturados hasta el
 > momento, sin necesidad de cerrar el puerto Serie. Para no cortar una captura en
 > curso, el guardado se **bloquea mientras se reciben datos** (el diálogo explica
-> el motivo) y se **habilita** al desconectar o tras **10 s de silencio** desde el
-> último dato (`STALE_TRANSMISSION_MS`). Con el puerto abierto pero sin datos, la
-> barra de estado muestra el Serial como **"en reposo"**. Si la sesión no se había
-> finalizado, el `TelemetryDataset` se construye al vuelo desde los frames
-> capturados (`currentDataset()`).
+> el motivo) y se **habilita** al desconectar o tras **2 s de silencio** desde el
+> último dato (`STALE_TRANSMISSION_MS = 2000`). Con el puerto abierto pero sin
+> datos, la barra de estado muestra el Serial como **"en reposo"**. Si la sesión
+> no se había finalizado, el `TelemetryDataset` se construye al vuelo desde los
+> frames capturados (`currentDataset()`).
+>
+> **Reinicio de transmisión**: al reanudar tras estar **"en reposo"** (silencio
+> ≥ `STALE_TRANSMISSION_MS` = 2 s) o al recibir un frame con `t = 0`, se descartan
+> los frames anteriores y las gráficas se repintan desde el principio,
+> conservando el layout y el schema descubierto (`SerialUARTParser.resetFrames()`).
+> Solo afecta al dataset **primario** (`TelemetryStore.clearPrimary()`): en modo
+> comparación, la sesión guardada contra la que se compara **no** se resetea.
+> El estado del Serial se muestra como **"recibiendo"** mientras llegan datos y
+> **"en reposo"** tras el silencio.
 
 ```typescript
 // src/services/session-manager.ts

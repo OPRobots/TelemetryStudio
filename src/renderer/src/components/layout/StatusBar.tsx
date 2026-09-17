@@ -25,7 +25,7 @@ export function StatusBar({ onOpenSerial, onOpenVideo }: StatusBarProps): React.
     const id = window.setInterval(() => {
       setDrift(videoSynchronizer.averageDrift);
       setNow(Date.now());
-    }, 1000);
+    }, 500);
     return () => window.clearInterval(id);
   }, []);
 

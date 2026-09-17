@@ -8,7 +8,13 @@ import {
 
 describe('isReceivingData', () => {
   it('es true con puerto abierto y dato reciente', () => {
-    expect(isReceivingData({ serialConnected: true, lastDataAt: 1000, now: 4000 })).toBe(true);
+    expect(
+      isReceivingData({
+        serialConnected: true,
+        lastDataAt: 1000,
+        now: 1000 + STALE_TRANSMISSION_MS - 1,
+      })
+    ).toBe(true);
   });
 
   it('es false cuando el dato es antiguo', () => {
@@ -30,10 +36,14 @@ describe('serialStatusLabel', () => {
     );
   });
 
-  it('grabando con datos recientes', () => {
-    expect(serialStatusLabel({ serialConnected: true, lastDataAt: 1000, now: 3000 })).toBe(
-      'grabando'
-    );
+  it('recibiendo con datos recientes', () => {
+    expect(
+      serialStatusLabel({
+        serialConnected: true,
+        lastDataAt: 1000,
+        now: 1000 + STALE_TRANSMISSION_MS - 1,
+      })
+    ).toBe('recibiendo');
   });
 
   it('en reposo tras el umbral de silencio', () => {
@@ -64,7 +74,7 @@ describe('sessionSaveStatus', () => {
       frameCount: 100,
       serialConnected: true,
       lastDataAt: 5000,
-      now: 8000,
+      now: 5000 + STALE_TRANSMISSION_MS - 1,
     });
     expect(status.canSave).toBe(false);
     expect(status.reason).toContain('se siguen recibiendo datos');

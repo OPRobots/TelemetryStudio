@@ -4,9 +4,9 @@
  */
 
 /** Silencio (ms) tras el cual se considera que la transmisión terminó. */
-export const STALE_TRANSMISSION_MS = 10000;
+export const STALE_TRANSMISSION_MS = 2000;
 
-export type SerialStatusLabel = 'desconectado' | 'grabando' | 'en reposo';
+export type SerialStatusLabel = 'desconectado' | 'recibiendo' | 'en reposo';
 
 export interface SerialStatusInput {
   serialConnected: boolean;
@@ -29,7 +29,7 @@ export function isReceivingData({
 /** Etiqueta para la barra de estado. */
 export function serialStatusLabel(input: SerialStatusInput): SerialStatusLabel {
   if (!input.serialConnected) return 'desconectado';
-  return isReceivingData(input) ? 'grabando' : 'en reposo';
+  return isReceivingData(input) ? 'recibiendo' : 'en reposo';
 }
 
 export interface SessionSaveStatusInput extends SerialStatusInput {

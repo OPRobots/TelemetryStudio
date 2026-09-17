@@ -104,4 +104,19 @@ describe('TelemetryStore', () => {
     store.clearComparison();
     expect(store.comparisonData).toBeNull();
   });
+
+  it('should clear only the primary dataset (keep comparison)', () => {
+    const dataset = makeDataset(10);
+    const comparison = makeDataset(5);
+    store.loadDataset(dataset);
+    store.loadComparisonDataset(comparison);
+
+    store.clearPrimary();
+
+    expect(store.frameCount).toBe(0);
+    expect(store.currentDataset).toBeNull();
+    // La comparación sigue intacta.
+    expect(store.comparisonData).toBe(comparison);
+    expect(store.getComparisonFrames()).toHaveLength(5);
+  });
 });
