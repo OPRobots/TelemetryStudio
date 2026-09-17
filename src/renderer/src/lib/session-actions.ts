@@ -55,6 +55,15 @@ export async function loadVideoFile(path: string): Promise<void> {
   useAppStore.getState().setVideo(prepared.path, prepared.path);
 }
 
+/**
+ * Cierra/oculta el vídeo actual: limpia el estado del vídeo y su sincronización.
+ * El sincronizador se desadjunta al desmontar el `<video>`.
+ */
+export function closeVideo(): void {
+  videoSynchronizer.clearAnchor();
+  useAppStore.getState().clearVideo();
+}
+
 export async function openVideoDialog(): Promise<void> {
   const api = window.api;
   if (!api) return;

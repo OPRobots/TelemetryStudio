@@ -162,9 +162,32 @@ app.whenReady().then(async () => {
       return { telemetryTimeMs: m ? Number(m[1]) : -1 };
     })()`);
 
+    // Cerrar el vídeo desde el botón del header
+    await win.webContents.executeJavaScript(`(() => {
+      const b = document.querySelector('button[title="Cerrar vídeo"]');
+      if (b) b.click();
+      return !!b;
+    })()`);
+    await new Promise((r) => setTimeout(r, 500));
+    const closed = await win.webContents.executeJavaScript(`(() => {
+      const footer = document.querySelector('footer');
+      return {
+        videos: document.querySelectorAll('video').length,
+        footerText: footer ? footer.innerText : '',
+      };
+    })()`);
+
     console.log(
       'E2E_VIDEO_RESULT ' +
-        JSON.stringify({ ...videoInfo, ...syncState, aligned, scrubTime, prepareCalls, stepDelta })
+        JSON.stringify({
+          ...videoInfo,
+          ...syncState,
+          aligned,
+          scrubTime,
+          prepareCalls,
+          stepDelta,
+          closed,
+        })
     );
     if (errors.length > 0) console.log('E2E_VIDEO_ERRORS ' + JSON.stringify(errors.slice(0, 20)));
 
@@ -176,6 +199,7 @@ app.whenReady().then(async () => {
     const alignedOk = aligned.telemetryTimeMs >= -50 && aligned.telemetryTimeMs <= 50;
     const footerOk = syncState.footerText.includes('mock_video.mp4');
     const prepareOk = prepareCalls >= 1;
+    const closedOk = closed.videos === 0 && closed.footerText.includes('sin cargar');
 
     const ok =
       durationOk &&
@@ -186,6 +210,7 @@ app.whenReady().then(async () => {
       alignedOk &&
       footerOk &&
       prepareOk &&
+      closedOk &&
       errors.length === 0;
     console.log(ok ? 'E2E_VIDEO_OK' : 'E2E_VIDEO_FAIL');
 

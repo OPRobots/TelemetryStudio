@@ -186,6 +186,12 @@ body {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
+/* Variante que no aumenta el alto de `.card__header` (min-height 40px). */
+.icon-button--compact {
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
 
 /* ============================================================
    Inspector (panel izquierdo fino)

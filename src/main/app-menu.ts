@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, Menu } from 'electron';
 
 export type MenuAction =
   | 'open-video'
+  | 'close-video'
   | 'open-session'
   | 'browse-sessions'
   | 'save-session'
@@ -39,6 +40,7 @@ export function buildAppMenu(win: BrowserWindow): void {
       label: 'Archivo',
       submenu: [
         { label: 'Abrir vídeo…', accelerator: 'CmdOrCtrl+O', click: send('open-video') },
+        { label: 'Cerrar vídeo', click: send('close-video') },
         { label: 'Abrir sesión…', accelerator: 'CmdOrCtrl+Shift+O', click: send('open-session') },
         { label: 'Explorar sesiones…', click: send('browse-sessions') },
         { type: 'separator' },

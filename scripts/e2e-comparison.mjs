@@ -122,6 +122,7 @@ app.whenReady().then(async () => {
         const r = g.getBoundingClientRect();
         return { top: Math.round(r.top), left: Math.round(r.left), scrollH: g.scrollHeight, clientH: g.clientHeight };
       });
+
       return {
         videos: document.querySelectorAll('video').length,
         widgetCards: document.querySelectorAll('.widget-card').length,
@@ -178,6 +179,21 @@ app.whenReady().then(async () => {
       `document.querySelectorAll('.widget-grid')[1].querySelector('canvas').toDataURL()`
     );
 
+    // 4b) Cerrar el vídeo del panel B con el botón del header
+    const closeButtons = await run(
+      `document.querySelectorAll('button[title="Cerrar vídeo"]').length`
+    );
+    await run(`(() => {
+      const btns = document.querySelectorAll('button[title="Cerrar vídeo"]');
+      if (btns[1]) btns[1].click();
+      return true;
+    })()`);
+    await wait(500);
+    const afterCloseB = await run(`(() => ({
+      videos: document.querySelectorAll('video').length,
+      hasPlaceholder: document.body.innerText.includes('Sin vídeo'),
+    }))()`);
+
     // 5) Salir y comparar con B sin vídeo
     await run(clickByText('Salir'));
     await wait(600);
@@ -197,6 +213,8 @@ app.whenReady().then(async () => {
     const canScroll = main.rects.length === 2 && main.rects[0].scrollH > main.rects[0].clientH;
     const scrollSynced = scroll.a > 100 && Math.abs(scroll.a - scroll.b) <= 2;
     const zoomSynced = bCanvasBefore !== bCanvasAfter;
+    const closePanelBOk =
+      closeButtons === 2 && afterCloseB.videos === 1 && afterCloseB.hasPlaceholder;
     const noVideoOk =
       noVideo.videos === 1 &&
       noVideo.hasPlaceholder &&
@@ -214,6 +232,7 @@ app.whenReady().then(async () => {
       scroll,
       scrollSynced,
       zoomSynced,
+      closePanelBOk,
       noVideoOk,
     };
     console.log('E2E_COMPARISON ' + JSON.stringify(result));
@@ -229,6 +248,7 @@ app.whenReady().then(async () => {
       canScroll &&
       scrollSynced &&
       zoomSynced &&
+      closePanelBOk &&
       noVideoOk &&
       errors.length === 0;
 

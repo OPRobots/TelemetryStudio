@@ -15,7 +15,13 @@ import { SessionBrowserDialog } from '../dialogs/SessionBrowserDialog';
 import { ComparisonDialog } from '../dialogs/ComparisonDialog';
 import { ExportDialog } from '../dialogs/ExportDialog';
 import { PrepareVideoDialog } from '../dialogs/PrepareVideoDialog';
-import { openVideoDialog, openSessionDialog, loadSession, loadVideoFile } from '../../lib/session-actions';
+import {
+  openVideoDialog,
+  openSessionDialog,
+  loadSession,
+  loadVideoFile,
+  closeVideo,
+} from '../../lib/session-actions';
 import { serialIngest } from '../../lib/serial-ingest';
 import { useAppStore } from '../../stores/app-store';
 import { useLayoutStore } from '../../stores/layout-store';
@@ -75,6 +81,9 @@ export function AppShell(): React.ReactElement {
       switch (action) {
         case 'open-video':
           void openVideoDialog();
+          break;
+        case 'close-video':
+          closeVideo();
           break;
         case 'open-session':
           void openSessionDialog();
@@ -196,7 +205,16 @@ export function AppShell(): React.ReactElement {
                 <div className="card" style={{ height: videoHeight, flexShrink: 0 }}>
                   <div className="card__header">
                     <span className="card__title">Vídeo</span>
-                    <span className="card__subtitle">{videoInfo?.filename ?? 'sin cargar'}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="card__subtitle">{videoInfo?.filename ?? 'sin cargar'}</span>
+                      <button
+                        className="icon-button icon-button--compact"
+                        title="Cerrar vídeo"
+                        onClick={closeVideo}
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                   <div className="card__body" style={{ padding: 10 }}>
                     <div

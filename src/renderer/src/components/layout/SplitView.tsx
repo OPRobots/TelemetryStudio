@@ -3,6 +3,7 @@ import { comparisonManager } from '@core/comparison-manager';
 import { videoSynchronizer, type VideoSynchronizer } from '@core/video-synchronizer';
 import { DEFAULT_PANELS } from '@core/types/layout';
 import { comparisonSynchronizer } from '../../lib/comparison-sync';
+import { closeVideo } from '../../lib/session-actions';
 import { useAppStore } from '../../stores/app-store';
 import { useComparisonStore } from '../../stores/comparison-store';
 import { useLayoutStore } from '../../stores/layout-store';
@@ -93,6 +94,8 @@ interface PaneProps {
   primary: boolean;
   /** Muestra un hueco del alto del vídeo cuando este panel no tiene vídeo. */
   placeholder: boolean;
+  /** Cierra/oculta el vídeo de este panel (si lo tiene). */
+  onClose?: () => void;
   fps?: number | null;
   style?: React.CSSProperties;
 }
@@ -106,6 +109,7 @@ function Pane({
   dataset,
   primary,
   placeholder,
+  onClose,
   fps = null,
   style,
 }: PaneProps): React.ReactElement {
@@ -116,7 +120,18 @@ function Pane({
     <div className="card" style={style}>
       <div className="card__header">
         <span className="card__title">{label}</span>
-        <span className="card__subtitle">{subtitle}</span>
+        <div className="flex items-center gap-1">
+          <span className="card__subtitle">{subtitle}</span>
+          {hasVideo && onClose && (
+            <button
+              className="icon-button icon-button--compact"
+              title="Cerrar vídeo"
+              onClick={onClose}
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {hasVideo ? (
@@ -163,6 +178,7 @@ export function SplitView(): React.ReactElement {
   const referenceFps = useComparisonStore((s) => s.referenceFps);
   const referenceName = useComparisonStore((s) => s.referenceName);
   const stopStore = useComparisonStore((s) => s.stop);
+  const clearReferenceVideo = useComparisonStore((s) => s.clearReferenceVideo);
 
   const panels = useLayoutStore((s) => s.panels);
   const setPanels = useLayoutStore((s) => s.setPanels);
@@ -226,6 +242,7 @@ export function SplitView(): React.ReactElement {
           dataset="primary"
           primary
           placeholder={!primarySrc && !!referenceSrc}
+          onClose={primarySrc ? closeVideo : undefined}
           fps={primaryFps}
           style={{ width: paneAWidth, flexShrink: 0, minHeight: 0 }}
         />
@@ -250,6 +267,7 @@ export function SplitView(): React.ReactElement {
           dataset="comparison"
           primary={false}
           placeholder={!referenceSrc && !!primarySrc}
+          onClose={referenceSrc ? clearReferenceVideo : undefined}
           fps={referenceFps}
           style={{ flex: '1 1 auto', minWidth: 0, minHeight: 0 }}
         />

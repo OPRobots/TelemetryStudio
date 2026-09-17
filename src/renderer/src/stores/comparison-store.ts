@@ -16,6 +16,7 @@ interface ComparisonState {
 
   start: (name: string, videoSrc: string | null, fps?: number | null) => void;
   stop: () => void;
+  clearReferenceVideo: () => void;
   setDifferences: (differences: string[]) => void;
   setError: (message: string | null) => void;
 }
@@ -47,6 +48,8 @@ export const useComparisonStore = create<ComparisonState>((set) => ({
       differences: [],
       errorMessage: null,
     }),
+
+  clearReferenceVideo: () => set({ referenceVideoSrc: null, referenceFps: null }),
 
   setDifferences: (differences) => set({ differences }),
   setError: (message) => set({ errorMessage: message }),
