@@ -343,7 +343,9 @@ Empaquetado multiplataforma funcional con pipeline de CI/CD.
 - [x] Iconos reales (`build/icon.svg` → `icon.png`/`icon.ico`/`icon.icns`) y `scripts/fetch-ffmpeg.mjs` (sidecar FFmpeg multiplataforma)
 - [x] GitHub Actions: `ci.yml` (lint+typecheck+tests+build+e2e en Linux) y `release.yml` (draft release por tag `v*`)
 - [ ] PoC 4 validado: serial en las 3 plataformas empaquetadas (Linux OK; Windows/macOS pendientes de hardware)
-- [x] Tamaño de paquete < 200 MB (AppImage ~169 MB, deb ~117 MB, exe ~221 MB, dmg ~154–159 MB)
+- [x] Artefactos con sidecar FFmpeg incluido (AppImage ~169 MB, deb ~117 MB;
+  Windows exe ~221 MB; dmg ~154–159 MB). Windows supera 200 MB por los binarios
+  estáticos de FFmpeg (~160 MB en total).
 
 ### Validación
 ```bash
