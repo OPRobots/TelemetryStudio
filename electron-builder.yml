@@ -1,5 +1,8 @@
 appId: org.oprobots.telemetry-studio
 productName: Telemetry Studio
+# @serialport/bindings-cpp es N-API y trae prebuilds por plataforma; no se debe
+# reconstruir con node-gyp (en CI falla por distutils ausente / falta de VS).
+npmRebuild: false
 directories:
   buildResources: build
 files:

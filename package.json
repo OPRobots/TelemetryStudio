@@ -44,8 +44,7 @@
     "poc:1": "FONTCONFIG_PATH=/dev/null electron-vite dev --config pocs/01-serial-widget/electron.vite.config.ts",
     "poc:2": "FONTCONFIG_PATH=/dev/null electron-vite dev --config pocs/02-video-sync/electron.vite.config.ts",
     "poc:3": "FONTCONFIG_PATH=/dev/null electron-vite dev --config pocs/03-video-export/electron.vite.config.ts",
-    "poc:4": "FONTCONFIG_PATH=/dev/null electron-vite dev --config pocs/04-packaging/electron.vite.config.ts",
-    "postinstall": "electron-builder install-app-deps"
+    "poc:4": "FONTCONFIG_PATH=/dev/null electron-vite dev --config pocs/04-packaging/electron.vite.config.ts"
   },
   "dependencies": {
     "@electron-toolkit/utils": "^3.0.0",

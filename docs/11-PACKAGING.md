@@ -65,22 +65,30 @@ publish:
 ```json
 {
   "scripts": {
-    "postinstall": "electron-builder install-app-deps",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/ tests/",
     "test": "vitest run",
-    "test:watch": "vitest",
     "smoke": "node scripts/run-electron.mjs scripts/smoke-test.mjs",
-    "e2e": "npm run e2e:serial && … && npm run e2e:comparison-reset",
-    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run smoke && npm run e2e"
+    "e2e": "npm run e2e:serial && … && npm run e2e:layouts",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run smoke && npm run e2e",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win"
   }
 }
 ```
 
 El empaquetado se lanza con `electron-builder` (p. ej. `npx electron-builder --linux`).
+
+## Módulos nativos
+
+`@serialport/bindings-cpp` es **N-API** y trae binarios en `prebuilds/` para todas
+las plataformas objetivo (`darwin-x64+arm64`, `win32-x64`, `linux-x64`, …), así
+que **no** se reconstruye: `npmRebuild: false` en `electron-builder.yml` y **sin**
+`postinstall`. Evita `node-gyp`, que en CI falla por `distutils` ausente (macOS
+con Python 3.12+) y por no encontrar Visual Studio (Windows).
 
 ## Entitlements macOS
 
