@@ -99,6 +99,30 @@ La funcionalidad de exportación de vídeo genera un archivo **MP4** con los gr�
 └───────────────┘  └───────────────────┘
 ```
 
+## Menú nativo
+
+Estructura agrupada por tareas (en macOS se añade además el menú de app estándar):
+
+- **Archivo**: Abrir/Cerrar vídeo, Abrir/Guardar/Explorar sesión, Exportar vídeo, Salir.
+- **Datos**: Conectar/Desconectar Serial, Comparar / Salir de comparación.
+- **Ver**: Inspector (`Ctrl+B`, con estado), Nuevo layout…, Layouts…, Pantalla completa.
+- **Desarrollo** (solo en desarrollo): Recargar, Forzar recarga, Herramientas de desarrollo.
+- **Ayuda**: enlaces a **OPRobots** y **@robotaleh**, y **Acerca de…**.
+
+Los ítems sensibles se habilitan/desactivan según el estado (Serial conectado, vídeo cargado,
+datos disponibles, comparación activa) y el inspector es un **checkbox** que refleja su
+visibilidad. El renderer sincroniza ese estado al menú por IPC (`menu:set-state`).
+
+## Acerca de
+
+El diálogo **Acerca de…** muestra el **logo de la app**, la versión y créditos con enlaces
+(usando los favicons de cada web): **robotaleh** ([robotaleh.dev](https://robotaleh.dev),
+[github.com/robotaleh](https://github.com/robotaleh)) y **OPRobots**
+([OPRobots.org](https://oprobots.org), [github.com/OPRobots](https://github.com/OPRobots)).
+Indica que ha sido desarrollado por **@robotaleh** con la ayuda de **DeepSeek**, para uso
+personal en OPRobots, bajo la **PolyForm Noncommercial License 1.0.0** (uso no comercial;
+queda prohibido el uso comercial).
+
 ## Equipo Objetivo
 
 Ingenieros de software y control de OPRobots que necesitan:

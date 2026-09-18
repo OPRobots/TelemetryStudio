@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, Menu } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 
 export type MenuAction =
   | 'open-video'
@@ -13,7 +13,28 @@ export type MenuAction =
   | 'stop-comparison'
   | 'toggle-inspector'
   | 'layouts'
-  | 'new-layout';
+  | 'new-layout'
+  | 'about';
+
+/** Enlaces externos usados por el menú Ayuda y el diálogo About. */
+export const LINKS = {
+  oprobotsWeb: 'https://oprobots.org',
+  oprobotsGithub: 'https://github.com/OPRobots',
+  robotalehWeb: 'https://robotaleh.dev',
+  robotalehGithub: 'https://github.com/robotaleh',
+  deepseek: 'https://deepseek.com',
+} as const;
+
+/** Estado que el renderer sincroniza para habilitar/deshabilitar ítems del menú. */
+export interface MenuState {
+  inspectorVisible: boolean;
+  serialConnected: boolean;
+  comparisonActive: boolean;
+  hasVideo: boolean;
+  hasData: boolean;
+}
+
+let stateWired = false;
 
 /**
  * Construye y establece el menú nativo de la aplicación.
@@ -24,6 +45,12 @@ export function buildAppMenu(win: BrowserWindow): void {
     (action: MenuAction) =>
     (): void => {
       if (!win.isDestroyed()) win.webContents.send('menu:action', action);
+    };
+
+  const openLink =
+    (url: string) =>
+    (): void => {
+      void shell.openExternal(url);
     };
 
   const confirmNewLayout = (): void => {
@@ -39,61 +66,162 @@ export function buildAppMenu(win: BrowserWindow): void {
     if (choice === 1 && !win.isDestroyed()) win.webContents.send('menu:action', 'new-layout');
   };
 
-  const showAbout = (): void => {
-    void dialog.showMessageBox(win, {
-      type: 'info',
-      title: 'Acerca de OPRobots Telemetry Studio',
-      message: 'OPRobots Telemetry Studio',
-      detail: `Versión ${app.getVersion()}\n\nAnálisis de telemetría de robots con vídeo sincronizado.\n100% offline y portable.`,
-      buttons: ['Cerrar'],
-    });
-  };
+  // macOS: el primer submenú es el menú de la app (About/Ocultar/Salir).
+  const appMenu: Electron.MenuItemConstructorOptions[] =
+    process.platform === 'darwin'
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { label: 'Acerca de…', click: send('about') },
+              { type: 'separator' },
+              { role: 'services', label: 'Servicios' },
+              { type: 'separator' },
+              { role: 'hide', label: `Ocultar ${app.name}` },
+              { role: 'hideOthers', label: 'Ocultar otros' },
+              { role: 'unhide', label: 'Mostrar todo' },
+              { type: 'separator' },
+              { role: 'quit', label: `Salir de ${app.name}` },
+            ],
+          },
+        ]
+      : [];
+
+  const quitItem: Electron.MenuItemConstructorOptions[] =
+    process.platform === 'darwin'
+      ? []
+      : [{ type: 'separator' }, { role: 'quit', label: 'Salir' }];
+
+  // Ítems de desarrollo solo fuera del empaquetado.
+  const devMenu: Electron.MenuItemConstructorOptions[] = app.isPackaged
+    ? []
+    : [
+        {
+          label: 'Desarrollo',
+          submenu: [
+            { role: 'reload', label: 'Recargar' },
+            { role: 'forceReload', label: 'Forzar recarga' },
+            { role: 'toggleDevTools', label: 'Herramientas de desarrollo' },
+          ],
+        },
+      ];
 
   const template: Electron.MenuItemConstructorOptions[] = [
+    ...appMenu,
     {
       label: 'Archivo',
       submenu: [
         { label: 'Abrir vídeo…', accelerator: 'CmdOrCtrl+O', click: send('open-video') },
-        { label: 'Cerrar vídeo', click: send('close-video') },
+        { id: 'close-video', label: 'Cerrar vídeo', enabled: false, click: send('close-video') },
+        { type: 'separator' },
         { label: 'Abrir sesión…', accelerator: 'CmdOrCtrl+Shift+O', click: send('open-session') },
+        {
+          id: 'save-session',
+          label: 'Guardar sesión…',
+          accelerator: 'CmdOrCtrl+S',
+          enabled: false,
+          click: send('save-session'),
+        },
         { label: 'Explorar sesiones…', click: send('browse-sessions') },
         { type: 'separator' },
-        { label: 'Guardar sesión…', accelerator: 'CmdOrCtrl+S', click: send('save-session') },
-        { type: 'separator' },
-        { label: 'Exportar vídeo…', accelerator: 'CmdOrCtrl+E', click: send('export-video') },
-        { type: 'separator' },
-        { role: 'quit', label: 'Salir' },
+        {
+          id: 'export-video',
+          label: 'Exportar vídeo…',
+          accelerator: 'CmdOrCtrl+E',
+          enabled: false,
+          click: send('export-video'),
+        },
+        ...quitItem,
       ],
     },
     {
       label: 'Datos',
       submenu: [
         { label: 'Conectar Serial…', accelerator: 'CmdOrCtrl+K', click: send('connect-serial') },
-        { label: 'Desconectar Serial', click: send('disconnect-serial') },
+        {
+          id: 'disconnect-serial',
+          label: 'Desconectar Serial',
+          enabled: false,
+          click: send('disconnect-serial'),
+        },
         { type: 'separator' },
-        { label: 'Comparar con otra sesión…', click: send('compare') },
-        { label: 'Salir de comparación', click: send('stop-comparison') },
+        {
+          id: 'compare',
+          label: 'Comparar con otra sesión…',
+          enabled: false,
+          click: send('compare'),
+        },
+        {
+          id: 'stop-comparison',
+          label: 'Salir de comparación',
+          enabled: false,
+          click: send('stop-comparison'),
+        },
       ],
     },
     {
       label: 'Ver',
       submenu: [
-        { label: 'Mostrar/ocultar inspector', accelerator: 'CmdOrCtrl+B', click: send('toggle-inspector') },
+        {
+          id: 'inspector',
+          label: 'Inspector',
+          type: 'checkbox',
+          checked: true,
+          accelerator: 'CmdOrCtrl+B',
+          click: send('toggle-inspector'),
+        },
+        { type: 'separator' },
         { label: 'Nuevo layout…', click: confirmNewLayout },
         { label: 'Layouts…', click: send('layouts') },
-        { type: 'separator' },
-        { role: 'reload', label: 'Recargar' },
-        { role: 'forceReload', label: 'Forzar recarga' },
-        { role: 'toggleDevTools', label: 'Herramientas de desarrollo' },
         { type: 'separator' },
         { role: 'togglefullscreen', label: 'Pantalla completa' },
       ],
     },
+    ...devMenu,
     {
       label: 'Ayuda',
-      submenu: [{ label: 'Acerca de OPRobots Telemetry Studio', click: showAbout }],
+      submenu: [
+        { label: 'OPRobots', click: openLink(LINKS.oprobotsWeb) },
+        { label: '@robotaleh', click: openLink(LINKS.robotalehWeb) },
+        { type: 'separator' },
+        { label: 'Acerca de…', click: send('about') },
+      ],
     },
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+
+  if (!stateWired) {
+    stateWired = true;
+    ipcMain.on('menu:set-state', (_event, state: Partial<MenuState>) => {
+      if (state && typeof state === 'object') applyMenuState(state);
+    });
+  }
+}
+
+/** Aplica el estado recibido del renderer a los ítems del menú. */
+function applyMenuState(state: Partial<MenuState>): void {
+  const menu = Menu.getApplicationMenu();
+  if (!menu) return;
+
+  const set = (id: string, patch: { checked?: boolean; enabled?: boolean }): void => {
+    const item = menu.getMenuItemById(id);
+    if (!item) return;
+    if (patch.checked !== undefined) item.checked = patch.checked;
+    if (patch.enabled !== undefined) item.enabled = patch.enabled;
+  };
+
+  if (state.inspectorVisible !== undefined) set('inspector', { checked: state.inspectorVisible });
+  if (state.serialConnected !== undefined)
+    set('disconnect-serial', { enabled: state.serialConnected });
+  if (state.comparisonActive !== undefined)
+    set('stop-comparison', { enabled: state.comparisonActive });
+  if (state.hasVideo !== undefined) {
+    set('close-video', { enabled: state.hasVideo });
+    set('export-video', { enabled: state.hasVideo });
+  }
+  if (state.hasData !== undefined) {
+    set('save-session', { enabled: state.hasData });
+    set('compare', { enabled: state.hasData });
+  }
 }

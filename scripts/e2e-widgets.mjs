@@ -29,6 +29,7 @@ function makeLine(t) {
 
 function registerMocks(win) {
   ipcMain.handle('layout:loadAll', () => []);
+  ipcMain.handle('app:version', () => '1.0.0');
   ipcMain.handle('video:prepare', (_e, p) => ({ success: true, path: p, transcoded: false, fps: 30 }));
   ipcMain.handle('serial:list', () => [{ path: '/dev/ttyMOCK', manufacturer: 'Simulador' }]);
   ipcMain.handle('serial:open', () => {
@@ -190,6 +191,22 @@ app.whenReady().then(async () => {
       `Array.from(document.querySelectorAll('[data-widget-id]')).map((c) => c.dataset.widgetId)`
     );
 
+    // 6. About: abrir desde el menú y comprobar contenido/enlaces
+    win.webContents.send('menu:action', 'about');
+    await wait(400);
+    const about = await run(`(() => {
+      const dlg = document.querySelector('.about-dialog');
+      if (!dlg) return { open: false, title: '', version: '', links: [] };
+      return {
+        open: true,
+        title: (dlg.querySelector('.about-title') || {}).textContent || '',
+        version: (dlg.querySelector('.about-version') || {}).textContent || '',
+        links: Array.from(dlg.querySelectorAll('a')).map((a) => a.getAttribute('href')),
+      };
+    })()`);
+    await run(clickByText('Cerrar'));
+    await wait(200);
+
     if (process.env.SCREENSHOT) {
       await wait(2000);
       const image = await win.webContents.capturePage();
@@ -198,7 +215,7 @@ app.whenReady().then(async () => {
 
     console.log(
       'E2E_WIDGETS ' +
-        JSON.stringify({ initial, beforeOrder, resizedRows, columns, rects, order })
+        JSON.stringify({ initial, beforeOrder, resizedRows, columns, rects, order, about })
     );
     if (errors.length > 0) console.log('E2E_WIDGETS_ERRORS ' + JSON.stringify(errors.slice(0, 10)));
 
@@ -212,7 +229,22 @@ app.whenReady().then(async () => {
     const reordered =
       order.length === 2 && beforeOrder.length === 2 && order[0] === beforeOrder[1];
 
-    const ok = defaultFullWidth && heightGrew && widthHalf && sideBySide && reordered && errors.length === 0;
+    const aboutOk =
+      about.open &&
+      about.title.includes('OPRobots Telemetry Studio') &&
+      about.version.includes('Versión') &&
+      ['https://robotaleh.dev', 'https://github.com/robotaleh', 'https://oprobots.org', 'https://github.com/OPRobots', 'https://deepseek.com'].every(
+        (u) => about.links.includes(u)
+      );
+
+    const ok =
+      defaultFullWidth &&
+      heightGrew &&
+      widthHalf &&
+      sideBySide &&
+      reordered &&
+      aboutOk &&
+      errors.length === 0;
     console.log(ok ? 'E2E_WIDGETS_OK' : 'E2E_WIDGETS_FAIL');
 
     if (sendTimer) clearInterval(sendTimer);

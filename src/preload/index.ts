@@ -31,6 +31,12 @@ const api = {
     ipcRenderer.on('menu:action', handler);
     return () => ipcRenderer.removeListener('menu:action', handler);
   },
+  /** Sincroniza al menú nativo el estado (checkbox inspector, ítems habilitados). */
+  menuSetState: (state: unknown): void => ipcRenderer.send('menu:set-state', state),
+
+  // === App ===
+  getVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
+  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('open-external', url),
 
   // === Vídeo ===
   videoPrepare: (

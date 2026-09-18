@@ -15,6 +15,7 @@ import { SessionBrowserDialog } from '../dialogs/SessionBrowserDialog';
 import { ComparisonDialog } from '../dialogs/ComparisonDialog';
 import { ExportDialog } from '../dialogs/ExportDialog';
 import { PrepareVideoDialog } from '../dialogs/PrepareVideoDialog';
+import { AboutDialog } from '../dialogs/AboutDialog';
 import {
   openVideoDialog,
   openSessionDialog,
@@ -40,6 +41,7 @@ export function AppShell(): React.ReactElement {
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [widgetMenuOpen, setWidgetMenuOpen] = useState(false);
 
   const videoSrc = useAppStore((s) => s.videoSrc);
@@ -53,6 +55,8 @@ export function AppShell(): React.ReactElement {
 
   const comparisonActive = useComparisonStore((s) => s.active);
   const comparisonError = useComparisonStore((s) => s.errorMessage);
+  const serialConnected = useAppStore((s) => s.serialConnected);
+  const frameCount = useAppStore((s) => s.frameCount);
 
   // Altura medida de la columna para convertir el ratio del vídeo a píxeles
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -124,12 +128,26 @@ export function AppShell(): React.ReactElement {
           layoutManager.loadLayout(layout);
           break;
         }
+        case 'about':
+          setAboutOpen(true);
+          break;
         default:
           break;
       }
     });
     return () => unsubscribe?.();
   }, []);
+
+  // Sincroniza el estado al menú nativo (checkbox de inspector, ítems habilitados).
+  useEffect(() => {
+    window.api?.menuSetState({
+      inspectorVisible: panels.inspectorVisible,
+      serialConnected,
+      comparisonActive,
+      hasVideo: !!videoSrc,
+      hasData: frameCount > 0,
+    });
+  }, [panels.inspectorVisible, serialConnected, comparisonActive, videoSrc, frameCount]);
 
   const handleDrop = (e: React.DragEvent): void => {
     e.preventDefault();
@@ -277,6 +295,7 @@ export function AppShell(): React.ReactElement {
       {sessionsOpen && <SessionBrowserDialog onClose={() => setSessionsOpen(false)} />}
       {compareOpen && <ComparisonDialog onClose={() => setCompareOpen(false)} />}
       {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} />}
+      {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
       <PrepareVideoDialog />
     </div>
   );

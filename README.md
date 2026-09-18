@@ -125,6 +125,14 @@ La documentación técnica completa está en [`docs/`](docs/):
 - [Formato de sesión](docs/14-SESSION-FORMAT.md)
 - [Roadmap](ROADMAP.md)
 
+## Créditos
+
+Desarrollado por **[@robotaleh](https://robotaleh.dev)** ([GitHub](https://github.com/robotaleh))
+con la ayuda de [DeepSeek](https://deepseek.com), para uso personal en
+[OPRobots](https://oprobots.org) ([GitHub](https://github.com/OPRobots)).
+
 ## Licencia
 
-MIT — autoría de robotaleh.
+[PolyForm Noncommercial License 1.0.0](LICENSE) — autoría de robotaleh. Se permite el uso
+**personal y no comercial**; queda **prohibido el uso comercial**. Texto completo en
+[`LICENSE`](LICENSE).

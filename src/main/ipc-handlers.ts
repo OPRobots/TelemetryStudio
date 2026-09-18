@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { readFile, writeFile, mkdir, readdir, copyFile, stat, unlink } from 'fs/promises';
 import { join, basename, dirname } from 'path';
 import { serialService } from './serial-service';
@@ -25,6 +25,12 @@ function wireSerialToWindow(win: BrowserWindow): void {
  */
 export function registerIpcHandlers(win: BrowserWindow): void {
   wireSerialToWindow(win);
+
+  // === App ===
+  ipcMain.handle('app:version', () => app.getVersion());
+  ipcMain.handle('open-external', async (_event, url: string) => {
+    if (typeof url === 'string' && /^https?:\/\//i.test(url)) await shell.openExternal(url);
+  });
 
   // === Dialogs ===
   ipcMain.handle('dialog:openVideo', async () => {

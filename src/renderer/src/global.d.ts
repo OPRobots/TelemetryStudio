@@ -60,6 +60,15 @@ export interface TelemetryAPI {
   layoutSave: (layout: DashboardLayout) => Promise<void>;
   layoutLoadAll: () => Promise<DashboardLayout[]>;
   layoutDelete: (name: string) => Promise<void>;
+  menuSetState: (state: {
+    inspectorVisible: boolean;
+    serialConnected: boolean;
+    comparisonActive: boolean;
+    hasVideo: boolean;
+    hasData: boolean;
+  }) => void;
+  getVersion: () => Promise<string>;
+  openExternal: (url: string) => Promise<void>;
   exportStart: (config: unknown) => Promise<{ success: boolean; error?: string }>;
   exportWriteFrame: (buffer: ArrayBuffer) => Promise<{ success: boolean; error?: string }>;
   exportFinalize: () => Promise<{ success: boolean; outputPath?: string; error?: string }>;

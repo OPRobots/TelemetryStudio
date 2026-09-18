@@ -38,6 +38,14 @@ function createWindow(): void {
     return { action: 'deny' };
   });
 
+  // Evita navegar fuera de la app; los enlaces externos se abren en el navegador.
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const devUrl = process.env['ELECTRON_RENDERER_URL'];
+    if (url.startsWith('file://') || (devUrl && url.startsWith(devUrl))) return;
+    event.preventDefault();
+    if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
+  });
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
