@@ -259,19 +259,19 @@ npm run build:win    # Build Windows (NSIS + portable)
 
 | Fase | Estado | Commits |
 |---|---|---|
-| Fase 0: Setup | ✅ Completada | `792cf03` |
-| Fase 1: Core Data Engine | ✅ Completada | `c1de566` |
-| Fase 2: Serial UART + JSON Parser | ✅ Completada | `f5c1510` |
-| Fase 3: Video Sync | ✅ Completada | `1adfe1f` |
-| Fase 4: Session Manager | ✅ Completada | `e26db2c` |
-| Fase 5: Widgets + Comparación | ✅ Completada | `faa8ec7` |
-| Fase 6: Layout Manager | ✅ Completada | `1adfe1f` |
-| Fase 7: Export para Redes | ✅ Completada | `c1117a7` |
-| Fase 8: Packaging | 🟡 Build Linux OK; Windows/macOS manual | `dd0f042` |
-| Fase 9: Polish + E2E | ✅ Completada | `7853030` |
-| PoC 1: Serial → Widget | ✅ Validado (hardware real) | `e89a14c` |
-| PoC 2: Video Sync | ✅ Funcional | `8ee0cd5`, `5f6adde` |
-| PoC 3: Video Export | ✅ Funcional | `ddd9354` |
-| PoC 4: Packaging | ✅ Build Linux OK | `25f1877` |
-| PoC 5: Emisor de telemetría (STM32) | ✅ Firmware de prueba | `920d372`, `2b95b96` |
-| Fase 10: Pendientes (post v1.0.0) | 🟡 En curso (P10.1–P10.4 hechos) | `443918d` |
+| Fase 0: Setup | ✅ Completada | `afff029` |
+| Fase 1: Core Data Engine | ✅ Completada | `4207d3a` |
+| Fase 2: Serial UART + JSON Parser | ✅ Completada | `da40292` |
+| Fase 3: Video Sync | ✅ Completada | `c465cee` |
+| Fase 4: Session Manager | ✅ Completada | `2545297` |
+| Fase 5: Widgets + Comparación | ✅ Completada | `b5aa501` |
+| Fase 6: Layout Manager | ✅ Completada | `c465cee` |
+| Fase 7: Export para Redes | ✅ Completada | `6c7818f` |
+| Fase 8: Packaging | 🟡 Build Linux OK; Windows/macOS manual | `0b2178d` |
+| Fase 9: Polish + E2E | ✅ Completada | `3c0f837` |
+| PoC 1: Serial → Widget | ✅ Validado (hardware real) | `0c083cb` |
+| PoC 2: Video Sync | ✅ Funcional | `0243314`, `98f8f6a` |
+| PoC 3: Video Export | ✅ Funcional | `a86dc5d` |
+| PoC 4: Packaging | ✅ Build Linux OK | `652c936` |
+| PoC 5: Emisor de telemetría (STM32) | ✅ Firmware de prueba | `869d568`, `a9c5d6b` |
+| Fase 10: Pendientes (post v1.0.0) | 🟡 En curso (P10.1–P10.4 hechos) | `0ce8d7a` |

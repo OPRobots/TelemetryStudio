@@ -44,9 +44,9 @@ export function AboutDialog({ onClose }: AboutDialogProps): React.ReactElement {
 
         <p className="about-desc">
           Aplicación de escritorio para analizar la telemetría de robots de competición
-          sincronizada con vídeo. Captura datos por UART en vivo o abre sesiones guardadas,
-          muéstralos en gráficas, matrices de bits, minimapa y líneas de estado, compara dos
-          ejecuciones en paralelo y exporta vídeos con la telemetría superpuesta. Funciona
+          sincronizada con vídeo.<br/><br/>Captura datos por UART en vivo o abre sesiones guardadas,
+          muéstralos en gráficas, matrices de bits, minimapa y líneas de estado. Compara dos
+          sesiones en paralelo y exporta vídeos con la telemetría superpuesta.<br/><br/>Funciona
           100% offline y es portable.
         </p>
 
@@ -90,8 +90,8 @@ export function AboutDialog({ onClose }: AboutDialogProps): React.ReactElement {
             <a href={LINKS.deepseek} onClick={openLink(LINKS.deepseek)}>
               DeepSeek
             </a>
-            , para uso personal del equipo <strong>OPRobots</strong>. Publicado bajo la{' '}
-            <strong>PolyForm Noncommercial License 1.0.0</strong>: se permite el uso personal y
+            ,<br/> para uso personal del equipo <strong>OPRobots</strong>.<br/><br/>Publicado bajo la{' '}
+            <strong>PolyForm Noncommercial License 1.0.0</strong>:<br/> se permite el uso personal y
             no comercial; queda <strong>prohibido el uso comercial</strong>.
           </p>
           <p className="about-stack">Electron · React · TypeScript · uPlot · FFmpeg</p>

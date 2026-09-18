@@ -486,7 +486,7 @@ body {
   flex: 0 0 auto;
 }
 .about-credit__icon--round {
-  border-radius: 6px;
+  border-radius: 50%;
 }
 .about-credit__body {
   display: flex;

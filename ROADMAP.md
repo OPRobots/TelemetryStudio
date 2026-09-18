@@ -57,7 +57,7 @@ npm run test                   # ✅ Tests pasan
 
 ---
 
-## FASE 1: Core Data Engine (2 semanas) ✅ COMPLETADA — Commit `c1de566`
+## FASE 1: Core Data Engine (2 semanas) ✅ COMPLETADA — Commit `4207d3a`
 
 ### Objetivo
 Implementar el motor de datos central: EventBus, TelemetryStore, búsqueda binaria y modelo de tipos.
@@ -94,7 +94,7 @@ npm run test                   # Todos los tests de core pasan
 
 ---
 
-## FASE 2: Serial UART + JSON Session Parser (2 semanas) ✅ COMPLETADA — Commit `f5c1510`
+## FASE 2: Serial UART + JSON Session Parser (2 semanas) ✅ COMPLETADA — Commit `da40292`
 
 ### Objetivo
 Implementar los dos modos de entrada: Serial UART (streaming) y carga de sesiones JSON (offline).
