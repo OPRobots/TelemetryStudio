@@ -145,6 +145,11 @@ Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, 
   - `maxPoints` es el límite **también dentro de la ventana**.
   - El caso de **vista completa con datasets enormes** (>1M) y la posible mitigación con un
     Web Worker se documenta en `docs/12-LIMITATIONS.md` #6.
+- **Leyenda**: fila **encima** del gráfico, **centrada horizontalmente** (`flex-wrap` si hay
+  muchos campos), con por cada campo una **muestra de color** (la de su línea) + nombre +
+  **valor actual** (en hover o ingesta, según el timestamp efectivo). Siempre visible; se
+  actualiza de forma **imperativa** (`textContent`, sin re-render). Formato adaptativo en
+  `src/widgets/format-value.ts`.
 - `pxAlign: false` (anti-aliasing) y `smoothing` (por defecto 1) = **spline cúbica
   monótona** (`uPlot.paths.spline`), que suaviza sin sobrepasar.
 - Colores: `seriesPalette` (paleta viva original; extiende por ángulo áureo si hay más series).
@@ -175,6 +180,11 @@ Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, 
 - **Pan/zoom manual** (vista local, no persistida): **rueda** = zoom hacia el cursor
   (0.5x–20x); **arrastrar** = desplazar; **doble clic** = reset de la vista. Es
   independiente por widget y no toca el `zoomRange` temporal compartido.
+- **Readout `X`/`Y`/`θ`**: **texto flotante** (overlay HTML **sin panel**, `pointer-events:
+  none`) en la esquina, en **columna** y con **ancho fijo** (no "salta" con la longitud del
+  valor), valores alineados a la derecha (`tabular-nums`) y un **punto de color** por
+  magnitud (X azul, Y verde, θ ámbar, vía `format-value.ts`). Se actualiza por frame de
+  forma imperativa.
 
 ## Widget 4: StateTimeline (Canvas 2D)
 

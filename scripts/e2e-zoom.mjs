@@ -218,6 +218,11 @@ app.whenReady().then(async () => {
     await wait(300);
     const miniReset = await miniSnap();
 
+    // Readout X/Y/θ del minimapa (pos_x/pos_y existen; θ puede faltar).
+    const miniReadout = await run(
+      `(() => Array.from(document.querySelectorAll('.minimap-readout__value')).map((v) => v.textContent.trim()))()`
+    );
+
     const result = {
       ok: before.ok && zoomed.ok && reset.ok && chartDriven.ok,
       chartZoomed: before.chart !== zoomed.chart,
@@ -233,6 +238,7 @@ app.whenReady().then(async () => {
       miniWheelZoomed: miniBefore !== miniWheel,
       miniPanned: miniWheel !== miniPan,
       miniViewReset: miniPan !== miniReset,
+      miniReadout,
     };
     console.log('E2E_ZOOM ' + JSON.stringify(result));
     if (errors.length > 0) console.log('E2E_ZOOM_ERRORS ' + JSON.stringify(errors.slice(0, 10)));
@@ -249,6 +255,9 @@ app.whenReady().then(async () => {
       result.miniWheelZoomed &&
       result.miniPanned &&
       result.miniViewReset &&
+      result.miniReadout.length === 3 &&
+      result.miniReadout[0] !== '--' &&
+      result.miniReadout[1] !== '--' &&
       errors.length === 0;
     console.log(ok ? 'E2E_ZOOM_OK' : 'E2E_ZOOM_FAIL');
 

@@ -4,6 +4,7 @@ import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { frameAt } from '../frame-lookup';
 import { useCanvasSize } from '../use-canvas-size';
 import { resolveViewTimestamp, useFrameBus } from '../frame-bus';
+import { formatLegendValue } from '../format-value';
 import { useWidgetDraw } from '../use-widget-draw';
 
 interface MinimapConfig {
@@ -75,6 +76,11 @@ export function Minimap2D({
     dataCenterY: number;
   } | null>(null);
   const panRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
+  const readoutRef = useRef<{
+    x: HTMLSpanElement | null;
+    y: HTMLSpanElement | null;
+    theta: HTMLSpanElement | null;
+  }>({ x: null, y: null, theta: null });
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -140,6 +146,17 @@ export function Minimap2D({
 
     const cx = cursorFrame?.data[fieldX];
     const cy = cursorFrame?.data[fieldY];
+    const thetaValue = cursorFrame?.data[fieldTheta];
+
+    // Readout HTML (esquina): X/Y/θ del cursor de tiempo.
+    const readout = readoutRef.current;
+    if (readout.x) readout.x.textContent = typeof cx === 'number' ? formatLegendValue(cx) : '--';
+    if (readout.y) readout.y.textContent = typeof cy === 'number' ? formatLegendValue(cy) : '--';
+    if (readout.theta) {
+      readout.theta.textContent =
+        typeof thetaValue === 'number' ? `${thetaValue.toFixed(1)}°` : '--';
+    }
+
     if (!boundsOk && (typeof cx !== 'number' || typeof cy !== 'number')) {
       ctx.fillStyle = '#0a0e17';
       ctx.fillRect(0, 0, width, height);
@@ -300,12 +317,6 @@ export function Minimap2D({
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.restore();
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '11px "JetBrains Mono", monospace';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.fillText(`X: ${cx.toFixed(2)}  Y: ${cy.toFixed(2)}  θ: ${theta.toFixed(1)}°`, 8, 8);
     }
   }, [bus]);
 
@@ -386,16 +397,56 @@ export function Minimap2D({
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="h-full w-full"
-      style={{ cursor: 'grab' }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onDoubleClick={handleDoubleClick}
-    />
+    <div className="minimap-widget">
+      <canvas
+        ref={canvasRef}
+        className="h-full w-full"
+        style={{ cursor: 'grab' }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onDoubleClick={handleDoubleClick}
+      />
+      <div className="minimap-readout">
+        <span className="minimap-readout__item">
+          <span className="minimap-readout__dot" style={{ backgroundColor: '#3b82f6' }} />
+          <span className="minimap-readout__label">X</span>
+          <span
+            className="minimap-readout__value"
+            ref={(el) => {
+              readoutRef.current.x = el;
+            }}
+          >
+            --
+          </span>
+        </span>
+        <span className="minimap-readout__item">
+          <span className="minimap-readout__dot" style={{ backgroundColor: '#22c55e' }} />
+          <span className="minimap-readout__label">Y</span>
+          <span
+            className="minimap-readout__value"
+            ref={(el) => {
+              readoutRef.current.y = el;
+            }}
+          >
+            --
+          </span>
+        </span>
+        <span className="minimap-readout__item">
+          <span className="minimap-readout__dot" style={{ backgroundColor: '#F2BE22' }} />
+          <span className="minimap-readout__label">θ</span>
+          <span
+            className="minimap-readout__value"
+            ref={(el) => {
+              readoutRef.current.theta = el;
+            }}
+          >
+            --
+          </span>
+        </span>
+      </div>
+    </div>
   );
 }
 

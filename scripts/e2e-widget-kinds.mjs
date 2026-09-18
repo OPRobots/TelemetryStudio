@@ -121,10 +121,18 @@ app.whenReady().then(async () => {
         }
         return { w, h, drawn };
       });
+      const legendItems = Array.from(document.querySelectorAll('.chart-legend__item'));
+      const readoutItems = Array.from(document.querySelectorAll('.minimap-readout__value'));
       return {
         widgets: document.querySelectorAll('[data-widget-id]').length,
         canvases: stats.length,
         stats,
+        legendCount: legendItems.length,
+        legendValues: legendItems.map((it) => {
+          const v = it.querySelector('.chart-legend__value');
+          return v ? v.textContent.trim() : '';
+        }),
+        readoutCount: readoutItems.length,
       };
     })()`);
 
@@ -138,8 +146,17 @@ app.whenReady().then(async () => {
     if (errors.length > 0) console.log('E2E_WIDGET_KINDS_ERRORS ' + JSON.stringify(errors.slice(0, 10)));
 
     const blank = result.stats.filter((s) => s.w > 10 && s.h > 10 && s.drawn === 0);
+    const legendOk =
+      result.legendCount >= 1 &&
+      result.legendValues.every((v) => v !== '' && v !== '--');
+    const readoutOk = result.readoutCount === 3;
     const ok =
-      result.widgets >= 4 && result.canvases >= 4 && blank.length === 0 && errors.length === 0;
+      result.widgets >= 4 &&
+      result.canvases >= 4 &&
+      blank.length === 0 &&
+      legendOk &&
+      readoutOk &&
+      errors.length === 0;
     console.log(ok ? 'E2E_WIDGET_KINDS_OK' : 'E2E_WIDGET_KINDS_FAIL');
 
     if (sendTimer) clearInterval(sendTimer);

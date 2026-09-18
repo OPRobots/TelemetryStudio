@@ -4,6 +4,8 @@ import 'uplot/dist/uPlot.min.css';
 import { frameRangeBounds } from '@core/binary-search';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { seriesPalette } from '../color-palette';
+import { valueAt } from '../frame-lookup';
+import { formatLegendValue } from '../format-value';
 import { useFrameBus } from '../frame-bus';
 import { useWidgetDraw } from '../use-widget-draw';
 import { buildSampledData, type SampledData } from './sample-data';
@@ -72,6 +74,7 @@ export function TimeSeriesChart({
   const userZoomPendingRef = useRef(false);
   const lastIdxRef = useRef<number | null>(null);
   const xValuesRef = useRef<number[]>([]);
+  const legendValueRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const onHoverRef = useRef(onCursorHover);
   onHoverRef.current = onCursorHover;
   const onZoomRef = useRef(onZoomRangeChange);
@@ -88,10 +91,23 @@ export function TimeSeriesChart({
   const scaleSigRef = useRef<string>('');
 
   const draw = useCallback(() => {
+    const { getFrames, fields, fieldsKey, config, hoverTimestamp_ms, zoomRange } = latest.current;
+    const snapshot = bus?.getSnapshot();
+
+    // Leyenda: valor real de cada campo en el timestamp efectivo (hover/vídeo/frame).
+    const legendMs =
+      hoverTimestamp_ms ?? snapshot?.context?.viewTimestamp_ms ?? snapshot?.frame?.timestamp_ms ?? null;
+    if (legendMs != null) {
+      const legendFrames = getFrames();
+      fields.forEach((field, i) => {
+        const el = legendValueRefs.current[i];
+        if (el) el.textContent = formatLegendValue(valueAt(legendFrames, field, legendMs));
+      });
+    }
+
     const u = uplotRef.current;
     if (!u) return;
 
-    const { getFrames, fields, fieldsKey, config, hoverTimestamp_ms, zoomRange } = latest.current;
     const frames = getFrames();
     const cfgLocal = { ...DEFAULT_CONFIG, ...(config as TimeSeriesConfig) };
 
@@ -148,9 +164,7 @@ export function TimeSeriesChart({
     if (cfgLocal.autoFollow && !hoveringRef.current) {
       const x = xValuesRef.current;
       if (x.length > 0) {
-        const snapshot = bus?.getSnapshot();
-        const currentMs =
-          hoverTimestamp_ms ?? snapshot?.context?.viewTimestamp_ms ?? snapshot?.frame?.timestamp_ms;
+        const currentMs = legendMs;
         if (currentMs != null) {
           const idx = nearestIndex(x, currentMs / 1000);
           if (idx >= 0) {
@@ -224,7 +238,8 @@ export function TimeSeriesChart({
         drag: { x: true, y: false, setScale: true },
         points: { size: 6 },
       },
-      legend: { show: fieldList.length > 1 },
+      // La leyenda la dibuja el propio widget (fila superior), no uPlot.
+      legend: { show: false },
       scales: {
         // auto:false conserva el zoom del usuario entre actualizaciones;
         // el rango completo se fija explícitamente en el efecto de datos.
@@ -316,12 +331,37 @@ export function TimeSeriesChart({
     return () => ro.disconnect();
   }, [schedule]);
 
+  const legendColors = seriesPalette(fields.length);
+
   return (
-    <div
-      ref={containerRef}
-      className="h-full w-full"
-      style={{ backgroundColor: '#0a0e17', overflow: 'hidden' }}
-    />
+    <div className="chart-widget">
+      {fields.length > 0 && (
+        <div className="chart-legend">
+          {fields.map((field, i) => (
+            <span className="chart-legend__item" key={field}>
+              <span
+                className="chart-legend__swatch"
+                style={{ backgroundColor: legendColors[i] ?? '#3b82f6' }}
+              />
+              <span className="chart-legend__label">{field}</span>
+              <span
+                className="chart-legend__value"
+                ref={(el) => {
+                  legendValueRefs.current[i] = el;
+                }}
+              >
+                --
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        className="chart-plot"
+        style={{ backgroundColor: '#0a0e17', overflow: 'hidden' }}
+      />
+    </div>
   );
 }
 
