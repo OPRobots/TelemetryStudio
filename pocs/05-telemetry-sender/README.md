@@ -1,6 +1,6 @@
 # PoC 05 — STM32 Telemetry Sender
 
-Firmware de prueba para STM32F401CC (WeAct Black Pill) que envía telemetría simulada a 100 Hz durante 10 segundos por UART (115200 baud). Sirve para validar los 4 tipos de gráficos de OPRobots Telemetry Studio.
+Firmware de prueba para STM32F401CC (WeAct Black Pill) que envía telemetría simulada a 100 Hz durante 10 segundos por UART (115200 baud). Sirve para validar los 4 tipos de gráficos de Telemetry Studio.
 
 ## Gráficos probados
 
@@ -38,11 +38,11 @@ pio run -t upload              # compilar + flashear
 pio device monitor             # monitor serial (115200 baud)
 ```
 
-## Uso con OPRobots Telemetry Studio
+## Uso con Telemetry Studio
 
 1. Flashear el firmware (`pio run -t upload`)
 2. Conectar la placa por USB (puerto serie)
-3. Abrir OPRobots Telemetry Studio → pestaña Serial
+3. Abrir Telemetry Studio → pestaña Serial
 4. Seleccionar puerto COM, baud rate **115200**
 5. Conectar → automáticamente aparecerán los datos de prueba durante 10 segundos
 

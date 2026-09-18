@@ -6,7 +6,7 @@
 > no existen y se añadirán en las fases correspondientes del roadmap.
 
 ```
-oprobots-telemetry-studio/
+telemetry-studio/
 ├── electron.vite.config.ts          # Configuración centralizada de electron-vite
 ├── package.json                     # Dependencias y scripts
 ├── tsconfig.json                    # Configuración TypeScript

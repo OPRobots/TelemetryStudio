@@ -1,10 +1,21 @@
-import { app, shell, BrowserWindow } from 'electron';
+import { app, shell, BrowserWindow, nativeImage } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import { registerIpcHandlers } from './ipc-handlers';
 import { registerExportHandlers } from './export-service';
 import { registerVideoHandlers } from './video-service';
 import { buildAppMenu } from './app-menu';
+
+/**
+ * Icono de la app accesible en runtime.
+ * - Dev: `build/icon.png` en la raíz del repo.
+ * - Empaquetado: copiado por `extraResources` a `<resources>/icon.png`.
+ */
+function resolveIconPath(): string {
+  return is.dev
+    ? join(__dirname, '../../build/icon.png')
+    : join(process.resourcesPath, 'icon.png');
+}
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -15,6 +26,8 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: false,
     backgroundColor: '#0b0e14',
+    // Icono de ventana/barra de tareas (Windows/Linux). En macOS se ignora.
+    icon: resolveIconPath(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -28,6 +41,12 @@ function createWindow(): void {
   registerExportHandlers(mainWindow);
   registerVideoHandlers();
   buildAppMenu(mainWindow);
+
+  // macOS: en desarrollo el Dock usa el icono de Electron; en el paquete lo
+  // pone el .icns del bundle, así que solo lo forzamos en dev.
+  if (is.dev && process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(nativeImage.createFromPath(resolveIconPath()));
+  }
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show();
@@ -54,7 +73,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.oprobots.telemetry-studio');
+  electronApp.setAppUserModelId('org.oprobots.telemetry-studio');
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window);

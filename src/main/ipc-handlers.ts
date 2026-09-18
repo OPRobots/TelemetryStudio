@@ -46,7 +46,7 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   ipcMain.handle('dialog:openSession', async () => {
     const result = await dialog.showOpenDialog(win, {
       title: 'Abrir sesión',
-      filters: [{ name: 'Sesión OPRobots', extensions: ['json'] }],
+      filters: [{ name: 'Sesión Telemetry Studio', extensions: ['json'] }],
       properties: ['openFile'],
     });
     if (result.canceled || result.filePaths.length === 0) return { canceled: true };

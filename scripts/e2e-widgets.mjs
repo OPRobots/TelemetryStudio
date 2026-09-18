@@ -231,7 +231,7 @@ app.whenReady().then(async () => {
 
     const aboutOk =
       about.open &&
-      about.title.includes('OPRobots Telemetry Studio') &&
+      about.title.includes('Telemetry Studio') &&
       about.version.includes('Versión') &&
       ['https://robotaleh.dev', 'https://github.com/robotaleh', 'https://oprobots.org', 'https://github.com/OPRobots', 'https://deepseek.com'].every(
         (u) => about.links.includes(u)

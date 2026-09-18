@@ -1,4 +1,4 @@
-# OPRobots Telemetry Studio
+# Telemetry Studio
 
 Aplicación de escritorio multiplataforma para **análisis de telemetría de robots
 de competición con vídeo sincronizado**. 100 % offline y portable.
@@ -36,7 +36,7 @@ de competición con vídeo sincronizado**. 100 % offline y portable.
 - Linux, macOS o Windows.
 - FFmpeg _(se empaqueta como sidecar para la exportación de vídeo y la conversión
   de códecs)_.
-
+gen
 ## Puesta en marcha
 
 ```bash

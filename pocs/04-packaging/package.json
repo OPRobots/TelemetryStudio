@@ -5,7 +5,7 @@
   "main": "./out/main/index.js",
   "author": "robotaleh",
   "license": "PolyForm-Noncommercial-1.0.0",
-  "homepage": "https://github.com/robotaleh/OPRobots-TelemetryPlayer",
+  "homepage": "https://github.com/OPRobots/TelemetryStudio",
   "scripts": {
     "dev": "FONTCONFIG_PATH=/dev/null electron-vite dev --config electron.vite.config.ts",
     "build:linux": "FONTCONFIG_PATH=/dev/null electron-vite build --config electron.vite.config.ts && electron-builder --linux --config electron-builder.yml",

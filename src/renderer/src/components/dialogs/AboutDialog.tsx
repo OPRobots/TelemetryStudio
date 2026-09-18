@@ -35,9 +35,9 @@ export function AboutDialog({ onClose }: AboutDialogProps): React.ReactElement {
         style={{ width: 470 }}
       >
         <header className="about-header">
-          <img className="about-logo" src={appIcon} alt="OPRobots Telemetry Studio" />
+          <img className="about-logo" src={appIcon} alt="Telemetry Studio" />
           <div className="about-heading">
-            <h2 className="about-title">OPRobots Telemetry Studio</h2>
+            <h2 className="about-title">Telemetry Studio</h2>
             <span className="about-version">Versión {version || '—'}</span>
           </div>
         </header>

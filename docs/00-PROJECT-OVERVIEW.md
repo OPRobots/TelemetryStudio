@@ -1,8 +1,8 @@
-# OPRobots Telemetry Studio — Visión General del Proyecto
+# Telemetry Studio — Visión General del Proyecto
 
 ## ¿Qué es Telemetry Studio?
 
-**OPRobots Telemetry Studio** es una aplicación de escritorio multiplataforma (Windows, macOS, Linux) diseñada para el análisis de telemetría y reproducción de vídeo sincronizada de robots de competición del equipo OPRobots.
+**Telemetry Studio** es una aplicación de escritorio multiplataforma (Windows, macOS, Linux) diseñada para el análisis de telemetría y reproducción de vídeo sincronizada de robots de competición del equipo OPRobots.
 
 La aplicación está diseñada para funcionar **100% offline**, sin dependencias de CDNs, APIs externas o conexión a internet. Todos los assets están empaquetados dentro de la app o son locales.
 

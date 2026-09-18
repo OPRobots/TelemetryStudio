@@ -50,7 +50,7 @@ function drawOverlay(ctx: CanvasRenderingContext2D, config: ExportConfig): void 
   ctx.font = '20px Inter, sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(config.sessionLabel ?? 'OPRobots Telemetry Studio', 16, 18);
+  ctx.fillText(config.sessionLabel ?? 'Telemetry Studio', 16, 18);
 }
 
 /**

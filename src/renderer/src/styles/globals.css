@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /* ============================================================
-   Diseño — OPRobots Telemetry Studio
+   Diseño — Telemetry Studio
    Paleta neutra con acento azul OPR usado con moderación.
    ============================================================ */
 
@@ -19,7 +19,7 @@
   --bg-primary: var(--bg-app);
   --bg-secondary: var(--bg-panel);
 
-  /* Acento (azul OPRobots) */
+  /* Acento (azul) */
   --accent: #3b82f6;
   --accent-strong: #2563eb;
   --accent-soft: rgba(59, 130, 246, 0.14);

@@ -1,4 +1,4 @@
-appId: com.oprobots.poc4-packaging
+appId: org.oprobots.poc4-packaging
 productName: OPRobots PoC4 Packaging
 directories:
   buildResources: build

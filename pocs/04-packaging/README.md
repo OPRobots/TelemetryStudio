@@ -16,7 +16,7 @@ npm run build:linux    # o build:mac, build:win
 ### Opción 2: Desde la raíz del proyecto
 
 ```bash
-cd OPRobots-TelemetryPlayer
+cd TelemetryStudio
 npm install
 npm run build:linux    # o build:mac, build:win
 # Los builds se generan en release/

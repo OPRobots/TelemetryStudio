@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Simulador de telemetría Serial para OPRobots Telemetry Studio.
+ * Simulador de telemetría Serial para Telemetry Studio.
  *
  * Genera líneas en el MISMO formato que el firmware STM32 de referencia:
  *   timestamp_ms,accX,accY,accZ,gyroX,gyroY,gyroZ,battery

@@ -2,7 +2,7 @@
 
 ## Identidad del Proyecto
 
-**OPRobots Telemetry Studio** — Aplicación de escritorio multiplataforma para análisis de telemetría de robots de competición con vídeo sincronizado.
+**Telemetry Studio** — Aplicación de escritorio multiplataforma para análisis de telemetría de robots de competición con vídeo sincronizado.
 
 - **Stack**: Electron 34, React 19, TypeScript 5.6, uPlot 1.6, Zustand 5, Tailwind CSS 4, serialport 13
 - **Export**: FFmpeg como sidecar (raw RGBA por stdin)

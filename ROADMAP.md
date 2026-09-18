@@ -1,4 +1,4 @@
-# ROADMAP — OPRobots Telemetry Studio
+# ROADMAP — Telemetry Studio
 
 ## Visión General
 
@@ -32,7 +32,7 @@ Scaffold completo del proyecto con todas las configs, dependencias y herramienta
 - [x] `tsconfig.json` + `tsconfig.node.json` optimizados
 - [x] `electron-builder.yml` con configs para las 3 plataformas
 - [x] `tailwind.config.ts` con paleta OPRobots (Tailwind 4: paleta vía CSS variables en globals.css)
-- [x] Ventana Electron mínima mostrando "OPRobots Telemetry Studio"
+- [x] Ventana Electron mínima mostrando "Telemetry Studio"
 - [x] HMR funcionando en renderer (dev server verificado con `npm run dev`)
 - [x] Hot reload en main process (electron-vite reconstruye main/preload al vuelo)
 - [x] `serialport` en `dependencies` (NO en devDependencies)

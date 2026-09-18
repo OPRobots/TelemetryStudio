@@ -20,7 +20,7 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
   const [includeBaseVideo, setIncludeBaseVideo] = useState(true);
   const [includeOverlays, setIncludeOverlays] = useState(true);
   const [includeWidgets, setIncludeWidgets] = useState(true);
-  const [sessionLabel, setSessionLabel] = useState(dataset?.name ?? 'OPRobots Telemetry Studio');
+  const [sessionLabel, setSessionLabel] = useState(dataset?.name ?? 'Telemetry Studio');
 
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ExportProgress | null>(null);

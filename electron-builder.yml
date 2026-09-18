@@ -1,5 +1,5 @@
-appId: com.oprobots.telemetry-studio
-productName: OPRobots Telemetry Studio
+appId: org.oprobots.telemetry-studio
+productName: Telemetry Studio
 directories:
   buildResources: build
 files:
@@ -19,13 +19,16 @@ extraResources:
     to: udev
     filter:
       - "**/*"
+  # Icono también en runtime (ventana/barra de tareas), además del empaquetado.
+  - from: build/icon.png
+    to: icon.png
 asarUnpack:
   - "node_modules/@serialport/**"
   - "node_modules/serialport/**"
   - "node_modules/.cache/**"
   - "**/*.node"
 win:
-  executableName: OPRobotsTelemetryStudio
+  executableName: TelemetryStudio
   target:
     - target: nsis
       arch:

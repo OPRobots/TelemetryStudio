@@ -1,4 +1,4 @@
-# OPRobots Telemetry Studio — reglas udev para acceso a puertos serie USB
+# Telemetry Studio — reglas udev para acceso a puertos serie USB
 #
 # Instalación (Linux):
 #   sudo cp resources/udev/69-oprobots-serial.rules /etc/udev/rules.d/

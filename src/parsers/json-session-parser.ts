@@ -8,7 +8,7 @@ import type { TelemetryFrame, TelemetryDataset, FieldSchema } from '@core/types/
 export class JSONSessionParser implements ITelemetryParser {
   readonly metadata: ParserMetadata = {
     name: 'JSON Session',
-    description: 'Loads telemetry from an OPRobots session (.json)',
+    description: 'Loads telemetry from a Telemetry Studio session (.json)',
     extensions: ['.json'],
     icon: 'folder-open',
     supportsStreaming: false,

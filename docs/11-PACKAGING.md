@@ -12,8 +12,8 @@
 `electron-builder.yml`:
 
 ```yaml
-appId: com.oprobots.telemetry-studio
-productName: OPRobots Telemetry Studio
+appId: org.oprobots.telemetry-studio
+productName: Telemetry Studio
 directories: { buildResources: build }
 files:
   - "out/**/*"

@@ -1,8 +1,9 @@
 {
-  "name": "oprobots-telemetry-studio",
+  "name": "telemetry-studio",
+  "productName": "Telemetry Studio",
   "version": "1.0.0",
-  "description": "Aplicación de escritorio para análisis de telemetría de robots OPRobots con vídeo sincronizado",
-  "homepage": "https://github.com/robotaleh/OPRobots-TelemetryPlayer",
+  "description": "Aplicación de escritorio para análisis de telemetría de robots de competición con vídeo sincronizado",
+  "homepage": "https://github.com/OPRobots/TelemetryStudio",
   "main": "./out/main/index.js",
   "author": "robotaleh",
   "license": "PolyForm-Noncommercial-1.0.0",
