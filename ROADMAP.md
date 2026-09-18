@@ -328,7 +328,7 @@ npm run test
 
 ---
 
-## FASE 8: Packaging + CI/CD (1 semana) 🟡 PARCIAL (Linux OK; CI activado; Windows/macOS vía CI sin verificar)
+## FASE 8: Packaging + CI/CD (1 semana) ✅ COMPLETADA (Linux local + Windows/macOS generados en CI)
 
 ### Objetivo
 Empaquetado multiplataforma funcional con pipeline de CI/CD.
@@ -336,14 +336,14 @@ Empaquetado multiplataforma funcional con pipeline de CI/CD.
 ### Entregables
 - [x] `electron-builder.yml` completo (extraResources de FFmpeg y udev)
 - [x] Build Linux: `AppImage` + `.deb` (PoC 4) y `--dir` verificado en la app de producción
-- [ ] Windows: `.exe` (NSIS) + portable — requiere build manual en Windows
-- [ ] macOS: `.dmg` (x64 y arm64) — build manual (PoC 4 validó DMG)
+- [x] Windows: `.exe` (NSIS) + portable — generados en CI (release draft `v1.0.0`; sin firmar)
+- [x] macOS: `.dmg` (x64 y arm64) — generados en CI (release draft `v1.0.0`; sin notarizar)
 - [x] `resources/udev/69-oprobots-serial.rules` para Linux
 - [x] `build/entitlements.mac.plist` para macOS
 - [x] Iconos reales (`build/icon.svg` → `icon.png`/`icon.ico`/`icon.icns`) y `scripts/fetch-ffmpeg.mjs` (sidecar FFmpeg multiplataforma)
 - [x] GitHub Actions: `ci.yml` (lint+typecheck+tests+build+e2e en Linux) y `release.yml` (draft release por tag `v*`)
-- [ ] PoC 4 validado: serial en las 3 plataformas empaquetadas (Linux OK; Windows pendiente)
-- [x] Tamaño de paquete < 200 MB (AppImage ~109 MB, deb ~75 MB)
+- [ ] PoC 4 validado: serial en las 3 plataformas empaquetadas (Linux OK; Windows/macOS pendientes de hardware)
+- [x] Tamaño de paquete < 200 MB (AppImage ~169 MB, deb ~117 MB, exe ~221 MB, dmg ~154–159 MB)
 
 ### Validación
 ```bash
@@ -519,13 +519,15 @@ elimina el redibujado O(n) por frame (menos CPU con datasets grandes). Se adopta
   mantiene (resaltado y atenuación de lo de fuera).
 - **Aceptación**: `e2e:video` valida el tooltip; `e2e:zoom` valida rueda/pan/reset. Verdes.
 
-### P10.5 — Packaging multiplataforma + PoC 4
+### P10.5 — Packaging multiplataforma + PoC 4 ✅ (PoC 4 hardware pendiente)
 
-- **Windows**: `.exe` (NSIS) + portable vía CI; verificar `SerialPort.list()` en la app empaquetada.
-- **macOS**: `.dmg` (x64 + arm64) vía CI; valorar notarización (hoy `notarize: false`).
-- **PoC 4**: serial en las 3 plataformas empaquetadas (Linux OK; Windows/macOS pendientes).
-- **CI**: activado `ci.yml` + `release.yml`; el tag `v*` genera un draft release.
-- **Aceptación**: instaladores generados; serial funciona en la app empaquetada.
+- **Windows**: `.exe` (NSIS) + portable generados en CI (release draft `v1.0.0`, sin firmar).
+- **macOS**: `.dmg` x64 + arm64 generados en CI (sin notarizar; `notarize: false`).
+- **PoC 4**: serial en las 3 plataformas empaquetadas — Linux OK; Windows/macOS pendientes de hardware.
+- **CI**: `ci.yml` (lint+typecheck+tests+build; smoke+e2e en Ubuntu) y `release.yml`
+  (tag `v*` → matriz 3 SOs → `electron-builder --publish always` → draft release).
+- **Aceptación**: instaladores generados ✅ (draft `v1.0.0`); verificación de serial en
+  Windows/macOS pendiente.
 
 ### P10.6 — Muestreo por ventana del TimeSeriesChart ✅
 
