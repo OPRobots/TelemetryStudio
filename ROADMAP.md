@@ -212,7 +212,7 @@ Implementar los 4 widgets estándar con registro dinámico, más el sistema de c
 - [x] `src/widgets/widget-registry.ts` — WidgetRegistry singleton (agnóstico, `register-widgets.ts` registra los estándar)
 - [x] `src/widgets/time-series-chart/` — Widget de gráficas
   - Integración con uPlot
-  - LTTB downsampling por viewport
+  - [x] LTTB downsampling por viewport (ventana visible al hacer zoom)
   - Múltiples series con colores
   - [x] Zoom/pan con uPlot cursor (desactivar "autoFollow" en la config del widget)
 - [x] `src/widgets/digital-bitmask/` — Widget de LEDs IR
@@ -449,7 +449,7 @@ Ver `docs/13-POC-TESTS.md` para los PoCs detallados con criterios de éxito.
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |---|---|---|---|
 | `serialport` falla en packaging | Alta | Crítico | PoC 4 primero |
-| LTTB bloquea UI con >1M puntos | Media | Medio | Worker / muestrear solo la ventana visible (pendiente) |
+| LTTB bloquea UI en vista completa con >1M puntos | Media | Medio | Muestreo por ventana al hacer zoom (hecho); Worker opcional |
 | macOS notarization rechazada | Baja | Alto | Seguir la guía de Apple exactamente |
 | 2 synchronizers causan lag | Media | Medio | RVFC por synchronizer; probado con 2 vídeos |
 | Widgets diferentes en comparación | Baja | Bajo | Validación estricta + error clarativo |
@@ -526,3 +526,14 @@ elimina el redibujado O(n) por frame (menos CPU con datasets grandes). Se adopta
 - **PoC 4**: serial en las 3 plataformas empaquetadas.
 - **CI**: activar `.github/workflows/build.yml` cuando exista repo remoto.
 - **Aceptación**: instaladores generados; serial funciona en la app empaquetada.
+
+### P10.6 — Muestreo por ventana del TimeSeriesChart ✅
+
+- `buildSampledData` (extraído a `src/widgets/time-series-chart/sample-data.ts`) acepta el
+  rango de zoom y muestrea solo la **ventana visible** (+1 frame de margen por lado):
+  ≤`maxPoints` (2000) frames → se muestran todos; >2000 → LTTB dentro de la ventana.
+- `frameRangeBounds` (`src/core/binary-search.ts`) localiza la ventana en O(log n).
+- Caché por ventana (índices `lo:hi` + último timestamp): en streaming solo recalcula si
+  cambia el contenido visible.
+- Tests: `tests/unit/widgets/sample-data.test.ts`. Documentado en `docs/08`.
+- **Pendiente opcional**: LTTB en Worker para la **vista completa** con >1M puntos.

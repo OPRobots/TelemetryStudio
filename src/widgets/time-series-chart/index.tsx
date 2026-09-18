@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
-import { downsampleLTTB } from '@core/lttb';
-import type { TelemetryFrame } from '@core/types/telemetry';
+import { frameRangeBounds } from '@core/binary-search';
 import type { WidgetProps, WidgetDefinition } from '../interfaces';
 import { seriesPalette } from '../color-palette';
 import { useFrameBus } from '../frame-bus';
 import { useWidgetDraw } from '../use-widget-draw';
+import { buildSampledData, type SampledData } from './sample-data';
 
 interface TimeSeriesConfig {
   colors?: string[];
@@ -32,47 +32,6 @@ const DEFAULT_CONFIG: Required<TimeSeriesConfig> = {
   autoFollow: true,
   smoothing: 1,
 };
-
-interface SampledData {
-  /** Timestamps en segundos (eje X), ordenados. */
-  x: number[];
-  /** Series alineadas por índice con `x`. */
-  series: number[][];
-}
-
-function toNumber(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : NaN;
-}
-
-/**
- * Construye las series muestreadas de TODO el dataset. Se elige un único
- * conjunto de índices (LTTB sobre el primer campo numérico) para que la X y
- * todas las Y queden alineadas por índice.
- */
-function buildSampledData(
-  frames: TelemetryFrame[],
-  fields: string[],
-  maxPoints: number
-): SampledData | null {
-  if (frames.length === 0 || fields.length === 0) return null;
-
-  let indices: number[];
-  if (frames.length <= maxPoints) {
-    indices = Array.from({ length: frames.length }, (_, i) => i);
-  } else {
-    const base =
-      fields.find((f) => frames.some((fr) => typeof fr.data[f] === 'number')) ?? fields[0]!;
-    const points = frames.map((f, i) => {
-      const v = f.data[base];
-      return { x: i, y: typeof v === 'number' && Number.isFinite(v) ? v : 0 };
-    });
-    indices = downsampleLTTB(points, maxPoints).map((p) => p.x);
-  }
-
-  const x = indices.map((i) => frames[i]!.timestamp_ms / 1000);
-  const series = fields.map((field) => indices.map((i) => toNumber(frames[i]!.data[field])));
-  return { x, series };
-}
 
 /** Índice del valor de `sorted` más cercano a `target`. */
 function nearestIndex(sorted: number[], target: number): number {
@@ -136,9 +95,21 @@ export function TimeSeriesChart({
     const frames = getFrames();
     const cfgLocal = { ...DEFAULT_CONFIG, ...(config as TimeSeriesConfig) };
 
-    const sig = `${frames.length}|${fieldsKey}|${cfgLocal.maxPoints}`;
-    if (sampledRef.current.sig !== sig) {
-      sampledRef.current = { sig, data: buildSampledData(frames, fields, cfgLocal.maxPoints) };
+    // Firma del muestreo: con zoom, la ventana visible (+vecinos) y su último
+    // timestamp; sin zoom, el dataset completo por longitud.
+    const bounds = zoomRange
+      ? frameRangeBounds(frames, zoomRange.startMs, zoomRange.endMs)
+      : null;
+    const sampleSig = bounds
+      ? `${fieldsKey}|${cfgLocal.maxPoints}|${bounds.start}:${bounds.end}:${
+          frames[bounds.end]?.timestamp_ms ?? 0
+        }`
+      : `${fieldsKey}|${cfgLocal.maxPoints}|full:${frames.length}`;
+    if (sampledRef.current.sig !== sampleSig) {
+      sampledRef.current = {
+        sig: sampleSig,
+        data: buildSampledData(frames, fields, cfgLocal.maxPoints, zoomRange),
+      };
     }
 
     const sampled = sampledRef.current.data;
@@ -157,7 +128,7 @@ export function TimeSeriesChart({
 
     // Escalas: solo al cambiar datos, zoom o rango Y (no pisa el arrastre de zoom).
     const xRange = zoomRange ? `${zoomRange.startMs}:${zoomRange.endMs}` : 'full';
-    const scaleSig = `${sig}|${cfgLocal.yMin}:${cfgLocal.yMax}|${xRange}`;
+    const scaleSig = `${sampleSig}|${cfgLocal.yMin}:${cfgLocal.yMax}|${xRange}`;
     if (scaleSigRef.current !== scaleSig) {
       scaleSigRef.current = scaleSig;
       if (cfgLocal.yMin !== cfgLocal.yMax) {

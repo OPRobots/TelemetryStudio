@@ -127,10 +127,22 @@ Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, 
 
 `src/widgets/time-series-chart/index.tsx`
 
-- Muestra **todo el dataset** (t=0..final); el arrastre hace **zoom compartido** y el
-  **doble clic** lo restablece.
+- Muestra el dataset; el arrastre hace **zoom compartido** y el **doble clic** lo restablece.
 - Cursor vertical que sigue la reproducción (`autoFollow`).
-- LTTB con un **único conjunto de índices** (X y todas las Y alineadas); `maxPoints` 2000.
+- **Muestreo LTTB** (`src/widgets/time-series-chart/sample-data.ts`) con un **único conjunto
+  de índices** (X y todas las Y alineadas por índice). LTTB **no promedia**: selecciona
+  puntos **reales** del dataset.
+  - **Vista completa (sin zoom)**: muestrea **todo** el dataset → hasta `maxPoints` (2000).
+  - **Con zoom**: muestrea solo la **ventana visible** (+1 frame de margen a cada lado para
+    que el trazo llegue a los bordes) → hasta 2000 puntos. Si la ventana tiene **≤2000
+    frames**, se muestran **todos** (fidelidad total).
+  - **Ejemplo**: con 4000 frames, la vista completa dibuja 2000 puntos; al hacer zoom sobre
+    una zona de ~500 frames, se ven esos **500 reales** (no un subconjunto de los 2000).
+  - El muestreo se **cachea por ventana** (índices `lo:hi` + último timestamp): durante el
+    streaming solo se recalcula si cambia el contenido de la ventana.
+  - El **hover** de la gráfica publica el timestamp del punto muestreado (más fino al hacer
+    zoom); el resto de widgets resuelven el **frame real** por búsqueda binaria.
+  - `maxPoints` es el límite **también dentro de la ventana**.
 - `pxAlign: false` (anti-aliasing) y `smoothing` (por defecto 1) = **spline cúbica
   monótona** (`uPlot.paths.spline`), que suaviza sin sobrepasar.
 - Colores: `seriesPalette` (paleta viva original; extiende por ángulo áureo si hay más series).

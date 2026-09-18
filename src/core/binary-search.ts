@@ -82,6 +82,28 @@ export function findFramesInRange(
   return frames.slice(startIdx, endIdx);
 }
 
+/**
+ * Índices [start, end] (inclusive) de los frames dentro de `[start_ms, end_ms]`,
+ * ampliados `pad` frames por cada lado y recortados a los límites del array.
+ * Devuelve `null` si el rango no contiene ningún frame (para hacer fallback).
+ * Asume `frames` ordenado por timestamp.
+ */
+export function frameRangeBounds(
+  frames: TelemetryFrame[],
+  start_ms: number,
+  end_ms: number,
+  pad = 1
+): { start: number; end: number } | null {
+  if (frames.length === 0 || end_ms < start_ms) return null;
+  const lo = lowerBound(frames, start_ms);
+  const hi = upperBound(frames, end_ms); // exclusivo
+  if (hi <= lo) return null; // ningún frame dentro del rango
+  return {
+    start: Math.max(0, lo - pad),
+    end: Math.min(frames.length - 1, hi - 1 + pad),
+  };
+}
+
 function lowerBound(frames: TelemetryFrame[], target_ms: number): number {
   let low = 0;
   let high = frames.length;

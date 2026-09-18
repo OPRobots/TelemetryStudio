@@ -68,11 +68,12 @@ necesario: `@serialport/bindings-cpp` trae un prebuild *fat* (`darwin-x64+arm64`
 cada DMG usa la rebanada de su arquitectura. Evita el coste de tamaño (~2×) y la
 complejidad de `mergeASARs`/`singleArchFiles` con módulos nativos.
 
-### 6. LTTB a >1M puntos bloquea el main thread (pendiente)
+### 6. LTTB en la vista completa con datasets enormes (mitigado parcialmente)
 
-LTTB es O(n): con 10M puntos tarda ~1,5 s. Mitigación futura: ejecutarlo en un
-Worker o muestrear solo la ventana visible. Hoy el chart muestrea el dataset
-completo con `maxPoints` (2000) y es fluido para los tamaños habituales.
+LTTB es O(n) y se ejecuta en el main thread. **Con zoom** ya se muestrea solo la
+**ventana visible** (coste O(ventana) y con detalle real), así que el caso problemático
+se reduce a la **vista completa** con >1M puntos (p. ej. 10M ≈ 1,5 s). Mitigación futura
+si hiciera falta: ejecutar LTTB en un Worker. En tamaños habituales es fluido.
 
 ### 7. Windows ARM64: drivers serial
 
@@ -148,5 +149,5 @@ Mientras convierte se muestra `PrepareVideoDialog` con progreso y opción de can
 | **P1** | Linux serial permissions | reglas udev + grupo `dialout` |
 | **P1** | RVFC timing | usar `mediaTime` (PTS) |
 | **P2** | macOS universal | descartado: DMGs por arquitectura (x64/arm64) |
-| **P2** | LTTB >1M | Worker / ventana visible (pendiente) |
+| **P2** | LTTB vista completa >1M | ventana visible al hacer zoom (hecho); Worker opcional |
 | **P3** | Windows ARM64 serial | recomendar CP210x |
