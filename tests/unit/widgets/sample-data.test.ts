@@ -56,6 +56,15 @@ describe('buildSampledData', () => {
     expect(sampled!.x[sampled!.x.length - 1]).toBeCloseTo(35); // frame 3500 (vecino)
   });
 
+  it('representa booleanos como 1/0', () => {
+    const frames: TelemetryFrame[] = [
+      { timestamp_ms: 0, data: { b: true } },
+      { timestamp_ms: 10, data: { b: false } },
+    ];
+    const sampled = buildSampledData(frames, ['b'], 2000);
+    expect(sampled!.series[0]).toEqual([1, 0]);
+  });
+
   it('con rango sin frames dentro: cae al dataset completo', () => {
     const frames = makeFrames(4000);
     const sampled = buildSampledData(frames, ['v'], 2000, { startMs: -1000, endMs: -500 });

@@ -363,6 +363,44 @@ body {
   border-color: var(--border-strong);
 }
 
+/* Cursor propio durante el arrastre de un campo desde el Inspector. */
+body.field-dragging,
+body.field-dragging * {
+  cursor: grabbing !important;
+}
+body.field-drag-copy,
+body.field-drag-copy * {
+  cursor: copy !important;
+}
+
+/* Overlay de acción al arrastrar un campo o fusionar una gráfica. */
+.widget-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  pointer-events: none;
+}
+.widget-overlay__icon {
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 600;
+  color: var(--accent);
+}
+.widget-overlay__label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
 .widget-menu {
   position: absolute;
   z-index: 40;

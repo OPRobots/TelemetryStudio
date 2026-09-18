@@ -372,7 +372,7 @@ export const timeSeriesChartDefinition: WidgetDefinition = {
     description: 'Series de datos continuos con múltiples valores por gráfica',
     icon: 'chart-line',
     category: 'chart',
-    acceptedFieldTypes: ['number'],
+    acceptedFieldTypes: ['number', 'boolean'],
     minSize: { width: 4, height: 4 },
     defaultSize: { width: 6, height: 6 },
     defaultConfig: {

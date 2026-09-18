@@ -216,7 +216,75 @@ app.whenReady().then(async () => {
       `Array.from(document.querySelectorAll('[data-widget-id]')).map((c) => c.dataset.widgetId)`
     );
 
-    // 6. About: abrir desde el menú y comprobar contenido/enlaces
+    // 6. Fusionar gráfica con Shift: arrastrar cells[1] sobre cells[0].
+    const chartInfo = (i) => `(() => {
+      const c = document.querySelectorAll('[data-widget-id]')[${i}];
+      return c ? {
+        id: c.dataset.widgetId,
+        fields: Array.from(c.querySelectorAll('.chart-legend__label')).map((e) => e.textContent.trim()),
+      } : null;
+    })()`;
+    const beforeMergeCount = await run(`document.querySelectorAll('[data-widget-id]').length`);
+    const beforeTarget = await run(chartInfo(0));
+    const beforeSource = await run(chartInfo(1));
+
+    // pointerdown (cabecera del origen)
+    await run(`(() => {
+      const src = document.querySelectorAll('[data-widget-id]')[1];
+      const header = src.querySelector('.widget-card > div');
+      const sr = src.getBoundingClientRect();
+      header.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: sr.left + 40, clientY: sr.top + 10, pointerId: 1 }));
+      return true;
+    })()`);
+    await wait(150);
+    // pointermove con Shift sobre el destino (ya hay listener registrado)
+    await run(`(() => {
+      const r = document.querySelectorAll('[data-widget-id]')[0].getBoundingClientRect();
+      window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, pointerId: 1, shiftKey: true }));
+      return true;
+    })()`);
+    await wait(150);
+    const mergeOverlay = await run(
+      `!!document.querySelectorAll('[data-widget-id]')[0].querySelector('.widget-overlay')`
+    );
+    await run(`(() => {
+      const r = document.querySelectorAll('[data-widget-id]')[0].getBoundingClientRect();
+      window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, pointerId: 1, shiftKey: true }));
+      return true;
+    })()`);
+    await wait(300);
+    const afterMergeCount = await run(`document.querySelectorAll('[data-widget-id]').length`);
+    const afterTarget = await run(chartInfo(0));
+
+    // 7. Añadir un campo del Inspector a una gráfica (accZ, que no está en el destino).
+    await run(`(() => {
+      const row = Array.from(document.querySelectorAll('.field-row')).find(
+        (r) => r.querySelector('.field-name').textContent.trim() === 'accZ'
+      );
+      const r = row.getBoundingClientRect();
+      row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: r.left + 5, clientY: r.top + 5, pointerId: 1, button: 0, buttons: 1 }));
+      return true;
+    })()`);
+    await wait(120);
+    await run(`(() => {
+      const r = document.querySelectorAll('[data-widget-id]')[0].getBoundingClientRect();
+      window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, pointerId: 1, buttons: 1 }));
+      return true;
+    })()`);
+    await wait(150);
+    const fieldOverlay = await run(
+      `!!document.querySelectorAll('[data-widget-id]')[0].querySelector('.widget-overlay')`
+    );
+    const fieldCursor = await run(`document.body.classList.contains('field-drag-copy')`);
+    await run(`(() => {
+      const r = document.querySelectorAll('[data-widget-id]')[0].getBoundingClientRect();
+      window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, pointerId: 1 }));
+      return true;
+    })()`);
+    await wait(300);
+    const afterDrop = await run(chartInfo(0));
+
+    // 8. About: abrir desde el menú y comprobar contenido/enlaces
     win.webContents.send('menu:action', 'about');
     await wait(400);
     const about = await run(`(() => {
@@ -240,7 +308,24 @@ app.whenReady().then(async () => {
 
     console.log(
       'E2E_WIDGETS ' +
-        JSON.stringify({ initial, beforeOrder, resizedRows, columns, rects, order, about })
+        JSON.stringify({
+          initial,
+          beforeOrder,
+          resizedRows,
+          columns,
+          rects,
+          order,
+          mergeOverlay,
+          beforeMergeCount,
+          afterMergeCount,
+          beforeTarget,
+          beforeSource,
+          afterTarget,
+          fieldOverlay,
+          fieldCursor,
+          afterDrop,
+          about,
+        })
     );
     if (errors.length > 0) console.log('E2E_WIDGETS_ERRORS ' + JSON.stringify(errors.slice(0, 10)));
 
@@ -262,12 +347,21 @@ app.whenReady().then(async () => {
         (u) => about.links.includes(u)
       );
 
+    const mergeOk =
+      mergeOverlay &&
+      afterMergeCount === beforeMergeCount - 1 &&
+      afterTarget.fields.length === beforeTarget.fields.length + beforeSource.fields.length &&
+      afterTarget.fields.includes(beforeSource.fields[0]);
+    const fieldDropOk = fieldOverlay && fieldCursor && afterDrop.fields.includes('accZ');
+
     const ok =
       defaultHalfWidth &&
       heightGrew &&
       widthChanged &&
       sideBySide &&
       reordered &&
+      mergeOk &&
+      fieldDropOk &&
       aboutOk &&
       errors.length === 0;
     console.log(ok ? 'E2E_WIDGETS_OK' : 'E2E_WIDGETS_FAIL');

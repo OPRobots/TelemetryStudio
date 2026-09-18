@@ -13,6 +13,8 @@ interface WidgetWrapperProps {
   onResizeHeightStart?: (e: React.PointerEvent) => void;
   /** Resalta el widget como destino de la inserción. */
   dropTarget?: boolean;
+  /** Overlay de acción: fusionar una gráfica o añadir un campo. */
+  overlay?: 'merge' | 'add' | null;
   children: ReactNode;
 }
 
@@ -25,6 +27,7 @@ export function WidgetWrapper({
   onResizeWidthStart,
   onResizeHeightStart,
   dropTarget = false,
+  overlay = null,
   children,
 }: WidgetWrapperProps): React.ReactElement {
   const onHeaderDown = (e: React.PointerEvent): void => {
@@ -77,6 +80,15 @@ export function WidgetWrapper({
       <div className="min-h-0 flex-1" style={{ padding: 8 }}>
         {children}
       </div>
+
+      {overlay && (
+        <div className="widget-overlay" aria-hidden>
+          <span className="widget-overlay__icon">＋</span>
+          <span className="widget-overlay__label">
+            {overlay === 'merge' ? 'Fusionar' : 'Añadir campo'}
+          </span>
+        </div>
+      )}
 
       {onResizeWidthStart && (
         <div

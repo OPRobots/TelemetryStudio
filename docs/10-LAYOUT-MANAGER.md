@@ -83,6 +83,24 @@ La lógica de rejilla (snap de ancho/alto, empaquetado en filas) vive en
 `src/renderer/src/lib/widget-layout.ts` (`packWidgetRows`, `snapWidthToPreset`,
 `columnsFromPixels`, `rowsFromPixels`, `clampHeight`).
 
+## Edición por arrastre
+
+- **Añadir un campo a un widget**: arrastra un campo desde el panel izquierdo
+  (**Campos**) y suéltalo sobre el widget. Se añade a `dataFields` (sin duplicar) y, si el
+  widget tiene colores explícitos, se le asigna un color nuevo conservando los existentes.
+  Mientras se arrastra, el widget muestra un overlay **“+” / Añadir campo** (HTML5 DnD).
+  Se permite soltar en **cualquier** widget; si el tipo de dato no encaja, la
+  representación fallará y se corrige en la configuración del widget.
+- **Fusionar gráficas**: arrastra la **cabecera** de una `TimeSeriesChart` sobre otra
+  manteniendo **Shift**. En lugar de reordenar, los campos de la arrastrada se añaden a la
+  de destino (sin duplicar, conservando sus colores) y **la de origen se elimina**. El
+  destino muestra un overlay **“+” / Fusionar**. Sin Shift el arrastre reordena como
+  siempre; con Shift sobre un destino **no válido** no se hace nada.
+- La edición por arrastre está **deshabilitada en comparación**.
+
+`seriesPalette` (`src/widgets/color-palette.ts`) aporta los colores nuevos; los booleanos
+en una gráfica se representan como **1/0**.
+
 ## Persistencia en Main Process
 
 `src/main/ipc-handlers.ts`:

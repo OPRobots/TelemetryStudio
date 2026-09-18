@@ -1,33 +1,8 @@
 import { widgetRegistry } from '@widgets/widget-registry';
 import type { WidgetConfig } from '@core/types/layout';
-import type { FieldSchema } from '@core/types/telemetry';
-import { useAppStore } from '../../stores/app-store';
 import { useLayoutStore } from '../../stores/layout-store';
-import { STATE_FIELD_PATTERN } from '../../lib/auto-layout';
 
 let addCounter = 0;
-
-function pickFields(widgetType: string, schema: FieldSchema[]): string[] {
-  if (widgetType === 'Minimap2D') {
-    const x = schema.find((s) => /(position[_-]?x|pos[_-]?x|^x$)/i.test(s.name))?.name;
-    const y = schema.find((s) => /(position[_-]?y|pos[_-]?y|^y$)/i.test(s.name))?.name;
-    const theta = schema.find((s) => /(heading|theta|yaw|angle[_-]?z)/i.test(s.name))?.name;
-    return [x, y, theta].filter(Boolean) as string[];
-  }
-  if (widgetType === 'StateTimeline') {
-    const state = schema.find((s) => STATE_FIELD_PATTERN.test(s.name))?.name;
-    if (state) return [state];
-    const text = schema.find((s) => s.type === 'string')?.name;
-    if (text) return [text];
-    return schema.filter((s) => s.type === 'number').slice(0, 1).map((s) => s.name);
-  }
-  if (widgetType === 'DigitalBitmask') {
-    const bits = schema.filter((s) => s.type === 'bitmask' || s.type === 'array').map((s) => s.name);
-    return bits.length > 0 ? bits : schema.filter((s) => s.type === 'number').slice(0, 1).map((s) => s.name);
-  }
-  // TimeSeriesChart por defecto: todos los numéricos
-  return schema.filter((s) => s.type === 'number').map((s) => s.name);
-}
 
 interface WidgetToolbarProps {
   open: boolean;
@@ -35,7 +10,6 @@ interface WidgetToolbarProps {
 }
 
 export function WidgetToolbar({ open, onOpenChange }: WidgetToolbarProps): React.ReactElement {
-  const schema = useAppStore((s) => s.schema);
   const addWidget = useLayoutStore((s) => s.addWidget);
 
   const add = (type: string): void => {
@@ -45,25 +19,15 @@ export function WidgetToolbar({ open, onOpenChange }: WidgetToolbarProps): React
 
     addCounter += 1;
 
-    const dataFields = pickFields(metadata.name, schema);
-    const config: Record<string, unknown> = { ...metadata.defaultConfig };
-
-    // Los bitmasks van en una sola fila, con tantas columnas como bits.
-    if (metadata.name === 'DigitalBitmask') {
-      const field = schema.find((s) => s.name === dataFields[0]);
-      const width = field?.bitmaskWidth ?? field?.arrayLength ?? dataFields.length ?? 8;
-      config.ledsPerRow = Math.max(width, 1);
-      config.rows = 1;
-    }
-
+    // Widget "limpio": sin campos seleccionados y con su tamaño por defecto.
     const widget: WidgetConfig = {
       id: `widget-${Date.now().toString(36)}-${addCounter}`,
       type: metadata.name,
       label: metadata.displayName,
-      width: 12,
+      width: Math.min(metadata.defaultSize.width, 12),
       height: metadata.defaultSize.height,
-      dataFields,
-      config,
+      dataFields: [],
+      config: { ...metadata.defaultConfig },
       visible: true,
     };
 

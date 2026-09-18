@@ -6,6 +6,8 @@ import { useEventListener } from '../../hooks/useEventListener';
 import { useLayoutStore } from '../../stores/layout-store';
 import { useAppStore } from '../../stores/app-store';
 import { useCursorStore } from '../../stores/cursor-store';
+import { useComparisonStore } from '../../stores/comparison-store';
+import { useFieldDragStore } from '../../lib/field-drag';
 import { WidgetWrapper } from './WidgetWrapper';
 import { WidgetConfigDialog } from './WidgetConfigDialog';
 import {
@@ -104,6 +106,7 @@ export function WidgetHost({
   const moveWidget = useLayoutStore((s) => s.moveWidget);
   const setWidgetWidth = useLayoutStore((s) => s.setWidgetWidth);
   const setWidgetHeight = useLayoutStore((s) => s.setWidgetHeight);
+  const mergeWidgets = useLayoutStore((s) => s.mergeWidgets);
   const hasTelemetry = useAppStore((s) => s.frameCount > 0);
   const hoverTimestamp = useCursorStore((s) => s.hoverTimestamp_ms);
   const setHoverTimestamp = useCursorStore((s) => s.setHoverTimestamp);
@@ -113,9 +116,13 @@ export function WidgetHost({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dragKind, setDragKind] = useState<DragKind | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [mergeTargetId, setMergeTargetId] = useState<string | null>(null);
+  const fieldDropTargetId = useFieldDragStore((s) => s.targetWidgetId);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
+  const mergeTargetRef = useRef<string | null>(null);
+  const shiftRef = useRef(false);
 
   // Bus de frames por panel: los widgets se redibujan sin re-render React.
   const frameBusRef = useRef<FrameBus | null>(null);
@@ -169,18 +176,31 @@ export function WidgetHost({
     document.body.style.userSelect = 'none';
   }, []);
 
-  const finishDrag = useCallback(() => {
-    const drag = dragRef.current;
-    if (drag?.kind === 'reorder' && dropIndex !== null) {
-      const clampedDrop = Math.min(dropIndex, widgets.length);
-      const target = clampedDrop > drag.startIndex ? clampedDrop - 1 : clampedDrop;
-      moveWidget(drag.id, target);
-    }
-    dragRef.current = null;
-    setDragKind(null);
-    setDropIndex(null);
-    document.body.style.userSelect = '';
-  }, [dropIndex, widgets.length, moveWidget]);
+  const finishDrag = useCallback(
+    (shiftKey = false) => {
+      const drag = dragRef.current;
+      if (drag?.kind === 'reorder') {
+        const mergeTarget = mergeTargetRef.current;
+        if (shiftRef.current || shiftKey) {
+          // Shift = fusionar; sin destino válido no se hace nada.
+          if (mergeTarget) mergeWidgets(drag.id, mergeTarget);
+        } else if (dropIndex !== null) {
+          const total = useLayoutStore.getState().widgets.length;
+          const clampedDrop = Math.min(dropIndex, total);
+          const target = clampedDrop > drag.startIndex ? clampedDrop - 1 : clampedDrop;
+          moveWidget(drag.id, target);
+        }
+      }
+      dragRef.current = null;
+      mergeTargetRef.current = null;
+      shiftRef.current = false;
+      setDragKind(null);
+      setDropIndex(null);
+      setMergeTargetId(null);
+      document.body.style.userSelect = '';
+    },
+    [dropIndex, moveWidget, mergeWidgets]
+  );
 
   const handleMove = useCallback(
     (e: PointerEvent) => {
@@ -190,6 +210,38 @@ export function WidgetHost({
 
       if (drag.kind === 'reorder') {
         const nodes = Array.from(grid.querySelectorAll<HTMLElement>('[data-widget-id]'));
+
+        // Widget bajo el puntero (para el merge con Shift).
+        let hoveredId: string | null = null;
+        for (const node of nodes) {
+          const r = node.getBoundingClientRect();
+          if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+            hoveredId = node.dataset.widgetId ?? null;
+            break;
+          }
+        }
+
+        if (e.shiftKey) {
+          const all = useLayoutStore.getState().widgets;
+          const sourceType = all.find((w) => w.id === drag.id)?.type;
+          const targetType = hoveredId ? all.find((w) => w.id === hoveredId)?.type : undefined;
+          const canMerge =
+            !useComparisonStore.getState().active &&
+            hoveredId != null &&
+            hoveredId !== drag.id &&
+            sourceType === 'TimeSeriesChart' &&
+            targetType === 'TimeSeriesChart';
+          mergeTargetRef.current = canMerge ? hoveredId : null;
+          shiftRef.current = true;
+          setMergeTargetId(canMerge ? hoveredId : null);
+          setDropIndex(null);
+          return;
+        }
+
+        shiftRef.current = false;
+        mergeTargetRef.current = null;
+        setMergeTargetId(null);
+
         let index = nodes.length;
         for (let i = 0; i < nodes.length; i++) {
           const rect = nodes[i]!.getBoundingClientRect();
@@ -219,7 +271,7 @@ export function WidgetHost({
   useEffect(() => {
     if (!dragKind) return;
     const onMove = (e: PointerEvent): void => handleMove(e);
-    const onUp = (): void => finishDrag();
+    const onUp = (e: PointerEvent): void => finishDrag(e.shiftKey);
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
@@ -295,6 +347,13 @@ export function WidgetHost({
                       title={widget.label}
                       type={widget.type}
                       dropTarget={isDropTarget}
+                      overlay={
+                        mergeTargetId === widget.id
+                          ? 'merge'
+                          : fieldDropTargetId === widget.id
+                            ? 'add'
+                            : null
+                      }
                       onConfigure={primary ? () => setEditingId(widget.id) : undefined}
                       onRemove={primary ? () => removeWidget(widget.id) : undefined}
                       onHeaderPointerDown={

@@ -65,4 +65,67 @@ describe('layout-store (rejilla de widgets)', () => {
     useLayoutStore.getState().setWidgetHeight('a', 5);
     expect(useLayoutStore.getState().widgets[0]!.height).toBe(5);
   });
+
+  it('addFieldToWidget añade el campo y evita duplicados', () => {
+    const store = useLayoutStore.getState();
+    store.addWidget({ ...widget('a'), dataFields: ['speed'] });
+
+    useLayoutStore.getState().addFieldToWidget('a', 'battery');
+    expect(useLayoutStore.getState().widgets[0]!.dataFields).toEqual(['speed', 'battery']);
+
+    useLayoutStore.getState().addFieldToWidget('a', 'speed');
+    expect(useLayoutStore.getState().widgets[0]!.dataFields).toEqual(['speed', 'battery']);
+  });
+
+  it('addFieldToWidget extiende los colores existentes', () => {
+    useLayoutStore
+      .getState()
+      .addWidget({ ...widget('a'), dataFields: ['speed'], config: { colors: ['#111111'] } });
+
+    useLayoutStore.getState().addFieldToWidget('a', 'battery');
+    expect(useLayoutStore.getState().widgets[0]!.config.colors).toEqual(['#111111', '#F2BE22']);
+  });
+
+  it('mergeWidgets fusiona campos, conserva colores del destino y elimina el origen', () => {
+    const store = useLayoutStore.getState();
+    store.addWidget({
+      ...widget('src'),
+      label: 'origen',
+      dataFields: ['b', 'c'],
+      config: { colors: ['#222222', '#333333'] },
+    });
+    store.addWidget({
+      ...widget('dst'),
+      label: 'destino',
+      dataFields: ['a'],
+      config: { colors: ['#111111'] },
+    });
+
+    useLayoutStore.getState().mergeWidgets('src', 'dst');
+
+    const widgets = useLayoutStore.getState().widgets;
+    expect(widgets.map((w) => w.id)).toEqual(['dst']);
+    expect(widgets[0]!.dataFields).toEqual(['a', 'b', 'c']);
+    expect(widgets[0]!.config.colors).toEqual(['#111111', '#F2BE22', '#22c55e']);
+  });
+
+  it('mergeWidgets dedupe campos ya presentes', () => {
+    const store = useLayoutStore.getState();
+    store.addWidget({ ...widget('src'), dataFields: ['a', 'b'] });
+    store.addWidget({ ...widget('dst'), dataFields: ['a'] });
+
+    useLayoutStore.getState().mergeWidgets('src', 'dst');
+
+    expect(useLayoutStore.getState().widgets[0]!.dataFields).toEqual(['a', 'b']);
+  });
+
+  it('mergeWidgets no hace nada si no son TimeSeriesChart', () => {
+    const store = useLayoutStore.getState();
+    store.addWidget({ ...widget('src'), type: 'DigitalBitmask' });
+    store.addWidget({ ...widget('dst') });
+
+    useLayoutStore.getState().mergeWidgets('src', 'dst');
+
+    expect(useLayoutStore.getState().widgets.map((w) => w.id)).toEqual(['src', 'dst']);
+  });
 });

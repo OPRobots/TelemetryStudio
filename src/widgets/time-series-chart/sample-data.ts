@@ -16,6 +16,8 @@ export interface SampleRange {
 }
 
 function toNumber(value: unknown): number {
+  // Los booleanos se representan como 1/0.
+  if (typeof value === 'boolean') return value ? 1 : 0;
   return typeof value === 'number' && Number.isFinite(value) ? value : NaN;
 }
 
