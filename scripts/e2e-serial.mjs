@@ -21,6 +21,8 @@ const errors = [];
 let sendTimer = null;
 
 app.commandLine.appendSwitch('no-sandbox');
+ipcMain.handle('settings:getSerial', () => null);
+ipcMain.handle('settings:setSerial', () => {});
 app.commandLine.appendSwitch('disable-gpu');
 
 function makeLine(t) {
@@ -92,6 +94,20 @@ app.whenReady().then(async () => {
     return false;
   })()`;
 
+  const chooseSerialParser = (label) => `(() => {
+    const b = Array.from(document.querySelectorAll('button')).find((x) => x.textContent.trim() === ${JSON.stringify(label)});
+    if (b) b.click();
+    return !!b;
+  })()`;
+  const setSerialCsvLabels = (labels) => `(() => {
+    const input = document.getElementById('serial-csv-labels');
+    if (!input) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(labels)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  })()`;
+
   try {
     await win.loadFile(join(root, 'out/renderer/index.html'));
     await new Promise((r) => setTimeout(r, 1200));
@@ -101,6 +117,10 @@ app.whenReady().then(async () => {
     const opened = await win.webContents.executeJavaScript(
       `document.body.innerText.includes('Conexión Serial')`
     );
+    await win.webContents.executeJavaScript(chooseSerialParser("CSV"));
+    await new Promise((r) => setTimeout(r, 150));
+    await win.webContents.executeJavaScript(setSerialCsvLabels("accX, accY, accZ, gyroX, gyroY, gyroZ, battery"));
+    await new Promise((r) => setTimeout(r, 150));
     const connected = await win.webContents.executeJavaScript(clickByText('Conectar'));
 
     // Dejar fluir telemetría ~2 s

@@ -16,6 +16,7 @@ import { ComparisonDialog } from '../dialogs/ComparisonDialog';
 import { ExportDialog } from '../dialogs/ExportDialog';
 import { PrepareVideoDialog } from '../dialogs/PrepareVideoDialog';
 import { AboutDialog } from '../dialogs/AboutDialog';
+import { TimestampWarningDialog } from '../dialogs/TimestampWarningDialog';
 import {
   openVideoDialog,
   openSessionDialog,
@@ -42,7 +43,9 @@ export function AppShell(): React.ReactElement {
   const [compareOpen, setCompareOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [timestampWarningOpen, setTimestampWarningOpen] = useState(false);
   const [widgetMenuOpen, setWidgetMenuOpen] = useState(false);
+  const warnedTimestampRef = useRef(false);
 
   const videoSrc = useAppStore((s) => s.videoSrc);
   const videoInfo = useAppStore((s) => s.videoInfo);
@@ -57,6 +60,8 @@ export function AppShell(): React.ReactElement {
   const comparisonError = useComparisonStore((s) => s.errorMessage);
   const serialConnected = useAppStore((s) => s.serialConnected);
   const frameCount = useAppStore((s) => s.frameCount);
+  const telemetryTimeReliable = useAppStore((s) => s.telemetryTimeReliable);
+  const setStatusMessage = useAppStore((s) => s.setStatusMessage);
 
   // Altura medida de la columna para convertir el ratio del vídeo a píxeles
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -148,6 +153,17 @@ export function AppShell(): React.ReactElement {
       hasData: frameCount > 0,
     });
   }, [panels.inspectorVisible, serialConnected, comparisonActive, videoSrc, frameCount]);
+
+  // Aviso: vídeo cargado + telemetría sin timestamp fiable.
+  useEffect(() => {
+    const shouldWarn = !!videoSrc && frameCount > 0 && !telemetryTimeReliable;
+    if (shouldWarn && !warnedTimestampRef.current) {
+      warnedTimestampRef.current = true;
+      setTimestampWarningOpen(true);
+      setStatusMessage('Datos sin timestamp fiable: sincronización con el vídeo aproximada');
+    }
+    if (!videoSrc) warnedTimestampRef.current = false;
+  }, [videoSrc, frameCount, telemetryTimeReliable, setStatusMessage]);
 
   const handleDrop = (e: React.DragEvent): void => {
     e.preventDefault();
@@ -296,6 +312,9 @@ export function AppShell(): React.ReactElement {
       {compareOpen && <ComparisonDialog onClose={() => setCompareOpen(false)} />}
       {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} />}
       {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
+      {timestampWarningOpen && (
+        <TimestampWarningDialog onClose={() => setTimestampWarningOpen(false)} />
+      )}
       <PrepareVideoDialog />
     </div>
   );

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ParserRegistry } from '@parsers/parser-registry';
-import { SerialUARTParser } from '@parsers/serial-uart-parser';
+import { KeyValueParser } from '@parsers/serial';
 import { JSONSessionParser } from '@parsers/json-session-parser';
 
 describe('ParserRegistry', () => {
@@ -15,14 +15,14 @@ describe('ParserRegistry', () => {
   });
 
   it('should register and retrieve parsers', () => {
-    const parser = new SerialUARTParser();
+    const parser = new KeyValueParser(true);
     registry.register(parser);
 
     expect(registry.get('Serial UART')).toBe(parser);
   });
 
   it('should return all parsers sorted by priority', () => {
-    registry.register(new SerialUARTParser());
+    registry.register(new KeyValueParser(true));
     registry.register(new JSONSessionParser());
 
     const all = registry.getAll();
@@ -51,7 +51,7 @@ describe('ParserRegistry', () => {
   });
 
   it('should get streaming parsers only', () => {
-    registry.register(new SerialUARTParser());
+    registry.register(new KeyValueParser(true));
     registry.register(new JSONSessionParser());
 
     const streaming = registry.getStreamingParsers();
@@ -60,7 +60,7 @@ describe('ParserRegistry', () => {
   });
 
   it('should unregister parsers', () => {
-    registry.register(new SerialUARTParser());
+    registry.register(new KeyValueParser(true));
     expect(registry.get('Serial UART')).toBeDefined();
 
     registry.unregister('Serial UART');
@@ -68,14 +68,14 @@ describe('ParserRegistry', () => {
   });
 
   it('should overwrite duplicate registrations', () => {
-    registry.register(new SerialUARTParser());
-    registry.register(new SerialUARTParser());
+    registry.register(new KeyValueParser(true));
+    registry.register(new KeyValueParser(true));
 
     expect(registry.getAll()).toHaveLength(1);
   });
 
   it('should clean up all parsers on destroyAll', () => {
-    registry.register(new SerialUARTParser());
+    registry.register(new KeyValueParser(true));
     registry.register(new JSONSessionParser());
     registry.destroyAll();
 

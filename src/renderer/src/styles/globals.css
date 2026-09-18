@@ -551,6 +551,10 @@ body {
     border-color 120ms ease,
     box-shadow 120ms ease;
 }
+.dialog-input::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
+}
 .dialog-input:focus {
   outline: none;
   border-color: var(--accent-border);

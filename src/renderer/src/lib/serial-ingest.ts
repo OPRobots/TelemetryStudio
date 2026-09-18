@@ -1,4 +1,8 @@
-import { SerialUARTParser } from '@parsers/serial-uart-parser';
+import {
+  createSerialParser,
+  type SerialParserBase,
+  type SerialParserConfig,
+} from '@parsers/serial';
 import { telemetryStore } from '@core/telemetry-store';
 import { eventBus } from '@core/event-bus';
 import { useAppStore } from '../stores/app-store';
@@ -7,19 +11,23 @@ import { useCursorStore } from '../stores/cursor-store';
 import { buildAutoLayoutWidgets } from './auto-layout';
 import { STALE_TRANSMISSION_MS } from './session-save-status';
 
+const DEFAULT_CONFIG: SerialParserConfig = { kind: 'keyvalue', hasTimestamp: true };
+
 /**
  * Gestiona la ingesta de telemetría Serial en el renderer:
- * - Mantiene una instancia del parser
+ * - Mantiene una instancia del parser elegido (Default/CSV/Macroarray)
  * - Añade frames al TelemetryStore en tiempo real
  * - Descubre el schema y auto-configura el layout inicial
  * - Construye el dataset al cerrar el stream
  */
 class SerialIngestService {
-  private parser = new SerialUARTParser();
+  private parser: SerialParserBase = createSerialParser(DEFAULT_CONFIG);
+  private config: SerialParserConfig = DEFAULT_CONFIG;
   private unsubData: (() => void) | null = null;
   private unsubStatus: (() => void) | null = null;
   private listening = false;
   private autoLayoutApplied = false;
+  private sawValidLine = false;
 
   private ensureListening(): void {
     if (this.listening || typeof window === 'undefined' || !window.api) return;
@@ -37,14 +45,12 @@ class SerialIngestService {
   async connect(
     path: string,
     baudRate: number,
-    csvFields?: string[]
+    config: SerialParserConfig = DEFAULT_CONFIG
   ): Promise<{ success: boolean; error?: string }> {
     if (!window.api) return { success: false, error: 'API no disponible' };
     this.ensureListening();
+    this.config = config;
     this.reset();
-    if (csvFields && csvFields.length > 0) {
-      this.parser.setCsvFields(csvFields);
-    }
 
     const result = await window.api.serialOpen(path, baudRate);
     if (result.success) {
@@ -52,6 +58,7 @@ class SerialIngestService {
       useAppStore.getState().setBaudRate(baudRate);
       useAppStore.getState().setStreamState('streaming');
       useAppStore.getState().setStatusMessage('');
+      useAppStore.getState().setTelemetryTimeReliable(config.hasTimestamp);
     } else {
       useAppStore.getState().setSerialError(result.error ?? 'Error desconocido');
       useAppStore.getState().setStreamState('idle');
@@ -67,7 +74,8 @@ class SerialIngestService {
 
   private reset(): void {
     this.parser.destroy();
-    this.parser = new SerialUARTParser();
+    this.parser = createSerialParser(this.config);
+    this.sawValidLine = false;
     telemetryStore.clearPrimary();
     this.autoLayoutApplied = false;
     useAppStore.getState().setDataset(null, []);
@@ -76,38 +84,55 @@ class SerialIngestService {
     useAppStore.getState().setSerialError(null);
   }
 
+  private restartCapture(): void {
+    telemetryStore.clearPrimary();
+    this.parser.resetFrames();
+    this.sawValidLine = false;
+    useCursorStore.getState().clear();
+    useCursorStore.getState().clearZoom();
+  }
+
   private onLine(line: string): void {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) return;
+
     const store = useAppStore.getState();
     const now = Date.now();
     const prevDataAt = store.lastDataAt;
 
-    const frame = this.parser.parseLine(line);
-    if (!frame) return;
+    const frame = this.parser.parseLine(trimmed);
 
-    // Nueva captura: si ya había datos y esta llegada implica una nueva
-    // transmisión (tras estar "en reposo" ≥ STALE_TRANSMISSION_MS, o porque el
-    // timestamp vuelve a 0), se descarta lo anterior y se vuelve a plotear
-    // desde el principio, conservando layout y schema.
-    const resumed =
-      prevDataAt != null &&
-      (now - prevDataAt >= STALE_TRANSMISSION_MS || frame.timestamp_ms === 0);
-    if (resumed) {
-      telemetryStore.clearPrimary();
-      this.parser.resetFrames();
-      this.parser.parseLine(line); // deja este frame en el parser ya limpio
-      store.setFrameCount(1);
-      useCursorStore.getState().clear();
-      useCursorStore.getState().clearZoom();
+    if (frame === null) {
+      // Validación estricta (CSV): la primera línea debe parsear; si no, se
+      // rechaza la importación.
+      if (!this.sawValidLine && this.parser.strict) {
+        void this.disconnect().then(() => {
+          const s = useAppStore.getState();
+          s.setSerialError(
+            'El formato no coincide con el CSV configurado. Revisa el separador y las etiquetas.'
+          );
+          s.setStatusMessage('Captura rechazada: formato CSV no válido');
+        });
+      }
+      return;
     }
 
+    // Nueva transmisión: por silencio ≥ umbral, o por timestamp que vuelve a 0.
+    const gap = prevDataAt != null && now - prevDataAt >= STALE_TRANSMISSION_MS;
+    const restart = gap || (this.sawValidLine && frame.timestamp_ms === 0);
+    if (restart) {
+      this.restartCapture();
+      this.parser.parseLine(trimmed); // deja este frame en el parser ya limpio
+    }
+
+    this.sawValidLine = true;
     telemetryStore.addFrame(frame);
     eventBus.emit('data:streaming-frame', { frame });
     store.setLastDataAt(now);
 
     const count = this.parser.frameCount;
-    if (count % 5 === 0) {
-      const schema = this.parser.getDiscoveredSchema();
-      useAppStore.getState().setSchema(schema);
+    if (restart || count % 5 === 0) {
+      useAppStore.getState().setSchema(this.parser.getDiscoveredSchema());
       useAppStore.getState().setFrameCount(count);
       this.maybeAutoLayout();
     }

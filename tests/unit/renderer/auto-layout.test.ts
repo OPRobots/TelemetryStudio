@@ -25,16 +25,13 @@ describe('buildAutoLayoutWidgets', () => {
     expect(minimap!.dataFields).toEqual(['position_x', 'position_y', 'heading_deg']);
   });
 
-  it('creates a single TimeSeriesChart with all numeric fields', () => {
+  it('creates one TimeSeriesChart per numeric field (half width)', () => {
     const widgets = buildAutoLayoutWidgets(FULL_SCHEMA);
     const charts = widgets.filter((w) => w.type === 'TimeSeriesChart');
-    expect(charts).toHaveLength(1);
-    // Incluye velocidad y motores, excluye posiciones/estado/bitmask
-    expect(charts[0]!.dataFields).toContain('speed_rpm');
-    expect(charts[0]!.dataFields).toContain('motor_left');
-    expect(charts[0]!.dataFields).toContain('motor_right');
-    expect(charts[0]!.dataFields).not.toContain('position_x');
-    expect(charts[0]!.dataFields).not.toContain('state');
+    // Numéricos no excluidos: speed_rpm, motor_left, motor_right
+    expect(charts).toHaveLength(3);
+    expect(charts.map((c) => c.dataFields)).toEqual([['speed_rpm'], ['motor_left'], ['motor_right']]);
+    expect(charts.every((c) => c.width === 6)).toBe(true);
   });
 
   it('creates a DigitalBitmask for bitmask fields', () => {
@@ -75,14 +72,14 @@ describe('buildAutoLayoutWidgets', () => {
     expect(state!.dataFields).toEqual(['state']);
   });
 
-  it('handles a schema with only numeric fields', () => {
+  it('handles a schema with only numeric fields (one chart each)', () => {
     const widgets = buildAutoLayoutWidgets([
       { name: 'a', type: 'number' },
       { name: 'b', type: 'number' },
     ]);
-    expect(widgets).toHaveLength(1);
-    expect(widgets[0]!.type).toBe('TimeSeriesChart');
-    expect(widgets[0]!.dataFields).toEqual(['a', 'b']);
+    expect(widgets).toHaveLength(2);
+    expect(widgets.every((w) => w.type === 'TimeSeriesChart')).toBe(true);
+    expect(widgets.map((w) => w.dataFields)).toEqual([['a'], ['b']]);
   });
 
   it('creates one StateTimeline per state field', () => {
@@ -108,14 +105,14 @@ describe('buildAutoLayoutWidgets', () => {
       'Estado: mode',
     ]);
 
-    const chart = widgets.find((w) => w.type === 'TimeSeriesChart');
-    expect(chart?.dataFields).toEqual(['speed']);
+    const charts = widgets.filter((w) => w.type === 'TimeSeriesChart');
+    expect(charts.map((c) => c.dataFields)).toEqual([['speed']]);
   });
 
-  it('creates every widget a full width', () => {
+  it('creates charts at half width and the rest at full width', () => {
     const widgets = buildAutoLayoutWidgets(FULL_SCHEMA);
     for (const widget of widgets) {
-      expect(widget.width).toBe(12);
+      expect(widget.width).toBe(widget.type === 'TimeSeriesChart' ? 6 : 12);
       expect(widget.height).toBeGreaterThanOrEqual(2);
     }
   });

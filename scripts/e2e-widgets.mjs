@@ -20,6 +20,8 @@ const errors = [];
 let sendTimer = null;
 
 app.commandLine.appendSwitch('no-sandbox');
+ipcMain.handle('settings:getSerial', () => null);
+ipcMain.handle('settings:setSerial', () => {});
 app.commandLine.appendSwitch('disable-gpu');
 
 function makeLine(t) {
@@ -85,6 +87,20 @@ app.whenReady().then(async () => {
     return false;
   })()`;
 
+  const chooseSerialParser = (label) => `(() => {
+    const b = Array.from(document.querySelectorAll('button')).find((x) => x.textContent.trim() === ${JSON.stringify(label)});
+    if (b) b.click();
+    return !!b;
+  })()`;
+  const setSerialCsvLabels = (labels) => `(() => {
+    const input = document.getElementById('serial-csv-labels');
+    if (!input) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(labels)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  })()`;
+
   const drag = async (setup, move) => {
     await run(setup);
     await wait(120);
@@ -131,12 +147,21 @@ app.whenReady().then(async () => {
     // 1. Conectar Serial → auto-layout crea el primer widget (ancho completo)
     win.webContents.send('menu:action', 'connect-serial');
     await wait(400);
+    await win.webContents.executeJavaScript(chooseSerialParser("CSV"));
+    await new Promise((r) => setTimeout(r, 150));
+    await win.webContents.executeJavaScript(setSerialCsvLabels("accX, accY, accZ, gyroX, gyroY, gyroZ, battery"));
+    await new Promise((r) => setTimeout(r, 150));
     await run(clickByText('Conectar'));
     await wait(900);
 
     const initial = await run(`(() => {
       const cells = Array.from(document.querySelectorAll('[data-widget-id]'));
-      return { count: cells.length, firstCols: cells[0] ? cells[0].dataset.cols : null };
+      const cols = cells.map((c) => c.dataset.cols);
+      return {
+        count: cells.length,
+        firstCols: cols[0] ?? null,
+        allHalf: cols.length >= 2 && cols.every((c) => c === '6'),
+      };
     })()`);
 
     // 2. Añadir un segundo widget
@@ -219,15 +244,15 @@ app.whenReady().then(async () => {
     );
     if (errors.length > 0) console.log('E2E_WIDGETS_ERRORS ' + JSON.stringify(errors.slice(0, 10)));
 
-    const defaultFullWidth = initial.count === 1 && initial.firstCols === '12';
-    const heightGrew = Number(resizedRows) > 7;
-    const widthHalf = columns.length === 2 && columns.every((c) => c === '6');
+    const defaultHalfWidth = initial.count >= 2 && initial.allHalf;
+    const heightGrew = Number(resizedRows) > 6;
+    const widthChanged =
+      columns.length >= 2 && Number(columns[0]) < 6 && Number(columns[1]) < 6;
     const sideBySide =
-      rects.cells.length === 2 &&
+      rects.cells.length >= 2 &&
       Math.abs(rects.cells[0].top - rects.cells[1].top) < 4 &&
       rects.cells[0].left !== rects.cells[1].left;
-    const reordered =
-      order.length === 2 && beforeOrder.length === 2 && order[0] === beforeOrder[1];
+    const reordered = order.length >= 2 && order[0] === beforeOrder[1];
 
     const aboutOk =
       about.open &&
@@ -238,9 +263,9 @@ app.whenReady().then(async () => {
       );
 
     const ok =
-      defaultFullWidth &&
+      defaultHalfWidth &&
       heightGrew &&
-      widthHalf &&
+      widthChanged &&
       sideBySide &&
       reordered &&
       aboutOk &&

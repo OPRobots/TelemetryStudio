@@ -38,6 +38,11 @@ const api = {
   getVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('open-external', url),
 
+  // === Ajustes persistentes ===
+  settingsGetSerial: (): Promise<unknown> => ipcRenderer.invoke('settings:getSerial'),
+  settingsSetSerial: (patch: unknown): Promise<void> =>
+    ipcRenderer.invoke('settings:setSerial', patch),
+
   // === Vídeo ===
   videoPrepare: (
     path: string

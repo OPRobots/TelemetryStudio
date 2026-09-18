@@ -93,6 +93,7 @@ export async function loadSession(jsonPath: string): Promise<void> {
 
   telemetryStore.loadDataset(dataset);
   useAppStore.getState().setDataset(dataset, dataset.schema);
+  useAppStore.getState().setTelemetryTimeReliable(session.telemetry.timestamped ?? true);
 
   if (session.video.file) {
     const videoPath = await sessionManager.resolveVideoPath(jsonPath, session.video.file);
@@ -131,7 +132,8 @@ export async function loadSession(jsonPath: string): Promise<void> {
  * Construye y persiste la sesión actual.
  */
 export async function saveSession(name: string, outputDir: string): Promise<void> {
-  const { videoPath, videoInfo, playbackRate, syncAnchor } = useAppStore.getState();
+  const { videoPath, videoInfo, playbackRate, syncAnchor, telemetryTimeReliable } =
+    useAppStore.getState();
   const dataset = currentDataset();
   if (!dataset) {
     useAppStore.getState().setStatusMessage('No hay telemetría para guardar');
@@ -158,7 +160,8 @@ export async function saveSession(name: string, outputDir: string): Promise<void
       anchor: syncAnchor ? [syncAnchor.video_ms / 1000, syncAnchor.telemetry_ms] : null,
       rate: playbackRate,
     },
-    widgets
+    widgets,
+    telemetryTimeReliable
   );
   session.name = name;
 

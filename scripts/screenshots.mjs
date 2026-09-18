@@ -18,6 +18,8 @@ const assetsDir = join(root, 'docs', 'assets');
 let sendTimer = null;
 
 app.commandLine.appendSwitch('no-sandbox');
+ipcMain.handle('settings:getSerial', () => null);
+ipcMain.handle('settings:setSerial', () => {});
 
 function makeLine(t) {
   const s = t / 1000;
@@ -140,6 +142,20 @@ app.whenReady().then(async () => {
     if (btn) { btn.click(); return true; }
     return false;
   })()`;
+
+  const chooseSerialParser = (label) => `(() => {
+    const b = Array.from(document.querySelectorAll('button')).find((x) => x.textContent.trim() === ${JSON.stringify(label)});
+    if (b) b.click();
+    return !!b;
+  })()`;
+  const setSerialCsvLabels = (labels) => `(() => {
+    const input = document.getElementById('serial-csv-labels');
+    if (!input) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(labels)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  })()`;
   const capture = async (name) => {
     const image = await win.webContents.capturePage();
     writeFileSync(join(assetsDir, name), image.toPNG());
@@ -153,6 +169,8 @@ app.whenReady().then(async () => {
     // Serial en vivo (menú nativo) + vídeo
     win.webContents.send('menu:action', 'connect-serial');
     await wait(400);
+    await win.webContents.executeJavaScript(chooseSerialParser("Default"));
+    await new Promise((r) => setTimeout(r, 150));
     await run(clickByText('Conectar'));
     await wait(1200);
     win.webContents.send('menu:action', 'open-video');

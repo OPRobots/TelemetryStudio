@@ -1,9 +1,36 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../../stores/app-store';
 import { serialIngest } from '../../lib/serial-ingest';
-import { DEFAULT_CSV_FIELDS } from '@parsers/serial-uart-parser';
+import { DEFAULT_CSV_FIELDS, type SerialParserKind, type CsvSeparator } from '@parsers/serial';
 
 const BAUD_RATES = [9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600];
+
+const PARSERS: Array<{ kind: SerialParserKind; label: string; description: string; example: string }> = [
+  {
+    kind: 'keyvalue',
+    label: 'Default',
+    description: 'Clave:valor con timestamp',
+    example: 'T:1234,speed:1500,battery:85.5,armed:true',
+  },
+  {
+    kind: 'csv',
+    label: 'CSV',
+    description: 'Valores separados por un separador',
+    example: '1000,1.20,2.30,9.80',
+  },
+  {
+    kind: 'macroarray',
+    label: 'Macroarray',
+    description: 'Un campo por línea con prefijo >',
+    example: '>speed:1500',
+  },
+];
+
+const SEPARATORS: Array<{ value: CsvSeparator; label: string }> = [
+  { value: ',', label: 'Coma ( , )' },
+  { value: ';', label: 'Punto y coma ( ; )' },
+  { value: ' ', label: 'Espacio' },
+];
 
 interface SerialConnectDialogProps {
   onClose: () => void;
@@ -18,8 +45,22 @@ export function SerialConnectDialog({ onClose }: SerialConnectDialogProps): Reac
 
   const [selectedPort, setSelectedPort] = useState<string>('');
   const [baudRate, setBaudRate] = useState<number>(115200);
-  const [csvFieldsText, setCsvFieldsText] = useState<string>('');
+  const [parserKind, setParserKind] = useState<SerialParserKind>('keyvalue');
+  const [hasTimestamp, setHasTimestamp] = useState<boolean>(true);
+  const [csvSeparator, setCsvSeparator] = useState<CsvSeparator>(',');
+  const [csvLabelsText, setCsvLabelsText] = useState<string>('');
   const [busy, setBusy] = useState(false);
+
+  const csvLabels = useMemo(
+    () => csvLabelsText.split(',').map((l) => l.trim()).filter((l) => l.length > 0),
+    [csvLabelsText]
+  );
+
+  const csvLabelsValid = useMemo(() => {
+    if (parserKind !== 'csv') return true;
+    // Vacío = se usan los nombres por defecto (placeholder).
+    return csvLabels.length === 0 || new Set(csvLabels).size === csvLabels.length;
+  }, [parserKind, csvLabels]);
 
   const refresh = useCallback(async () => {
     setBusy(true);
@@ -35,14 +76,41 @@ export function SerialConnectDialog({ onClose }: SerialConnectDialogProps): Reac
     void refresh();
   }, [refresh]);
 
+  // Configuración recordada.
+  useEffect(() => {
+    void (async () => {
+      const saved = await window.api?.settingsGetSerial().catch(() => null);
+      if (!saved) return;
+      setParserKind(saved.kind);
+      setHasTimestamp(saved.hasTimestamp);
+      setCsvSeparator(saved.csvSeparator);
+      setCsvLabelsText(saved.csvLabels.length > 0 ? saved.csvLabels.join(', ') : '');
+    })();
+  }, []);
+
+  const selectParser = (kind: SerialParserKind): void => {
+    setParserKind(kind);
+    setHasTimestamp(kind !== 'macroarray');
+  };
+
   const connect = async (): Promise<void> => {
     if (!selectedPort) return;
-    const csvFields = csvFieldsText
-      .split(',')
-      .map((f) => f.trim())
-      .filter((f) => f.length > 0);
+    if (!csvLabelsValid) return;
     setBusy(true);
-    await serialIngest.connect(selectedPort, baudRate, csvFields);
+    const labels = csvLabels.length > 0 ? csvLabels : DEFAULT_CSV_FIELDS;
+    await serialIngest.connect(selectedPort, baudRate, {
+      kind: parserKind,
+      hasTimestamp,
+      csv: { separator: csvSeparator, labels },
+    });
+    void window.api
+      ?.settingsSetSerial({
+        kind: parserKind,
+        hasTimestamp,
+        csvSeparator,
+        csvLabels: labels,
+      })
+      .catch(() => undefined);
     setBusy(false);
     onClose();
   };
@@ -55,7 +123,7 @@ export function SerialConnectDialog({ onClose }: SerialConnectDialogProps): Reac
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog-panel" onClick={(e) => e.stopPropagation()} style={{ width: 420 }}>
+      <div className="dialog-panel" onClick={(e) => e.stopPropagation()} style={{ width: 460 }}>
         <h3 className="mb-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
           Conexión Serial
         </h3>
@@ -98,17 +166,88 @@ export function SerialConnectDialog({ onClose }: SerialConnectDialogProps): Reac
               ))}
             </select>
 
-            <label className="dialog-label mt-2">Campos CSV (sin encabezado)</label>
-            <input
-              className="dialog-input"
-              value={csvFieldsText}
-              placeholder={DEFAULT_CSV_FIELDS.join(', ')}
-              onChange={(e) => setCsvFieldsText(e.target.value)}
-            />
+            <label className="dialog-label mt-3">Formato de los datos</label>
+            <div className="flex gap-1">
+              {PARSERS.map((p) => {
+                const active = parserKind === p.kind;
+                return (
+                  <button
+                    key={p.kind}
+                    type="button"
+                    className="toolbar-button toolbar-button--compact flex-1"
+                    style={
+                      active
+                        ? {
+                            background: 'var(--accent-soft)',
+                            borderColor: 'var(--accent-border)',
+                            color: 'var(--accent)',
+                          }
+                        : undefined
+                    }
+                    onClick={() => selectParser(p.kind)}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
             <p className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-              Para datos posicionales `timestamp,campo1,campo2,...`. Si lo dejas vacío se usan los
-              nombres de ejemplo. También se aceptan formatos con claves `T:ms,campo:valor`.
+              {PARSERS.find((p) => p.kind === parserKind)?.description}. Ej.:{' '}
+              <code>{PARSERS.find((p) => p.kind === parserKind)?.example}</code>
             </p>
+
+            <label className="dialog-checkbox mt-2">
+              <input
+                type="checkbox"
+                checked={hasTimestamp}
+                onChange={(e) => setHasTimestamp(e.target.checked)}
+              />
+              <span className="text-xs">La telemetría incluye timestamp (1ª columna/campo)</span>
+            </label>
+
+            {parserKind === 'csv' && (
+              <div className="mt-2">
+                <label className="dialog-label">Separador</label>
+                <div className="flex gap-1">
+                  {SEPARATORS.map((s) => {
+                    const active = csvSeparator === s.value;
+                    return (
+                      <button
+                        key={s.label}
+                        type="button"
+                        className="toolbar-button toolbar-button--compact flex-1"
+                        style={
+                          active
+                            ? {
+                                background: 'var(--accent-soft)',
+                                borderColor: 'var(--accent-border)',
+                                color: 'var(--accent)',
+                              }
+                            : undefined
+                        }
+                        onClick={() => setCsvSeparator(s.value)}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <label className="dialog-label mt-2">Etiquetas (separadas por comas)</label>
+                <input
+                  id="serial-csv-labels"
+                  className="dialog-input"
+                  value={csvLabelsText}
+                  placeholder={DEFAULT_CSV_FIELDS.join(', ')}
+                  onChange={(e) => setCsvLabelsText(e.target.value)}
+                />
+                {!csvLabelsValid && (
+                  <p className="mt-1 text-[10px]" style={{ color: '#f87171' }}>
+                    Define al menos una etiqueta y sin duplicados.
+                  </p>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -135,7 +274,7 @@ export function SerialConnectDialog({ onClose }: SerialConnectDialogProps): Reac
             <button
               className="toolbar-button toolbar-button-primary"
               onClick={() => void connect()}
-              disabled={busy || !selectedPort}
+              disabled={busy || !selectedPort || !csvLabelsValid}
             >
               Conectar
             </button>

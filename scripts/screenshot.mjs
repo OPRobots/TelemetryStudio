@@ -16,6 +16,8 @@ const out = '/tmp/opencode/oprobots-ui.png';
 let sendTimer = null;
 
 app.commandLine.appendSwitch('no-sandbox');
+ipcMain.handle('settings:getSerial', () => null);
+ipcMain.handle('settings:setSerial', () => {});
 
 function makeLine(t) {
   const s = t / 1000;
@@ -70,6 +72,20 @@ app.whenReady().then(async () => {
     return false;
   })()`;
 
+  const chooseSerialParser = (label) => `(() => {
+    const b = Array.from(document.querySelectorAll('button')).find((x) => x.textContent.trim() === ${JSON.stringify(label)});
+    if (b) b.click();
+    return !!b;
+  })()`;
+  const setSerialCsvLabels = (labels) => `(() => {
+    const input = document.getElementById('serial-csv-labels');
+    if (!input) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(labels)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  })()`;
+
   try {
     await win.loadFile(join(root, 'out/renderer/index.html'));
     await new Promise((r) => setTimeout(r, 1200));
@@ -79,6 +95,8 @@ app.whenReady().then(async () => {
 
     win.webContents.send('menu:action', 'connect-serial');
     await new Promise((r) => setTimeout(r, 500));
+    await win.webContents.executeJavaScript(chooseSerialParser("Default"));
+    await new Promise((r) => setTimeout(r, 150));
     await win.webContents.executeJavaScript(clickByText('Conectar'));
     await new Promise((r) => setTimeout(r, 900));
 

@@ -52,6 +52,8 @@ interface SessionSync {
 interface SessionTelemetry {
   schema: SessionFieldSchema[];
   frames: SessionFrameValue[][]; // [timestamp_ms, valor_1, valor_2, ...]
+  /** false si la captura no tenía timestamps (tiempo = índice de muestra). Ausente = true. */
+  timestamped?: boolean;
 }
 
 /** Valores permitidos en un frame de sesión. */

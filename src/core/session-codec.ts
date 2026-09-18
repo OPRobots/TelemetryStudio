@@ -40,6 +40,7 @@ export function decodeSession(json: string): SessionFile {
     telemetry: {
       schema: raw.telemetry.schema,
       frames: raw.telemetry.frames,
+      timestamped: raw.telemetry.timestamped ?? true,
     },
     layout: {
       widgets: (raw.layout?.widgets ?? []).map((w) => ({
@@ -169,7 +170,8 @@ export function datasetToSession(
   dataset: TelemetryDataset,
   video: SessionVideo,
   sync: SessionSync,
-  widgets: SessionWidget[]
+  widgets: SessionWidget[],
+  timestamped = true
 ): SessionFile {
   return {
     v: 1,
@@ -177,7 +179,7 @@ export function datasetToSession(
     created: new Date().toISOString(),
     video,
     sync,
-    telemetry: datasetToSessionTelemetry(dataset),
+    telemetry: { ...datasetToSessionTelemetry(dataset), timestamped },
     layout: { widgets },
   };
 }

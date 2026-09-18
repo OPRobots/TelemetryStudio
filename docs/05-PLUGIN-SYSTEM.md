@@ -3,21 +3,27 @@
 El sistema de plugins permite extender la app sin tocar el core. Hay dos tipos:
 **Parsers** (entrada de datos) y **Widgets** (visualización).
 
-> **Serial UART** acepta TRES formatos de línea (timestamp en la primera posición):
+> **Serial UART** ofrece tres **parsers** seleccionables al conectar, más la casilla
+> "La telemetría incluye timestamp" (1ª columna/campo):
 >
-> | Formato | Ejemplo |
-> |---|---|
-> | CSV posicional | `1000,1.20,2.30,9.80,10.0,-5.0,0.0,99.5` |
-> | Legacy con letras | `T:1234,S:1500,M:512,-510,G:15` |
-> | Genérico con claves | `T:1234,speed_rpm:1500,battery:85.5,armed:true` |
+> | Parser | Formato | Ejemplo |
+> |---|---|---|
+> | **Default** | clave:valor con timestamp | `T:1234,speed:1500,battery:85.5,armed:true` |
+> | **CSV** | separado por `,`, `;` o espacio (separador y etiquetas configurables) | `1000,1.20,2.30,9.80` |
+> | **Macroarray** | un campo por línea con prefijo `>` | `>speed:1500` |
 >
-> En CSV posicional los nombres de columna se configuran con `setCsvFields()`
-> (por defecto `accX…battery`, ver `DEFAULT_CSV_FIELDS`). El tipo de cada campo se
-> **infiere del valor** y se expone vía `getDiscoveredSchema()`:
-> `true`/`false` → `boolean`, decimales → `number`, literales **hexadecimales**
-> (`0x...`) → `bitmask` (`bitmaskWidth = 4 × dígitos`) y cualquier otro token sin
-> comas → `string` (p. ej. `state:RUNNING`). Un campo que primero llegó como número
-> se **asciende** a `bitmask` en cuanto aparece un hex.
+> - **Con timestamp**: la 1ª columna/campo es el tiempo (ms).
+> - **Sin timestamp**: el tiempo es el **índice de muestra** (0, 1, 2…); los frames se
+>   agrupan hasta que se repite el primer campo (útil en Macroarray). En ese caso la app
+>   **avisa** de que la sincronización con el vídeo es aproximada.
+> - **CSV** valida estrictamente el nº de columnas y el parseo; si la primera línea no
+>   cuadra, se **rechaza la importación** con un aviso.
+> - El tipo de cada campo se **infiere del valor**: `true`/`false` → `boolean`, decimales
+>   → `number`, literales **hexadecimales** (`0x...`) → `bitmask` (`bitmaskWidth = 4 ×
+>   dígitos`) y cualquier otro token → `string` (p. ej. `state:RUNNING`). Un campo que
+>   primero llegó como número se **asciende** a `bitmask` en cuanto aparece un hex.
+> - La configuración elegida (parser, timestamp, separador y etiquetas) se **recuerda**
+>   entre sesiones (`settings.json` en `userData`).
 
 ---
 
@@ -56,14 +62,17 @@ Ambos parsers producen el mismo `TelemetryDataset`; los widgets no distinguen su
 
 ## Parser: Serial UART (streaming)
 
-`src/parsers/serial-uart-parser.ts`
+`src/parsers/serial/` — base común (`serial-parser-base.ts`) + `key-value-parser.ts`
+(Default), `csv-parser.ts`, `macro-array-parser.ts` y la fábrica
+`createSerialParser(config)`.
 
 - `parseLine(line)`: parsea una línea y devuelve un `TelemetryFrame` (o `null`).
 - `getDiscoveredSchema()`: campos descubiertos con su tipo.
-- `setCsvFields(names)`: nombres de columna para el CSV posicional.
-- `resetFrames()`: vacía los frames acumulados **conservando** el schema y los
-  nombres CSV (se usa al reiniciar una captura).
+- `resetFrames()`: vacía los frames acumulados **conservando** el schema (reinicio de
+  captura).
 - `completeStream()` / `buildDataset(name)`: cierran el stream y construyen el dataset.
+- En modo **sin timestamp**, la base agrupa campos y cierra el frame cuando se repite
+  el primer campo (`t` = índice de muestra).
 
 ## ParserRegistry
 

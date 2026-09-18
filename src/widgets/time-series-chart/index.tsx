@@ -373,8 +373,8 @@ export const timeSeriesChartDefinition: WidgetDefinition = {
     icon: 'chart-line',
     category: 'chart',
     acceptedFieldTypes: ['number'],
-    minSize: { width: 6, height: 4 },
-    defaultSize: { width: 12, height: 6 },
+    minSize: { width: 4, height: 4 },
+    defaultSize: { width: 6, height: 6 },
     defaultConfig: {
       yLabel: '',
       autoFollow: true,

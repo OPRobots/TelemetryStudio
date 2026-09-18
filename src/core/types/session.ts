@@ -51,6 +51,11 @@ export interface SessionTelemetry {
    * Frames en formato compacto: [timestamp_ms, valor_1, valor_2, ...]
    */
   frames: SessionFrameValue[][];
+  /**
+   * `false` si la captura no tenía timestamps (el tiempo es el índice de
+   * muestra). Ausente en sesiones antiguas → se asume `true`.
+   */
+  timestamped?: boolean;
 }
 
 export type SessionFrameValue = number | boolean | string | number[] | null;

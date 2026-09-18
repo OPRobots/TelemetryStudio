@@ -69,6 +69,18 @@ export interface TelemetryAPI {
   }) => void;
   getVersion: () => Promise<string>;
   openExternal: (url: string) => Promise<void>;
+  settingsGetSerial: () => Promise<{
+    kind: 'keyvalue' | 'csv' | 'macroarray';
+    hasTimestamp: boolean;
+    csvSeparator: ',' | ';' | ' ';
+    csvLabels: string[];
+  }>;
+  settingsSetSerial: (patch: {
+    kind?: 'keyvalue' | 'csv' | 'macroarray';
+    hasTimestamp?: boolean;
+    csvSeparator?: ',' | ';' | ' ';
+    csvLabels?: string[];
+  }) => Promise<void>;
   exportStart: (config: unknown) => Promise<{ success: boolean; error?: string }>;
   exportWriteFrame: (buffer: ArrayBuffer) => Promise<{ success: boolean; error?: string }>;
   exportFinalize: () => Promise<{ success: boolean; outputPath?: string; error?: string }>;

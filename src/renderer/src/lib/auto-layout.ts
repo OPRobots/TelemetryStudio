@@ -22,7 +22,8 @@ function findField(schema: FieldSchema[], patterns: RegExp[]): string | undefine
  * Todos los widgets se crean a ancho completo; el orden define su colocación
  * en la rejilla fluida.
  *
- * - Campos numéricos → una sola TimeSeriesChart con múltiples series
+ * - Cada campo numérico → su propia TimeSeriesChart, a media anchura
+ * - Campos booleanos → una TimeSeriesChart conjunta (a media anchura)
  * - Bitmasks/arrays → DigitalBitmask (todos los bits en una sola fila)
  * - Campos position_x/y (+ heading) → Minimap2D
  * - Cada campo de estado (`state`, `state_*`, `mode`, `status`, `fsm`) → un
@@ -77,15 +78,29 @@ export function buildAutoLayoutWidgets(schema: FieldSchema[]): WidgetConfig[] {
     });
   }
 
-  const chartFields = [...numericFields, ...booleanFields];
-  if (chartFields.length > 0) {
+  // Una gráfica independiente por cada campo numérico (media anchura).
+  for (const field of numericFields) {
     widgets.push({
       id: makeId('chart'),
       type: 'TimeSeriesChart',
-      label: 'Telemetría',
-      width: 12,
-      height: 7,
-      dataFields: chartFields,
+      label: field,
+      width: 6,
+      height: 6,
+      dataFields: [field],
+      config: { autoFollow: true, smoothing: 1 },
+      visible: true,
+    });
+  }
+
+  // Los booleanos se agrupan en una única gráfica (media anchura).
+  if (booleanFields.length > 0) {
+    widgets.push({
+      id: makeId('chart'),
+      type: 'TimeSeriesChart',
+      label: 'Booleanos',
+      width: 6,
+      height: 6,
+      dataFields: booleanFields,
       config: { autoFollow: true, smoothing: 1 },
       visible: true,
     });

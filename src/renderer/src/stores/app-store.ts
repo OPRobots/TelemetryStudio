@@ -41,6 +41,8 @@ interface AppState {
   frameCount: number;
   /** Timestamp del último dato de telemetría recibido por Serial. */
   lastDataAt: number | null;
+  /** `false` si la captura no tenía timestamps (tiempo por índice de muestra). */
+  telemetryTimeReliable: boolean;
 
   // Sincronización
   syncOffsetMs: number;
@@ -73,6 +75,7 @@ interface AppState {
   setSchema: (schema: FieldSchema[]) => void;
   setFrameCount: (count: number) => void;
   setLastDataAt: (ts: number | null) => void;
+  setTelemetryTimeReliable: (reliable: boolean) => void;
 
   setSyncOffset: (ms: number) => void;
   setSyncAnchor: (anchor: SyncAnchor | null) => void;
@@ -102,6 +105,7 @@ export const useAppStore = create<AppState>((set) => ({
   schema: [],
   frameCount: 0,
   lastDataAt: null,
+  telemetryTimeReliable: true,
 
   syncOffsetMs: 0,
   syncAnchor: null,
@@ -144,6 +148,7 @@ export const useAppStore = create<AppState>((set) => ({
   setSchema: (schema) => set({ schema }),
   setFrameCount: (count) => set({ frameCount: count }),
   setLastDataAt: (ts) => set({ lastDataAt: ts }),
+  setTelemetryTimeReliable: (reliable) => set({ telemetryTimeReliable: reliable }),
 
   setSyncOffset: (ms) => set({ syncOffsetMs: ms }),
   setSyncAnchor: (anchor) => set({ syncAnchor: anchor }),

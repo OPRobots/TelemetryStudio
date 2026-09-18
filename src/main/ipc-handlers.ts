@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { readFile, writeFile, mkdir, readdir, copyFile, stat, unlink } from 'fs/promises';
 import { join, basename, dirname } from 'path';
 import { serialService } from './serial-service';
+import { getSerialSettings, setSerialSettings, type SerialSettings } from './settings-store';
 
 const LAYOUTS_DIR = (): string => join(app.getPath('userData'), 'layouts');
 
@@ -30,6 +31,12 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   ipcMain.handle('app:version', () => app.getVersion());
   ipcMain.handle('open-external', async (_event, url: string) => {
     if (typeof url === 'string' && /^https?:\/\//i.test(url)) await shell.openExternal(url);
+  });
+
+  // === Ajustes ===
+  ipcMain.handle('settings:getSerial', () => getSerialSettings());
+  ipcMain.handle('settings:setSerial', (_event, patch: Partial<SerialSettings>) => {
+    if (patch && typeof patch === 'object') setSerialSettings(patch);
   });
 
   // === Dialogs ===

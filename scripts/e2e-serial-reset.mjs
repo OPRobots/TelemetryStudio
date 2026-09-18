@@ -16,6 +16,8 @@ const root = join(currentDir, '..');
 
 const errors = [];
 app.commandLine.appendSwitch('no-sandbox');
+ipcMain.handle('settings:getSerial', () => null);
+ipcMain.handle('settings:setSerial', () => {});
 app.commandLine.appendSwitch('disable-gpu');
 
 const RUN = ['IDLE', 'RUNNING', 'TURNING', 'SEARCHING'];
@@ -67,6 +69,20 @@ app.whenReady().then(async () => {
     return false;
   })()`;
 
+  const chooseSerialParser = (label) => `(() => {
+    const b = Array.from(document.querySelectorAll('button')).find((x) => x.textContent.trim() === ${JSON.stringify(label)});
+    if (b) b.click();
+    return !!b;
+  })()`;
+  const setSerialCsvLabels = (labels) => `(() => {
+    const input = document.getElementById('serial-csv-labels');
+    if (!input) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(labels)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  })()`;
+
   const footer = () => run(`(document.querySelector('footer') || {}).textContent || ''`);
   const framesFromFooter = async () => {
     const text = await footer();
@@ -86,6 +102,8 @@ app.whenReady().then(async () => {
     await wait(1000);
     win.webContents.send('menu:action', 'connect-serial');
     await wait(400);
+    await win.webContents.executeJavaScript(chooseSerialParser("Default"));
+    await new Promise((r) => setTimeout(r, 150));
     await run(clickByText('Conectar'));
     await wait(300);
 

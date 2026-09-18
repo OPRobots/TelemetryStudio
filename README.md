@@ -49,9 +49,12 @@ npm run dev        # desarrollo con HMR
 1. **Abrir vídeo**: carga el `.mp4` de la ejecución. Se recomienda **H.264**;
    si el vídeo usa un códec no soportado por Chromium (p. ej. **HEVC/H.265**,
    habitual en móviles) se **convierte automáticamente a H.264** con FFmpeg.
-2. **Conectar Serial**: elige el puerto y el baud rate. Si el robot envía CSV
-   posicional (`timestamp,accX,...`), ajusta los nombres de columna en el
-   diálogo; también se aceptan formatos `T:ms,campo:valor`.
+2. **Conectar Serial**: elige el puerto, el baud rate y el **formato de los datos**:
+   **Default** (`T:ms,campo:valor`), **CSV** (separador y etiquetas configurables) o
+   **Macroarray** (`>campo:valor`, un campo por línea). Marca *"la telemetría incluye
+   timestamp"* si la primera columna/campo es el tiempo; si no, el tiempo es el índice
+   de muestra (la app avisa de que la sincronización con el vídeo es aproximada).
+   Los campos **numéricos** generan **una gráfica por campo**, a media anchura.
 3. **Analizar**: los widgets se auto-configuran según los campos descubiertos.
    Reproduce el vídeo y las gráficas siguen la reproducción.
 4. **Sincronizar**: con el vídeo cargado, pausa en el frame que marca el inicio y

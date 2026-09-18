@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SerialUARTParser } from '@parsers/serial-uart-parser';
+import { CsvParser, DEFAULT_CSV_FIELDS, type SerialParserBase } from '@parsers/serial';
 import { telemetryStore } from '@core/telemetry-store';
 import { VideoSynchronizer } from '@core/video-synchronizer';
 import { buildAutoLayoutWidgets } from '@renderer/lib/auto-layout';
@@ -30,11 +30,11 @@ function simulateStm32Capture(hz = 50, seconds = 2): string[] {
 }
 
 describe('Integración: Serial → Store → auto-layout → sync', () => {
-  let parser: SerialUARTParser;
+  let parser: SerialParserBase;
 
   beforeEach(() => {
     telemetryStore.clear();
-    parser = new SerialUARTParser();
+    parser = new CsvParser(true, ',', DEFAULT_CSV_FIELDS);
   });
 
   it('ingesta una captura CSV completa en el TelemetryStore', () => {
@@ -56,7 +56,7 @@ describe('Integración: Serial → Store → auto-layout → sync', () => {
     ]);
   });
 
-  it('auto-configura una gráfica con todos los campos numéricos', () => {
+  it('auto-configura una gráfica por campo numérico a media anchura', () => {
     for (const line of simulateStm32Capture()) {
       const frame = parser.parseLine(line);
       if (frame) telemetryStore.addFrame(frame);
@@ -64,8 +64,8 @@ describe('Integración: Serial → Store → auto-layout → sync', () => {
 
     const widgets = buildAutoLayoutWidgets(parser.getDiscoveredSchema());
     const charts = widgets.filter((w) => w.type === 'TimeSeriesChart');
-    expect(charts).toHaveLength(1);
-    expect(charts[0]!.dataFields).toHaveLength(7);
+    expect(charts).toHaveLength(7);
+    expect(charts.every((c) => c.dataFields.length === 1 && c.width === 6)).toBe(true);
   });
 
   it('selecciona el frame correcto según el tiempo de vídeo', () => {
