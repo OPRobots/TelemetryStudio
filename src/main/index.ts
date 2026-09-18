@@ -73,6 +73,18 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // En Linux, el nombre que muestra la barra de tareas/dock (WM_CLASS/app id)
+  // deriva de `app.name` (en dev, "Electron"). Lo fijamos a "OPRobots" y
+  // conservamos la carpeta de datos existente basada en el nombre anterior.
+  if (process.platform === 'linux') {
+    app.setName('OPRobots');
+    try {
+      app.setPath('userData', join(app.getPath('appData'), 'Telemetry Studio'));
+    } catch {
+      // Si no se puede resolver, se deja el userData por defecto.
+    }
+  }
+
   electronApp.setAppUserModelId('org.oprobots.telemetry-studio');
 
   app.on('browser-window-created', (_, window) => {
