@@ -1,6 +1,12 @@
 import { app, shell, BrowserWindow, nativeImage } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
+
+// En Linux el gestor de ventanas (KDE) muestra el nombre del proceso en la
+// barra de tareas/dock; en dev, el ejecutable es "electron".
+if (process.platform === 'linux') {
+  process.title = 'OPRobots';
+}
 import { registerIpcHandlers } from './ipc-handlers';
 import { registerExportHandlers } from './export-service';
 import { registerVideoHandlers } from './video-service';
