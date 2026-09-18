@@ -4,6 +4,10 @@
   "version": "1.0.0",
   "description": "Aplicación de escritorio para análisis de telemetría de robots de competición con vídeo sincronizado",
   "homepage": "https://github.com/OPRobots/TelemetryStudio",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OPRobots/TelemetryStudio.git"
+  },
   "main": "./out/main/index.js",
   "author": "robotaleh",
   "license": "PolyForm-Noncommercial-1.0.0",
@@ -31,6 +35,10 @@
     "e2e": "npm run e2e:serial && npm run e2e:video && npm run e2e:comparison && npm run e2e:export && npm run e2e:prepare && npm run e2e:save && npm run e2e:widgets && npm run e2e:widget-kinds && npm run e2e:zoom && npm run e2e:serial-reset && npm run e2e:comparison-reset && npm run e2e:layouts",
     "screenshots": "node scripts/run-electron.mjs scripts/screenshots.mjs",
     "icons": "node scripts/generate-icons.mjs",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist": "npm run build && electron-builder",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run smoke && npm run e2e",
     "lint": "eslint src/ tests/",
     "poc:1": "FONTCONFIG_PATH=/dev/null electron-vite dev --config pocs/01-serial-widget/electron.vite.config.ts",

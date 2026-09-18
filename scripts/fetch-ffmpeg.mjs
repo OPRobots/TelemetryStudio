@@ -12,7 +12,7 @@
  */
 import { createWriteStream } from 'fs';
 import { chmod, mkdir, rm, copyFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
@@ -45,12 +45,12 @@ const PLATFORMS = {
       {
         url: 'https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip',
         archive: 'ffmpeg-mac.zip',
-        extract: (archive, dest) => spawnSync('unzip', ['-o', archive, '-d', dest], { stdio: 'inherit' }),
+        extract: (archive, dest) => spawnSync('tar', ['-xf', archive, '-C', dest], { stdio: 'inherit' }),
       },
       {
         url: 'https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip',
         archive: 'ffprobe-mac.zip',
-        extract: (archive, dest) => spawnSync('unzip', ['-o', archive, '-d', dest], { stdio: 'inherit' }),
+        extract: (archive, dest) => spawnSync('tar', ['-xf', archive, '-C', dest], { stdio: 'inherit' }),
       },
     ],
   },
@@ -60,15 +60,23 @@ const PLATFORMS = {
       {
         url: 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip',
         archive: 'ffmpeg-win.zip',
-        extract: (archive, dest) => spawnSync('unzip', ['-o', archive, '-d', dest], { stdio: 'inherit' }),
+        extract: (archive, dest) => spawnSync('tar', ['-xf', archive, '-C', dest], { stdio: 'inherit' }),
       },
     ],
   },
 };
 
 function findFile(dir, name) {
-  const res = spawnSync('find', [dir, '-name', name, '-type', 'f'], { encoding: 'utf-8' });
-  return res.stdout?.trim().split('\n')[0] || null;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const found = findFile(full, name);
+      if (found) return found;
+    } else if (entry.name === name) {
+      return full;
+    }
+  }
+  return null;
 }
 
 async function download(url, archivePath) {
@@ -94,14 +102,19 @@ async function main() {
     await rm(archivePath, { force: true }).catch(() => undefined);
   }
 
+  const missing = [];
   for (const name of platform.binaries) {
-    let target = join(binDir, name);
+    const target = join(binDir, name);
     if (!existsSync(target)) {
       const found = findFile(binDir, name);
       if (found) await copyFile(found, target);
     }
     if (existsSync(target)) await chmod(target, 0o755);
-    else console.warn(`Aviso: no se encontró ${name}`);
+    else missing.push(name);
+  }
+  if (missing.length > 0) {
+    console.error(`Error: no se encontraron los binarios: ${missing.join(', ')}`);
+    process.exit(1);
   }
 
   console.log(`FFmpeg listo en ${binDir}`);

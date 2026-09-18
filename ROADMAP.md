@@ -328,7 +328,7 @@ npm run test
 
 ---
 
-## FASE 8: Packaging + CI/CD (1 semana) 🟡 PARCIAL (Linux OK; Windows/macOS manual; CI preparado sin repo)
+## FASE 8: Packaging + CI/CD (1 semana) 🟡 PARCIAL (Linux OK; CI activado; Windows/macOS vía CI sin verificar)
 
 ### Objetivo
 Empaquetado multiplataforma funcional con pipeline de CI/CD.
@@ -340,8 +340,8 @@ Empaquetado multiplataforma funcional con pipeline de CI/CD.
 - [ ] macOS: `.dmg` (x64 y arm64) — build manual (PoC 4 validó DMG)
 - [x] `resources/udev/69-oprobots-serial.rules` para Linux
 - [x] `build/entitlements.mac.plist` para macOS
-- [x] `build/icon.png` (placeholder) y `scripts/fetch-ffmpeg.mjs` (sidecar FFmpeg)
-- [x] GitHub Actions CI/CD (`.github/workflows/build.yml`) preparado — inactivo hasta tener repo remoto
+- [x] Iconos reales (`build/icon.svg` → `icon.png`/`icon.ico`/`icon.icns`) y `scripts/fetch-ffmpeg.mjs` (sidecar FFmpeg multiplataforma)
+- [x] GitHub Actions: `ci.yml` (lint+typecheck+tests+build+e2e en Linux) y `release.yml` (draft release por tag `v*`)
 - [ ] PoC 4 validado: serial en las 3 plataformas empaquetadas (Linux OK; Windows pendiente)
 - [x] Tamaño de paquete < 200 MB (AppImage ~109 MB, deb ~75 MB)
 
@@ -521,10 +521,10 @@ elimina el redibujado O(n) por frame (menos CPU con datasets grandes). Se adopta
 
 ### P10.5 — Packaging multiplataforma + PoC 4
 
-- **Windows**: build manual de `.exe` (NSIS) + portable; verificar `SerialPort.list()`.
-- **macOS**: build manual de `.dmg`; valorar notarización (hoy `notarize: false`).
-- **PoC 4**: serial en las 3 plataformas empaquetadas.
-- **CI**: activar `.github/workflows/build.yml` cuando exista repo remoto.
+- **Windows**: `.exe` (NSIS) + portable vía CI; verificar `SerialPort.list()` en la app empaquetada.
+- **macOS**: `.dmg` (x64 + arm64) vía CI; valorar notarización (hoy `notarize: false`).
+- **PoC 4**: serial en las 3 plataformas empaquetadas (Linux OK; Windows/macOS pendientes).
+- **CI**: activado `ci.yml` + `release.yml`; el tag `v*` genera un draft release.
 - **Aceptación**: instaladores generados; serial funciona en la app empaquetada.
 
 ### P10.6 — Muestreo por ventana del TimeSeriesChart ✅

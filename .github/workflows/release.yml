@@ -1,0 +1,44 @@
+name: Release
+
+# Se dispara al empujar un tag `vX.Y.Z`. Genera los instaladores de las 3
+# plataformas y los sube a un GitHub Release en borrador (revisar y publicar).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Descargar FFmpeg sidecar
+        run: node scripts/fetch-ffmpeg.mjs
+
+      - name: Build
+        run: npm run build
+
+      - name: Empaquetar y publicar en el release borrador
+        run: npx electron-builder --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Primera fase sin firma: macOS (Gatekeeper) y Windows (SmartScreen)
+          # mostrarán aviso.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'

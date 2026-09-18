@@ -34,7 +34,11 @@ if (existsSync(fontsConf)) {
 
 const NOISE = /fontconfig|Gtk-Message|Failed to load module|libva|dri3|vaapi|ffmpeg_common|Unsupported pixel format/i;
 
-const child = spawn(electronPath, [...args, '--no-sandbox'], {
+// En CI (xvfb) el sandbox y la GPU no están disponibles.
+const flags = ['--no-sandbox'];
+if (process.env.CI) flags.push('--disable-gpu');
+
+const child = spawn(electronPath, [...args, ...flags], {
   stdio: ['inherit', 'inherit', 'pipe'],
   env,
 });

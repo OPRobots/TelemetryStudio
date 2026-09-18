@@ -29,21 +29,32 @@ asarUnpack:
   - "node_modules/.cache/**"
   - "**/*.node"
 win:
-  executableName: OPRobotsTelemetryStudio
+  executableName: TelemetryStudio
   target: [ { target: nsis, arch: [x64] }, { target: portable, arch: [x64] } ]
 mac:
+  category: public.app-category.utilities
+  entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  extendInfo: { … }              # DEBE ser un mapa (no una lista `- clave: valor`)
   notarize: false
   target: [ { target: dmg, arch: [x64, arm64] } ]
 linux:
   target: [ { target: AppImage, arch: [x64] }, { target: deb, arch: [x64] } ]
   category: Development
   maintainer: robotaleh
+publish:
+  provider: github
+  owner: OPRObots
+  repo: TelemetryStudio
+  releaseType: draft
 ```
 
-> Estado: **Linux verificado** (`--dir` arranca; AppImage ~109 MB, deb ~75 MB).
-> Windows (`.exe` + portable) y macOS (`x64` y `arm64`) quedan como **build manual**
-> hasta disponer de esas plataformas o de un repo remoto (ver "Pendiente").
+> Los artefactos se nombran `${name}-${version}[-${arch}].${ext}`. El `mac` usa
+> `${arch}` porque genera **dos DMGs** (x64 y arm64); sin él colisionarían.
+>
+> Estado: **Linux verificado** (AppImage y deb arrancan con el sidecar FFmpeg
+> incluido; ~168 MB y ~117 MB respectivamente por los binarios de FFmpeg).
+> Windows/macOS se generan en CI (ver más abajo); quedan sin firmar en esta fase.
 >
 > **macOS**: se generan **dos DMGs** (x64 y arm64), no un binario universal. No es
 > necesario un universal: `@serialport/bindings-cpp` incluye un prebuild *fat*
@@ -89,14 +100,28 @@ sudo usermod -a -G dialout $USER   # cerrar sesión y volver a entrar
 
 ## CI/CD (GitHub Actions)
 
-`.github/workflows/build.yml` compila, pasa typecheck + tests y empaqueta en Linux,
-macOS y Windows. Está **preparado pero inactivo** hasta que exista repo remoto.
+Dos workflows:
+
+- **`.github/workflows/ci.yml`** — en push a `main` y PR: instalación, lint,
+  typecheck, tests, descarga del sidecar FFmpeg y build. En Linux (Ubuntu) además
+  ejecuta `smoke` + `e2e` bajo `xvfb`.
+- **`.github/workflows/release.yml`** — al empujar un tag `vX.Y.Z`: matriz
+  Ubuntu/macOS/Windows → `electron-builder --publish always` con `GH_TOKEN`,
+  subiendo los instaladores a un **GitHub Release en borrador** (revisar y
+  publicar). `CSC_IDENTITY_AUTO_DISCOVERY=false`: sin firma en esta fase.
+
+Artefactos por plataforma:
+
+| Plataforma | Targets | Arch |
+|---|---|---|
+| Linux | AppImage, deb | x64 |
+| Windows | NSIS (setup), portable | x64 |
+| macOS | DMG | x64 + arm64 |
 
 ## Pendiente
 
-- Windows: `.exe` (NSIS) + portable — build manual en Windows.
-- macOS: `.dmg` — build manual (PoC 4 validó el DMG).
-- PoC 4: serial en las 3 plataformas empaquetadas (Windows pendiente).
+- Firma de código: macOS (hardened runtime + notarización) y Windows (certificado).
+- PoC 4: serial en las 3 plataformas empaquetadas (Windows/macOS sin verificar).
 
 ## Checklist
 
