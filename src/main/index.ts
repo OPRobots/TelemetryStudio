@@ -13,6 +13,12 @@ import { registerExportHandlers } from './export-service';
 import { registerVideoHandlers } from './video-service';
 import { buildAppMenu } from './app-menu';
 
+// Título de la ventana. En Linux (KDE) el gestor muestra el nombre de la app y,
+// debajo, el título de la ventana: usamos "OPRobots" como subtítulo. En
+// Windows/macOS la barra de tareas/menú muestra solo el título, así que usamos
+// el nombre de la aplicación.
+const WINDOW_TITLE = process.platform === 'linux' ? 'OPRobots' : 'Telemetry Studio';
+
 /**
  * Icono de la app accesible en runtime.
  * - Dev: `build/icon.png` en la raíz del repo.
@@ -31,6 +37,7 @@ function createWindow(): void {
     minWidth: 1024,
     minHeight: 600,
     show: false,
+    title: WINDOW_TITLE,
     autoHideMenuBar: false,
     backgroundColor: '#0b0e14',
     // Icono de ventana/barra de tareas (Windows/Linux). En macOS se ignora.
@@ -54,6 +61,13 @@ function createWindow(): void {
   if (is.dev && process.platform === 'darwin' && app.dock) {
     app.dock.setIcon(nativeImage.createFromPath(resolveIconPath()));
   }
+
+  // Mantiene el título fijo por plataforma; evita que el <title> del renderer
+  // lo sobrescriba.
+  mainWindow.on('page-title-updated', (event) => {
+    event.preventDefault();
+    mainWindow.setTitle(WINDOW_TITLE);
+  });
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show();
