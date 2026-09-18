@@ -68,12 +68,30 @@ necesario: `@serialport/bindings-cpp` trae un prebuild *fat* (`darwin-x64+arm64`
 cada DMG usa la rebanada de su arquitectura. Evita el coste de tamaño (~2×) y la
 complejidad de `mergeASARs`/`singleArchFiles` con módulos nativos.
 
-### 6. LTTB en la vista completa con datasets enormes (mitigado parcialmente)
+### 6. LTTB en la vista completa con datasets enormes (mejora futura)
 
-LTTB es O(n) y se ejecuta en el main thread. **Con zoom** ya se muestrea solo la
-**ventana visible** (coste O(ventana) y con detalle real), así que el caso problemático
-se reduce a la **vista completa** con >1M puntos (p. ej. 10M ≈ 1,5 s). Mitigación futura
-si hiciera falta: ejecutar LTTB en un Worker. En tamaños habituales es fluido.
+**Qué ocurre**: al dibujar la **vista completa** (sin zoom) de un dataset que supera
+`maxPoints` (2000), `buildSampledData` ejecuta LTTB sobre **todos** los frames. LTTB es
+O(n) y corre en el **hilo principal**, así que con datasets muy grandes la UI puede
+congelarse un instante. Es un coste **puntual**: gracias al caché solo se recalcula cuando
+cambia el dataset (carga o crecimiento), no en cada frame de vídeo.
+
+**Cuándo sería necesario un Worker** (casos concretos):
+- Vista **sin zoom** de un dataset con **cientos de miles a millones** de frames
+  (a partir de ~500k empieza a notarse; >1M ⇒ ~1,5 s de bloqueo).
+- Que ese cálculo coincida con interacción del usuario (carga inicial o streaming vivo).
+
+**Por qué NO es necesario en este proyecto** (tamaños realistas):
+- A 100 Hz, una sesión de 10 min ≈ **60k frames** (LTTB < 10 ms).
+- Al máximo documentado (1 kHz), 10 min ≈ **600k frames** (~90 ms, aceptable).
+- Llegar a 1M exigiría ~16 min a 1 kHz o ~2,8 h a 100 Hz, fuera del uso previsto.
+- Y **con zoom** ya está resuelto: se muestrea solo la ventana visible (O(ventana)).
+
+**Cómo se haría** (si algún día hiciera falta): mover solo el LTTB de vista completa a un
+**Web Worker**, enviando únicamente los valores del campo base (p. ej. un `Float32Array`, no
+los frames completos) y devolviendo los índices seleccionados; el hilo principal mapea
+x/series y aplica solo el último resultado (descartando respuestas obsoletas). Con fallback
+síncrono si el worker no está disponible.
 
 ### 7. Windows ARM64: drivers serial
 
@@ -149,5 +167,5 @@ Mientras convierte se muestra `PrepareVideoDialog` con progreso y opción de can
 | **P1** | Linux serial permissions | reglas udev + grupo `dialout` |
 | **P1** | RVFC timing | usar `mediaTime` (PTS) |
 | **P2** | macOS universal | descartado: DMGs por arquitectura (x64/arm64) |
-| **P2** | LTTB vista completa >1M | ventana visible al hacer zoom (hecho); Worker opcional |
+| **P2** | LTTB vista completa >1M | ventana visible al hacer zoom (hecho); Worker = mejora futura documentada |
 | **P3** | Windows ARM64 serial | recomendar CP210x |

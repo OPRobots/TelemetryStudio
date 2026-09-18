@@ -536,4 +536,6 @@ elimina el redibujado O(n) por frame (menos CPU con datasets grandes). Se adopta
 - Caché por ventana (índices `lo:hi` + último timestamp): en streaming solo recalcula si
   cambia el contenido visible.
 - Tests: `tests/unit/widgets/sample-data.test.ts`. Documentado en `docs/08`.
-- **Pendiente opcional**: LTTB en Worker para la **vista completa** con >1M puntos.
+- **Mejora futura (no planificada)**: LTTB en Web Worker para la **vista completa** con
+  >1M puntos; no se espera necesaria con los tamaños previstos. Detalles y casos concretos
+  en `docs/12-LIMITATIONS.md` #6.
