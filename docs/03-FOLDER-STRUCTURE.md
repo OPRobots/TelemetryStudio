@@ -39,9 +39,12 @@ telemetry-studio/
 │   ├── e2e-zoom.mjs                 # E2E: zoom compartido entre timelines
 │   ├── e2e-serial-reset.mjs         # E2E: "recibiendo"/"en reposo" + reinicio de captura
 │   ├── e2e-comparison-reset.mjs     # E2E: reset aislado en comparación
+│   ├── e2e-layouts.mjs              # E2E: gestión de layouts
+│   ├── e2e-perf.mjs                 # E2E: rendimiento (fuera de verify)
 │   ├── run-electron.mjs             # Lanzador de Electron (filtra ruido ambiental)
 │   ├── screenshot.mjs               # Captura de pantalla para revisión visual
 │   ├── fonts.conf                   # Config mínima de fontconfig para dev
+│   ├── generate-icons.mjs           # Genera icon.png/ico/icns desde icon.svg
 │   └── fetch-ffmpeg.mjs             # Descarga FFmpeg a resources/bin (sidecar)
 │
 ├── resources/                       # Assets estáticos empaquetados
@@ -51,7 +54,10 @@ telemetry-studio/
 │
 ├── build/                           # Configuración de build
 │   ├── entitlements.mac.plist       # Permisos macOS para code signing
-│   └── icon.png                     # Icono placeholder 512x512
+│   ├── icon.svg                     # Fuente del icono
+│   ├── icon.png                     # 1024x1024 (ventana + Linux)
+│   ├── icon.ico                     # Windows (exe/instalador/barra de tareas)
+│   └── icon.icns                    # macOS (bundle)
 │
 ├── src/
 │   ├── main/                        # ═══ MAIN PROCESS (Node.js) ═══
