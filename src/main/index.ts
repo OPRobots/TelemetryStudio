@@ -3,9 +3,10 @@ import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 
 // En Linux el gestor de ventanas (KDE) muestra el nombre del proceso en la
-// barra de tareas/dock; en dev, el ejecutable es "electron".
+// barra de tareas/dock; en dev, el ejecutable es "electron". Lo fijamos al
+// nombre real de la aplicación.
 if (process.platform === 'linux') {
-  process.title = 'OPRobots';
+  process.title = 'Telemetry Studio';
 }
 import { registerIpcHandlers } from './ipc-handlers';
 import { registerExportHandlers } from './export-service';
@@ -79,11 +80,10 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  // En Linux, el nombre que muestra la barra de tareas/dock (WM_CLASS/app id)
-  // deriva de `app.name` (en dev, "Electron"). Lo fijamos a "OPRobots" y
-  // conservamos la carpeta de datos existente basada en el nombre anterior.
+  // En Linux, el WM_CLASS/app id deriva de `app.name` (en dev, "Electron").
+  // Lo fijamos al nombre real y conservamos la carpeta de datos.
   if (process.platform === 'linux') {
-    app.setName('OPRobots');
+    app.setName('Telemetry Studio');
     try {
       app.setPath('userData', join(app.getPath('appData'), 'Telemetry Studio'));
     } catch {
