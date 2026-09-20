@@ -1,4 +1,13 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  shell,
+  type IpcMainInvokeEvent,
+  type OpenDialogOptions,
+  type OpenDialogReturnValue,
+} from 'electron';
 import { readFile, writeFile, mkdir, readdir, copyFile, stat, unlink } from 'fs/promises';
 import { join, basename, dirname } from 'path';
 import { serialService } from './serial-service';
@@ -8,24 +17,44 @@ const LAYOUTS_DIR = (): string => join(app.getPath('userData'), 'layouts');
 
 let serialWired = false;
 
-function wireSerialToWindow(win: BrowserWindow): void {
+/**
+ * Difunde un evento a todas las ventanas abiertas. La app usa una sola ventana,
+ * pero en macOS puede reabrirse tras cerrarla, así que no capturamos una
+ * instancia concreta.
+ */
+function broadcast(channel: string, payload: unknown): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send(channel, payload);
+  }
+}
+
+function wireSerial(): void {
   if (serialWired) return;
   serialWired = true;
 
-  serialService.onLine((line) => {
-    if (!win.isDestroyed()) win.webContents.send('serial:data', line);
-  });
+  serialService.onLine((line) => broadcast('serial:data', line));
+  serialService.onStatus((status) => broadcast('serial:status', status));
+}
 
-  serialService.onStatus((status) => {
-    if (!win.isDestroyed()) win.webContents.send('serial:status', status);
-  });
+/** Ventana que originó la llamada IPC (para diálogos modales). */
+function senderWindow(event: IpcMainInvokeEvent): BrowserWindow | null {
+  return BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0] ?? null;
+}
+
+function openDialog(
+  event: IpcMainInvokeEvent,
+  options: OpenDialogOptions
+): Promise<OpenDialogReturnValue> {
+  const win = senderWindow(event);
+  return win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options);
 }
 
 /**
- * Registra todos los handlers IPC del Main Process.
+ * Registra todos los handlers IPC del Main Process. Se llama una sola vez
+ * (registrar de nuevo lanzaría un error de "second handler").
  */
-export function registerIpcHandlers(win: BrowserWindow): void {
-  wireSerialToWindow(win);
+export function registerIpcHandlers(): void {
+  wireSerial();
 
   // === App ===
   ipcMain.handle('app:version', () => app.getVersion());
@@ -40,8 +69,8 @@ export function registerIpcHandlers(win: BrowserWindow): void {
   });
 
   // === Dialogs ===
-  ipcMain.handle('dialog:openVideo', async () => {
-    const result = await dialog.showOpenDialog(win, {
+  ipcMain.handle('dialog:openVideo', async (event) => {
+    const result = await openDialog(event, {
       title: 'Seleccionar vídeo',
       filters: [{ name: 'Vídeo', extensions: ['mp4', 'webm', 'mov', 'mkv'] }],
       properties: ['openFile'],
@@ -50,8 +79,8 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     return { canceled: false, filePath: result.filePaths[0] };
   });
 
-  ipcMain.handle('dialog:openSession', async () => {
-    const result = await dialog.showOpenDialog(win, {
+  ipcMain.handle('dialog:openSession', async (event) => {
+    const result = await openDialog(event, {
       title: 'Abrir sesión',
       filters: [{ name: 'Sesión Telemetry Studio', extensions: ['json'] }],
       properties: ['openFile'],
@@ -60,8 +89,8 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     return { canceled: false, filePath: result.filePaths[0] };
   });
 
-  ipcMain.handle('dialog:openDirectory', async () => {
-    const result = await dialog.showOpenDialog(win, {
+  ipcMain.handle('dialog:openDirectory', async (event) => {
+    const result = await openDialog(event, {
       title: 'Seleccionar carpeta',
       properties: ['openDirectory', 'createDirectory'],
     });

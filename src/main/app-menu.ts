@@ -36,15 +36,21 @@ export interface MenuState {
 
 let stateWired = false;
 
+/** Ventana activa (o la primera abierta) en el momento de la acción. */
+function activeWindow(): BrowserWindow | null {
+  return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? null;
+}
+
 /**
  * Construye y establece el menú nativo de la aplicación.
  * Las acciones se envían al renderer por el canal `menu:action`.
  */
-export function buildAppMenu(win: BrowserWindow): void {
+export function buildAppMenu(): void {
   const send =
     (action: MenuAction) =>
     (): void => {
-      if (!win.isDestroyed()) win.webContents.send('menu:action', action);
+      const win = activeWindow();
+      if (win && !win.isDestroyed()) win.webContents.send('menu:action', action);
     };
 
   const openLink =
@@ -54,6 +60,8 @@ export function buildAppMenu(win: BrowserWindow): void {
     };
 
   const confirmNewLayout = (): void => {
+    const win = activeWindow();
+    if (!win) return;
     const choice = dialog.showMessageBoxSync(win, {
       type: 'warning',
       title: 'Nuevo layout',

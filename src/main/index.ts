@@ -51,11 +51,6 @@ function createWindow(): void {
     },
   });
 
-  registerIpcHandlers(mainWindow);
-  registerExportHandlers(mainWindow);
-  registerVideoHandlers();
-  buildAppMenu(mainWindow);
-
   // macOS: en desarrollo el Dock usa el icono de Electron; en el paquete lo
   // pone el .icns del bundle, así que solo lo forzamos en dev.
   if (is.dev && process.platform === 'darwin' && app.dock) {
@@ -110,6 +105,14 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window);
   });
+
+  // Los handlers IPC y el menú se registran una sola vez. En macOS la app
+  // sobrevive al cierre de la ventana, así que `activate` vuelve a llamar a
+  // `createWindow()`: registrar de nuevo lanzaría "second handler" en ipcMain.
+  registerIpcHandlers();
+  registerExportHandlers();
+  registerVideoHandlers();
+  buildAppMenu();
 
   createWindow();
 

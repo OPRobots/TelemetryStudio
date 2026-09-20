@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, type SaveDialogOptions } from 'electron';
 import { spawn, type ChildProcess } from 'child_process';
 import { existsSync } from 'fs';
 import { mkdir, copyFile } from 'fs/promises';
@@ -14,7 +14,7 @@ let outputPath = '';
  * Los frames llegan como raw RGBA por `export:writeFrame` y se escriben a
  * FFmpeg por stdin (con backpressure).
  */
-export function registerExportHandlers(win: BrowserWindow): void {
+export function registerExportHandlers(): void {
   ipcMain.handle('export:start', async (_event, config: FfmpegArgsInput) => {
     const dir = join(app.getPath('temp'), 'oprobots-export');
     await mkdir(dir, { recursive: true });
@@ -66,13 +66,16 @@ export function registerExportHandlers(win: BrowserWindow): void {
     return { success: true };
   });
 
-  ipcMain.handle('export:save', async () => {
+  ipcMain.handle('export:save', async (event) => {
     if (!outputPath || !existsSync(outputPath)) return { canceled: true };
-    const result = await dialog.showSaveDialog(win, {
+    const options: SaveDialogOptions = {
       title: 'Guardar vídeo exportado',
       defaultPath: `telemetry_export_${Date.now()}.mp4`,
       filters: [{ name: 'Vídeo MP4', extensions: ['mp4'] }],
-    });
+    };
+    const win =
+      BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0] ?? null;
+    const result = win ? await dialog.showSaveDialog(win, options) : await dialog.showSaveDialog(options);
     if (result.canceled || !result.filePath) return { canceled: true };
 
     try {
