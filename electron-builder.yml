@@ -3,6 +3,9 @@ productName: Telemetry Studio
 # @serialport/bindings-cpp es N-API y trae prebuilds por plataforma; no se debe
 # reconstruir con node-gyp (en CI falla por distutils ausente / falta de VS).
 npmRebuild: false
+# macOS: firma ad-hoc del .app (ver scripts/after-pack-sign.cjs). Apple Silicon
+# exige una firma de código válida; sin ella el DMG arm64 no arranca.
+afterPack: ./scripts/after-pack-sign.cjs
 directories:
   buildResources: build
 files:

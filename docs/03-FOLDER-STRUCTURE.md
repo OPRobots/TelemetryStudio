@@ -45,7 +45,8 @@ telemetry-studio/
 │   ├── screenshot.mjs               # Captura de pantalla para revisión visual
 │   ├── fonts.conf                   # Config mínima de fontconfig para dev
 │   ├── generate-icons.mjs           # Genera icon.png/ico/icns desde icon.svg
-│   └── fetch-ffmpeg.mjs             # Descarga FFmpeg a resources/bin (sidecar)
+│   ├── after-pack-sign.cjs          # Hook afterPack: firma ad-hoc del .app (macOS)
+│   └── fetch-ffmpeg.mjs             # Descarga FFmpeg a resources/bin (universal en macOS)
 │
 ├── resources/                       # Assets estáticos empaquetados
 │   ├── udev/                        # Reglas udev para Linux

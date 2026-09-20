@@ -66,7 +66,15 @@ Prolific PL2303HXA en Windows.
 **Decisión**: se publican **dos DMGs** (x64 y arm64), no un binario universal. No es
 necesario: `@serialport/bindings-cpp` trae un prebuild *fat* (`darwin-x64+arm64`) y
 cada DMG usa la rebanada de su arquitectura. Evita el coste de tamaño (~2×) y la
-complejidad de `mergeASARs`/`singleArchFiles` con módulos nativos.
+complejidad de `mergeASARs`/`singleArchFiles` con módulos nativos. El sidecar
+FFmpeg sí es **universal** (x86_64 + arm64) para servir a ambos DMGs.
+
+**Firma ad-hoc (resuelto)**: Apple Silicon exige una firma de código válida. Sin
+certificado, electron-builder no firma y el DMG arm64 mostraba *"la aplicación está
+incompleta/dañada"*. Lo resuelve el hook `afterPack`
+(`scripts/after-pack-sign.cjs`), que aplica firma ad-hoc (`codesign --sign -`). Al
+descargar en otro Mac, Gatekeeper sigue avisando de *desarrollador no identificado*
+(clic derecho → Abrir); la solución definitiva es Developer ID + notarización.
 
 ### 6. LTTB en la vista completa con datasets enormes (mejora futura)
 
@@ -143,10 +151,11 @@ redibujan imperativamente vía `FrameBus` + `useWidgetDraw` (coalescido por rAF)
 
 ### F-06 — Empaquetado multiplataforma
 
-`electron-builder.yml` configurado (extraResources de FFmpeg y udev), con workflow
-de CI preparado. Build Linux verificado (`--dir` arranca; AppImage ~109 MB, deb
-~75 MB). Windows y macOS quedan como build manual hasta disponer de esas
-plataformas o de un repo remoto.
+`electron-builder.yml` configurado (extraResources de FFmpeg universal y udev),
+con workflow de CI que genera los instaladores de las 3 plataformas. Build Linux
+verificado (`--dir` arranca; AppImage ~109 MB, deb ~75 MB). macOS genera dos DMGs
+(x64 y arm64) con firma **ad-hoc**, por lo que el arm64 arranca en Apple Silicon;
+Windows genera NSIS + portable.
 
 ### F-07 — Vídeos HEVC/H.265 se convierten automáticamente
 
@@ -167,5 +176,6 @@ Mientras convierte se muestra `PrepareVideoDialog` con progreso y opción de can
 | **P1** | Linux serial permissions | reglas udev + grupo `dialout` |
 | **P1** | RVFC timing | usar `mediaTime` (PTS) |
 | **P2** | macOS universal | descartado: DMGs por arquitectura (x64/arm64) |
+| **P0** | macOS arm64 no arranca | firma ad-hoc vía hook `afterPack`; FFmpeg universal |
 | **P2** | LTTB vista completa >1M | ventana visible al hacer zoom (hecho); Worker = mejora futura documentada |
 | **P3** | Windows ARM64 serial | recomendar CP210x |
