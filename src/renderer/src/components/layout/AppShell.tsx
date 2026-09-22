@@ -104,9 +104,15 @@ export function AppShell(): React.ReactElement {
         case 'save-session':
           setSaveOpen(true);
           break;
-        case 'export-video':
+        case 'export-video': {
+          const state = useAppStore.getState();
+          if (!state.videoSrc && state.frameCount === 0) {
+            state.setStatusMessage('Carga un vídeo o telemetría para exportar');
+            break;
+          }
           setExportOpen(true);
           break;
+        }
         case 'connect-serial':
           setSerialOpen(true);
           break;

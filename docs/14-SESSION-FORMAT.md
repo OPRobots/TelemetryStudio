@@ -34,6 +34,8 @@ interface SessionFile {
   sync: SessionSync;
   telemetry: SessionTelemetry;
   layout: SessionLayout;
+  /** Board del editor de exportación (opcional; ausente en sesiones antiguas). */
+  export?: ExportBoard;
 }
 
 interface SessionVideo {
@@ -81,12 +83,18 @@ interface SessionLayout {
 }
 
 interface SessionWidget {
+  id?: string;              // id estable (lo usan las referencias del board de export)
   t: string;                // tipo de widget ("TimeSeriesChart", ...)
   size: [number, number];   // [columnas, filas]
   fields: string[];
   config?: Record<string, unknown>;
 }
 ```
+
+`export` es el board del editor de exportación (`ExportBoard` de
+`src/shared/export-composition.ts`): lista ordenada de ítems (`widget` | `video` |
+`section`) en rejilla de 12 columnas. Ver `docs/09-VIDEO-EXPORT.md`. Es
+**opcional**: si falta, se usa un preset por defecto.
 
 ### Ejemplo
 

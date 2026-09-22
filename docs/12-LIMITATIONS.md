@@ -128,12 +128,17 @@ vídeo, su `VideoSynchronizer` (`comparison:frame`) y sus widgets. La reproducci
 de widgets, cursor y zoom sincronizados**. Soporta sesiones sin vídeo (placeholder
 alineado) y cierre de vídeo por panel. e2e: `e2e:comparison`, `e2e:comparison-reset`.
 
-### F-03 — Exportación de vídeo implementada (FFmpeg sidecar)
+### F-03 — Exportación de vídeo con plantillas y preview (FFmpeg sidecar)
 
-`src/services/video-exporter.ts` compone vídeo + widgets + overlay en un canvas y
-envía los frames como **raw RGBA** a `src/main/export-service.ts`, que ejecuta
-FFmpeg (sidecar empaquetado o del PATH). Tests: argumentos (unit), MP4 real con
-ffprobe (integración) y composición del renderer (e2e).
+`src/shared/export-composition.ts` (puro) calcula el layout de la composición
+(plantillas overlay/vertical/horizontal/solo-gráficas, resolución, aspecto,
+`videoFit`). `ExportStage` monta los widgets a tamaño de celda en un host oculto
+y **captura su canvas** (dibujo síncrono, sin depender de `rAF`); el vídeo se
+pinta con `contain`/`cover` (sin deformar) y los frames van como **raw RGBA** a
+`src/main/export-service.ts` (FFmpeg sidecar o del PATH). El `ExportDialog`
+incluye **previsualización estática + slider** y selección de gráficas. Tests:
+modelo de composición y argumentos (unit), MP4 real con ffprobe (integración) y
+composición/cancelación del renderer (e2e).
 
 ### F-04 — Editor de layout con arrastre y redimensionado
 

@@ -49,6 +49,7 @@ export function Minimap2D({
   getFrames,
   hoverTimestamp_ms,
   zoomRange,
+  live,
 }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
@@ -56,8 +57,8 @@ export function Minimap2D({
 
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<MinimapConfig>) };
 
-  const latest = useRef({ getFrames, dataFields, hoverTimestamp_ms, zoomRange, cfg, size });
-  latest.current = { getFrames, dataFields, hoverTimestamp_ms, zoomRange, cfg, size };
+  const latest = useRef({ getFrames, dataFields, hoverTimestamp_ms, zoomRange, live, cfg, size });
+  latest.current = { getFrames, dataFields, hoverTimestamp_ms, zoomRange, live, cfg, size };
 
   // BBox cacheada (la parte O(n) al encuadrar la trayectoria).
   const bboxRef = useRef<{ sig: string; bounds: { minX: number; maxX: number; minY: number; maxY: number } }>({
@@ -88,7 +89,7 @@ export function Minimap2D({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { getFrames, dataFields, hoverTimestamp_ms, zoomRange, cfg, size } = latest.current;
+    const { getFrames, dataFields, hoverTimestamp_ms, zoomRange, live, cfg, size } = latest.current;
     const frames = getFrames();
     const fieldX = cfg.fieldX || dataFields[0] || 'position_x';
     const fieldY = cfg.fieldY || dataFields[1] || 'position_y';
@@ -198,7 +199,7 @@ export function Minimap2D({
       base = document.createElement('canvas');
       baseRef.current.canvas = base;
     }
-    const baseSig = `${frames.length}|${fieldX}|${fieldY}|${
+    const baseSig = `${live ? 'live' : 'static'}|${frames.length}|${fieldX}|${fieldY}|${
       zoomRange ? `${zoomRange.startMs}:${zoomRange.endMs}` : 'full'
     }|${Math.round(width)}x${Math.round(height)}|${scale.toFixed(3)}|${centerX.toFixed(2)}|${centerY.toFixed(
       2
@@ -271,6 +272,10 @@ export function Minimap2D({
           if (zoomRange) {
             strokeTrail((f) => !inRange(f), 0.2);
             strokeTrail(inRange, 0.9);
+          } else if (live) {
+            // Modo directo: la trayectoria completa se atenúa; el tramo ya
+            // recorrido se resalta en la capa dinámica (sin perder valores).
+            strokeTrail(() => true, 0.22);
           } else {
             strokeTrail(() => true, 0.85);
           }
@@ -300,6 +305,34 @@ export function Minimap2D({
     }
     ctx.drawImage(base, 0, 0, width, height);
 
+    // --- Dinámico: rastro recorrido (modo directo) + robot ---
+    if (live && viewTimestamp != null && frames.length > 1) {
+      ctx.strokeStyle = cfg.trailColor;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.95;
+      ctx.beginPath();
+      let penDown = false;
+      for (const f of frames) {
+        if (f.timestamp_ms > viewTimestamp) break;
+        const fx = f.data[fieldX];
+        const fy = f.data[fieldY];
+        if (typeof fx !== 'number' || typeof fy !== 'number') {
+          penDown = false;
+          continue;
+        }
+        const px = mapX(fx);
+        const py = mapY(fy);
+        if (!penDown) {
+          ctx.moveTo(px, py);
+          penDown = true;
+        } else {
+          ctx.lineTo(px, py);
+        }
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
     // --- Dinámico: robot y coordenadas del cursor ---
     if (typeof cx === 'number' && typeof cy === 'number') {
       const theta = (cursorFrame?.data[fieldTheta] as number | undefined) ?? 0;
@@ -325,6 +358,7 @@ export function Minimap2D({
     dataFields,
     hoverTimestamp_ms,
     zoomRange,
+    live,
     size.width,
     size.height,
     cfg.fieldX,

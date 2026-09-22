@@ -40,7 +40,8 @@ export function buildSampledData(
   frames: TelemetryFrame[],
   fields: string[],
   maxPoints: number,
-  range?: SampleRange | null
+  range?: SampleRange | null,
+  strictRange = false
 ): SampledData | null {
   if (frames.length === 0 || fields.length === 0) return null;
 
@@ -48,11 +49,14 @@ export function buildSampledData(
   let hi = frames.length - 1;
   if (range) {
     const bounds = frameRangeBounds(frames, range.startMs, range.endMs, PAD);
-    // Sin frames en la ventana → se cae al dataset completo (lo/hi por defecto).
     if (bounds) {
       lo = bounds.start;
       hi = bounds.end;
+    } else if (strictRange) {
+      // Modo directo antes del primer dato: ventana vacía (sin "futuro").
+      return null;
     }
+    // Sin `strictRange`, sin frames en la ventana → dataset completo.
   }
 
   const count = hi - lo + 1;

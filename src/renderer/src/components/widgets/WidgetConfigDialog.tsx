@@ -4,7 +4,7 @@ import { ROW_UNIT, WIDTH_PRESETS } from '@core/types/layout';
 import { telemetryStore } from '@core/telemetry-store';
 import { useLayoutStore } from '../../stores/layout-store';
 import { useAppStore } from '../../stores/app-store';
-import { clampHeight } from '../../lib/widget-layout';
+import { clampGridHeight } from '@shared/grid';
 import { seriesPalette, statePalette } from '@widgets/color-palette';
 import {
   collectStateKeys,
@@ -158,7 +158,7 @@ export function WidgetConfigDialog({ widget, onClose }: WidgetConfigDialogProps)
           <button
             type="button"
             className="toolbar-button toolbar-button--compact"
-            onClick={() => setHeight((h) => clampHeight(h - 1))}
+            onClick={() => setHeight((h) => clampGridHeight(h - 1))}
           >
             −
           </button>
@@ -168,7 +168,7 @@ export function WidgetConfigDialog({ widget, onClose }: WidgetConfigDialogProps)
           <button
             type="button"
             className="toolbar-button toolbar-button--compact"
-            onClick={() => setHeight((h) => clampHeight(h + 1))}
+            onClick={() => setHeight((h) => clampGridHeight(h + 1))}
           >
             +
           </button>

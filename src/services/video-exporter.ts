@@ -1,4 +1,7 @@
 import type { ExportConfig } from '@core/types/video';
+import { telemetryStore } from '@core/telemetry-store';
+import { videoSynchronizer } from '@core/video-synchronizer';
+import { createExportStage } from '@renderer/lib/export-stage';
 
 export interface ExportProgress {
   percent: number;
@@ -6,56 +9,38 @@ export interface ExportProgress {
   totalFrames: number;
 }
 
+/** Espera a que el vídeo termine de hacer seek a `time` (segundos). */
 function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
   return new Promise((resolve) => {
-    const done = (): void => {
-      video.removeEventListener('seeked', done);
+    let done = false;
+    const finish = (): void => {
+      if (done) return;
+      done = true;
+      video.removeEventListener('seeked', finish);
+      window.clearTimeout(timeout);
       resolve();
     };
-    video.addEventListener('seeked', done);
+    const timeout = window.setTimeout(finish, 1500);
+    video.addEventListener('seeked', finish);
     try {
+      if (Math.abs(video.currentTime - time) < 1e-4) {
+        finish();
+        return;
+      }
       video.currentTime = time;
     } catch {
-      done();
-      return;
-    }
-    // Fallback si no dispara `seeked` (p. ej. mismo tiempo)
-    window.setTimeout(done, 500);
-  });
-}
-
-function drawWidgets(
-  ctx: CanvasRenderingContext2D,
-  config: ExportConfig
-): void {
-  const ids = config.includedWidgets;
-  if (ids.length === 0) return;
-
-  const stripHeight = Math.round(config.height * 0.32);
-  const eachWidth = Math.floor(config.width / ids.length);
-  const y = config.height - stripHeight;
-
-  ids.forEach((id, index) => {
-    const canvas = document.querySelector<HTMLCanvasElement>(`[data-widget-id="${id}"] canvas`);
-    if (canvas && canvas.width > 0) {
-      ctx.drawImage(canvas, index * eachWidth, y, eachWidth, stripHeight);
+      finish();
     }
   });
-}
-
-function drawOverlay(ctx: CanvasRenderingContext2D, config: ExportConfig): void {
-  ctx.fillStyle = 'rgba(10, 14, 23, 0.6)';
-  ctx.fillRect(0, 0, config.width, 36);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = '20px Inter, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(config.sessionLabel ?? 'Telemetry Studio', 16, 18);
 }
 
 /**
- * Exporta un vídeo componiendo el vídeo base + overlays de widgets en un
- * canvas y enviando los frames raw RGBA a FFmpeg (Main Process).
+ * Exporta un vídeo componiendo el layout (vídeo + celdas de widgets) en un host
+ * offscreen a resolución final y enviando los frames raw RGBA a FFmpeg (Main).
+ *
+ * El timestamp de telemetría de cada frame se obtiene mapeando el tiempo del
+ * vídeo con `videoSynchronizer.mapTime`, de modo que las gráficas muestran el
+ * frame sincronizado correcto (no el estado "en vivo" del panel).
  */
 export async function exportVideo(
   config: ExportConfig,
@@ -65,6 +50,7 @@ export async function exportVideo(
   const api = window.api;
   if (!api) throw new Error('API no disponible');
 
+  const { layout } = config;
   const video = document.querySelector<HTMLVideoElement>('video');
   const wasPlaying = video ? !video.paused : false;
   const originalTime = video?.currentTime ?? 0;
@@ -76,44 +62,46 @@ export async function exportVideo(
     if (wasPlaying) video.play().catch(() => undefined);
   };
 
-  const canvas = document.createElement('canvas');
-  canvas.width = config.width;
-  canvas.height = config.height;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) throw new Error('No se pudo crear el canvas de exportación');
+  const stage = await createExportStage({
+    layout,
+    widgets: config.widgets,
+    getFrames: () => telemetryStore.getAllFrames(),
+    videoSize: video ? { width: video.videoWidth, height: video.videoHeight } : null,
+    live: config.live,
+    liveWindowMs: config.liveWindowMs,
+  });
+  const overlay = config.includeOverlays ? { label: config.sessionLabel } : undefined;
 
   const total = Math.max(config.endFrame - config.startFrame + 1, 1);
 
   const start = await api.exportStart({
-    width: config.width,
-    height: config.height,
+    width: layout.width,
+    height: layout.height,
     fps: config.fps,
     format: config.format,
     codec: config.codec,
+    crf: config.crf,
+    preset: config.preset,
   });
-  if (!start.success) throw new Error(start.error ?? 'No se pudo iniciar FFmpeg');
+  if (!start.success) {
+    stage.dispose();
+    throw new Error(start.error ?? 'No se pudo iniciar FFmpeg');
+  }
 
   try {
     for (let i = config.startFrame; i <= config.endFrame; i++) {
       if (signal?.aborted) throw new DOMException('Exportación cancelada', 'AbortError');
-      const t = i / config.fps;
-      if (video) await seekTo(video, Math.min(t, video.duration || t));
 
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, config.width, config.height);
+      const mediaTime_s = i / config.fps;
+      if (video) await seekTo(video, Math.min(mediaTime_s, video.duration || mediaTime_s));
 
-      if (config.includeBaseVideo && video) {
-        ctx.drawImage(video, 0, 0, config.width, config.height);
-      }
-      if (config.includedWidgets.length > 0) {
-        drawWidgets(ctx, config);
-      }
-      if (config.includeOverlays) {
-        drawOverlay(ctx, config);
-      }
+      const mediaTime_ms = video ? video.currentTime * 1000 : mediaTime_s * 1000;
+      const viewTimestamp_ms = videoSynchronizer.mapTime(mediaTime_ms);
 
-      const image = ctx.getImageData(0, 0, config.width, config.height);
-      const written = await api.exportWriteFrame(image.data.buffer as ArrayBuffer);
+      await stage.renderFrame(video, viewTimestamp_ms, overlay);
+
+      const pixels = stage.getImageData();
+      const written = await api.exportWriteFrame(pixels.buffer as ArrayBuffer);
       if (!written.success) throw new Error(written.error ?? 'Error al escribir el frame');
 
       const currentFrame = i - config.startFrame + 1;
@@ -127,6 +115,7 @@ export async function exportVideo(
     await api.exportAbort().catch(() => undefined);
     throw error;
   } finally {
+    stage.dispose();
     restoreVideo();
   }
 

@@ -32,7 +32,13 @@ export function LayoutDialog({ onClose }: LayoutDialogProps): React.ReactElement
 
   const save = async (): Promise<void> => {
     const layoutName = name.trim() || 'Layout sin nombre';
-    const layout = toDashboardLayout(layoutName, '', widgets);
+    const layout = toDashboardLayout(
+      layoutName,
+      '',
+      widgets,
+      undefined,
+      useLayoutStore.getState().exportBoard
+    );
     layoutManager.loadLayout(layout);
     await layoutManager.saveLayout(layoutName);
     setLayout(layout);

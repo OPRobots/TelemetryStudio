@@ -10,12 +10,8 @@ import { useComparisonStore } from '../../stores/comparison-store';
 import { useFieldDragStore } from '../../lib/field-drag';
 import { WidgetWrapper } from './WidgetWrapper';
 import { WidgetConfigDialog } from './WidgetConfigDialog';
-import {
-  columnsFromPixels,
-  packWidgetRows,
-  rowsFromPixels,
-  snapWidthToPreset,
-} from '../../lib/widget-layout';
+import { packGridRows, snapGridWidth } from '@shared/grid';
+import { columnsFromPixels, rowsFromPixels } from '../../lib/widget-layout';
 import { propagateScroll, registerScrollElement } from '../../lib/widget-scroll-sync';
 
 const GRID_GAP = 12;
@@ -258,7 +254,7 @@ export function WidgetHost({
         const rect = grid.getBoundingClientRect();
         const targetPx = drag.startWidthPx + (e.clientX - drag.startX);
         const columns = columnsFromPixels(targetPx, rect.width, GRID_GAP);
-        setWidgetWidth(drag.id, snapWidthToPreset(columns));
+        setWidgetWidth(drag.id, snapGridWidth(columns));
         return;
       }
 
@@ -307,7 +303,7 @@ export function WidgetHost({
   }
 
   const visibleWidgets = widgets.filter((w) => w.visible);
-  const rows = packWidgetRows(visibleWidgets);
+  const rows = packGridRows(visibleWidgets);
 
   return (
     <FrameBusContext.Provider value={frameBus}>

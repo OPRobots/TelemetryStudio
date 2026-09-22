@@ -28,6 +28,11 @@ export function registerExportHandlers(): void {
     ffmpeg.stderr?.on('data', () => {
       // Salida de FFmpeg descartada (progreso real lo reporta el renderer)
     });
+    // Sin estos handlers, un `write` a un FFmpeg que ya cerró (p. ej. tras
+    // cancelar) emitiría un `EPIPE` como excepción no capturada en el main.
+    ffmpeg.stdin?.on('error', (err) => {
+      console.error('FFmpeg stdin error:', err.message);
+    });
     ffmpeg.on('error', (err) => {
       console.error('FFmpeg error:', err.message);
     });
@@ -36,12 +41,19 @@ export function registerExportHandlers(): void {
   });
 
   ipcMain.handle('export:writeFrame', async (_event, buffer: ArrayBuffer) => {
-    if (!ffmpeg?.stdin?.writable) {
+    const stdin = ffmpeg?.stdin;
+    if (!stdin || !stdin.writable || stdin.destroyed) {
       return { success: false, error: 'FFmpeg no está en ejecución' };
     }
-    const stdin = ffmpeg.stdin;
-    return new Promise<{ success: boolean }>((resolve) => {
-      stdin.write(Buffer.from(buffer), () => resolve({ success: true }));
+    return new Promise<{ success: boolean; error?: string }>((resolve) => {
+      try {
+        stdin.write(Buffer.from(buffer), (err) => {
+          if (err) resolve({ success: false, error: err.message });
+          else resolve({ success: true });
+        });
+      } catch (err) {
+        resolve({ success: false, error: (err as Error).message });
+      }
     });
   });
 

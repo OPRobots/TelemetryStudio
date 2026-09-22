@@ -8,6 +8,7 @@ import type {
   SessionSync,
 } from './types/session';
 import type { TelemetryDataset, TelemetryFrame, FieldSchema, TelemetryValue } from './types/telemetry';
+import type { ExportBoard } from '@shared/export-composition';
 
 /**
  * Decodifica un JSON de sesión con validación básica.
@@ -44,12 +45,14 @@ export function decodeSession(json: string): SessionFile {
     },
     layout: {
       widgets: (raw.layout?.widgets ?? []).map((w) => ({
+        ...(w.id ? { id: w.id } : {}),
         t: w.t ?? 'unknown',
         size: w.size ?? [1, 1],
         fields: w.fields ?? [],
         config: w.config ?? {},
       })),
     },
+    ...(raw.export ? { export: raw.export } : {}),
   };
 }
 
@@ -171,7 +174,8 @@ export function datasetToSession(
   video: SessionVideo,
   sync: SessionSync,
   widgets: SessionWidget[],
-  timestamped = true
+  timestamped = true,
+  exportBoard?: ExportBoard | null
 ): SessionFile {
   return {
     v: 1,
@@ -181,6 +185,7 @@ export function datasetToSession(
     sync,
     telemetry: { ...datasetToSessionTelemetry(dataset), timestamped },
     layout: { widgets },
+    ...(exportBoard ? { export: exportBoard } : {}),
   };
 }
 

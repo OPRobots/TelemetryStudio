@@ -73,6 +73,15 @@ export interface WidgetProps {
 
   /** Publica el rango de zoom (o `null` al restablecer). */
   onZoomRangeChange?: (range: ZoomRange | null) => void;
+
+  /**
+   * Modo "directo" (exportación/replay): el widget muestra solo los datos hasta
+   * el timestamp visualizado, como si llegaran en vivo desde el robot.
+   */
+  live?: boolean;
+
+  /** Ventana visible (ms) del modo directo. Por defecto `DEFAULT_LIVE_WINDOW_MS`. */
+  liveWindowMs?: number;
 }
 
 /**

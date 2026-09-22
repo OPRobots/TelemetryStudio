@@ -72,4 +72,18 @@ describe('buildSampledData', () => {
     expect(sampled!.x[0]).toBeCloseTo(0);
     expect(sampled!.x[sampled!.x.length - 1]).toBeCloseTo(39.99);
   });
+
+  it('con rango sin frames y strictRange: null (modo directo antes del primer dato)', () => {
+    const frames = makeFrames(4000);
+    expect(buildSampledData(frames, ['v'], 2000, { startMs: -1000, endMs: -500 }, true)).toBeNull();
+  });
+
+  it('ventana deslizante (modo directo): solo el tramo hasta `now`', () => {
+    const frames = makeFrames(4000); // 0..39.99 s
+    const sampled = buildSampledData(frames, ['v'], 2000, { startMs: 20000, endMs: 25000 }, true);
+    expect(sampled).not.toBeNull();
+    // Vecinos: frame 1999 (19.99 s) .. frame 2501 (25.01 s), sin "futuro".
+    expect(sampled!.x[0]).toBeCloseTo(19.99);
+    expect(sampled!.x[sampled!.x.length - 1]).toBeCloseTo(25.01);
+  });
 });

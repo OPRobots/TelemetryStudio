@@ -93,7 +93,7 @@ telemetry-studio/
 │   │   ├── interfaces.ts            # ITelemetryParser + metadatos del parser
 │   │   ├── parser-registry.ts       # Registro dinámico de parsers
 │   │   ├── json-session-parser.ts   # Parser de sesiones JSON (formato compacto)
-│   │   └── serial-uart-parser.ts    # Parser UART/Serial (CSV, legacy, genérico)
+│   │   └── serial/                  # Parsers UART (base + keyvalue/csv/macroarray)
 │   │
 │   ├── widgets/                     # ═══ PLUGINS DE WIDGET ═══
 │   │   ├── interfaces.ts            # WidgetDefinition, WidgetMetadata, WidgetProps
@@ -103,6 +103,8 @@ telemetry-studio/
 │   │   ├── use-canvas-size.ts       # ResizeObserver para widgets canvas
 │   │   ├── color-palette.ts         # Paletas automáticas (series / estados)
 │   │   ├── zoom-range.ts            # Rango de zoom compartido (helpers puros)
+│   │   ├── use-widget-draw.ts       # Redibujo imperativo (síncrono en export)
+│   │   ├── live-view.ts             # Ventana deslizante del modo directo
 │   │   ├── time-series-chart/       # Gráfica temporal multi-serie (uPlot)
 │   │   │   └── index.tsx
 │   │   ├── digital-bitmask/         # Matriz de LEDs (Canvas 2D)
@@ -116,7 +118,7 @@ telemetry-studio/
 │   ├── services/                    # ═══ SERVICIOS ═══
 │   │   ├── layout-manager.ts        # Guardar/cargar layouts en JSON
 │   │   ├── session-manager.ts       # Exportar/importar sesiones (adaptador IPC)
-│   │   └── video-exporter.ts        # Orquestador de exportación (composición canvas)
+│   │   └── video-exporter.ts        # Orquestador de exportación (ExportStage + FFmpeg)
 │   │
 │   ├── renderer/                    # ═══ RENDERER PROCESS (React) ═══
 │   │   ├── index.html
@@ -147,7 +149,8 @@ telemetry-studio/
 │   │       │       ├── SaveSessionDialog.tsx   # Guardar sesión
 │   │       │       ├── SessionBrowserDialog.tsx # Listar y abrir sesiones
 │   │       │       ├── ComparisonDialog.tsx    # Activar comparación
-│   │       │       ├── ExportDialog.tsx        # Exportar vídeo con overlays
+│   │       │       ├── ExportDialog.tsx        # Exportar: editor de board, preview y calidad
+│   │       │       ├── ExportBoardEditor.tsx   # Editor WYSIWYG del board de exportación
 │   │       │       └── PrepareVideoDialog.tsx   # Progreso de conversión + cancelar
 │   │       ├── hooks/
 │   │       │   ├── useEventListener.ts  # Suscripción al EventBus
@@ -161,6 +164,7 @@ telemetry-studio/
 │   │       │   ├── widget-layout.ts     # Snap de rejilla (ancho/alto) de widgets
 │   │       │   ├── widget-scroll-sync.ts # Scroll sincronizado entre paneles
 │   │       │   ├── video-prepare.ts     # Transcode de vídeo (diálogo + progreso)
+│   │       │   ├── export-stage.tsx     # Compositor offscreen de la exportación
 │   │       │   └── comparison-sync.ts   # Sincronizador del panel de comparación
 │   │       ├── stores/
 │   │       │   ├── app-store.ts         # Zustand: estado global
@@ -171,6 +175,8 @@ telemetry-studio/
 │   │           └── globals.css          # Tailwind + variables de color
 │   │
 │   └── shared/                      # ═══ SHARED (Main + Renderer) ═══
+│       ├── export-composition.ts    # Board de exportación (ítems, rects en px)
+│       ├── grid.ts                  # Rejilla compartida (12 col, filas) + packing
 │       ├── export-args.ts           # Construcción de argumentos de FFmpeg (puro)
 │       ├── video-codecs.ts          # Códecs reproducibles (puro)
 │       └── video-transcode.ts       # Argumentos de conversión a H.264 (puro)

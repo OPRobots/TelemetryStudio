@@ -47,6 +47,8 @@ predefinidos y los guardados por el usuario se persisten en
 - `width` (columnas de 12) y `height` (filas de 40 px) definen el tamaño en la rejilla
   fluida. El **orden** de `widgets` es el de colocación (no hay x/y).
 - `panels.comparisonRatio` es el **ancho** del panel A en comparación.
+- `exportBoard` (opcional): board del **editor de exportación** (ítems
+  widget/vídeo/sección). Se guarda y carga con el layout; ver `docs/09-VIDEO-EXPORT.md`.
 
 ## Layout Manager
 

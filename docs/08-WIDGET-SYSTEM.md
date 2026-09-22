@@ -79,6 +79,27 @@ todas las timelines (estado **global**, no se persiste en sesión/layout):
 - Helpers puros en `src/widgets/zoom-range.ts` (`makeRange`, `isInRange`,
   `clampRange`, `isFullRange`).
 
+## Modo directo (`live`) — replay para exportación
+
+`WidgetProps.live` + `liveWindowMs` (por defecto 10 s, `src/widgets/live-view.ts`)
+hacen que los widgets muestren **solo los datos hasta el timestamp visualizado**,
+como si llegaran en vivo desde el robot. El "reloj" es el **timestamp de
+telemetría** que fija el `FrameBus` (en la exportación, mapeado desde el vídeo con
+`videoSynchronizer.mapTime`).
+
+- **TimeSeriesChart**: ventana deslizante `[t − W, t]`; muestrea y escala solo esa
+  ventana (la traza termina en `t`, sin "futuro") y el cursor auto-follow va en el
+  borde derecho. Se deriva del timestamp efectivo, así que **no hay re-render por
+  frame**. Con `strictRange`, antes del primer dato la ventana queda vacía (no cae
+  al dataset completo).
+- **StateTimeline**: la barra avanza mostrando los estados hasta `t`.
+- **Minimap2D**: se mantiene la **trayectoria completa** (sin perder valores) y se
+  **resalta el rastro ya recorrido**; el tramo futuro se atenúa. El robot avanza.
+- **DigitalBitmask**: ya mostraba el valor actual (sin cambios).
+
+En la app interactiva (`live` sin definir) el comportamiento es el de siempre:
+dataset completo + `zoomRange` compartido.
+
 ## Comportamiento por Defecto
 
 - **TimeSeriesChart**: muestra siempre **todo el dataset (t=0..final)**. El zoom

@@ -1,3 +1,5 @@
+import type { CompositionWidget, ExportLayout } from '@shared/export-composition';
+
 /**
  * Contexto completo del frame de vídeo actual.
  * Se actualiza en cada `requestVideoFrameCallback`.
@@ -28,20 +30,30 @@ export interface PlaybackState {
 
 /**
  * Configuración para la exportación de vídeo.
+ *
+ * La composición (board de ítems, resolución y placement del vídeo) vive en
+ * `layout` (`@shared/export-composition`); los widgets se renderizan a tamaño de
+ * celda en un host oculto y se captura su canvas. La ruta de salida la resuelve
+ * el main process.
  */
 export interface ExportConfig {
-  outputPath: string;
   format: 'mp4' | 'webm';
   codec: 'h264' | 'vp9';
   fps: number;
-  width: number;
-  height: number;
-  bitrate: number;
-  keyframeInterval_s: number;
+  /** Calidad CRF (menor = mejor). */
+  crf?: number;
+  /** Preset de libx264. */
+  preset?: string;
   startFrame: number;
   endFrame: number;
-  includedWidgets: string[];
-  includeBaseVideo: boolean;
+  /** Layout de composición calculado (incluye ancho/alto finales). */
+  layout: ExportLayout;
+  /** Widgets disponibles para renderizar (se usan los referenciados por el layout). */
+  widgets: CompositionWidget[];
   includeOverlays: boolean;
   sessionLabel?: string;
+  /** Modo directo (replay): las gráficas avanzan con el vídeo. */
+  live?: boolean;
+  /** Ventana visible (ms) del modo directo. */
+  liveWindowMs?: number;
 }

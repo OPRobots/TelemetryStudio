@@ -1,26 +1,63 @@
 import { useMemo, useRef, useState } from 'react';
 import type { ExportConfig } from '@core/types/video';
+import {
+  computeBoardLayout,
+  createBoardPreset,
+  type CompositionWidget,
+  type ExportBoard,
+} from '@shared/export-composition';
 import { exportVideo, type ExportProgress } from '@services/video-exporter';
 import { useAppStore } from '../../stores/app-store';
 import { useLayoutStore } from '../../stores/layout-store';
+import { ExportBoardEditor } from './ExportBoardEditor';
 
 interface ExportDialogProps {
   onClose: () => void;
 }
+
+const PRESETS = ['veryfast', 'fast', 'medium', 'slow'];
+const CRFS = [18, 20, 23, 28];
 
 export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement {
   const videoInfo = useAppStore((s) => s.videoInfo);
   const dataset = useAppStore((s) => s.dataset);
   const widgets = useLayoutStore((s) => s.widgets);
 
-  const [width, setWidth] = useState(1280);
-  const [height, setHeight] = useState(720);
-  const [fps, setFps] = useState(30);
-  const [startFrame, setStartFrame] = useState(0);
-  const [includeBaseVideo, setIncludeBaseVideo] = useState(true);
+  const source = useMemo(
+    () => (videoInfo ? { width: videoInfo.width, height: videoInfo.height } : null),
+    [videoInfo?.width, videoInfo?.height]
+  );
+  const visibleWidgets = useMemo(
+    () => widgets.filter((w) => w.visible),
+    [widgets]
+  ) as CompositionWidget[];
+
+  const setExportBoard = useLayoutStore((s) => s.setExportBoard);
+
+  const [board, setBoard] = useState<ExportBoard>(
+    () =>
+      useLayoutStore.getState().exportBoard ??
+      createBoardPreset('overlay', {
+        widgetIds: visibleWidgets.map((w) => w.id),
+        hasVideo: !!source,
+      })
+  );
+
+  const updateBoard = (next: ExportBoard): void => {
+    setBoard(next);
+    setExportBoard(next);
+  };
+
+  const [mode, setMode] = useState<'live' | 'full'>('live');
+  const [liveWindowMs, setLiveWindowMs] = useState(10000);
   const [includeOverlays, setIncludeOverlays] = useState(true);
-  const [includeWidgets, setIncludeWidgets] = useState(true);
   const [sessionLabel, setSessionLabel] = useState(dataset?.name ?? 'Telemetry Studio');
+  const [fps, setFps] = useState(30);
+  const [crf, setCrf] = useState(18);
+  const [preset, setPreset] = useState('medium');
+  const [startFrame, setStartFrame] = useState(0);
+  const [endFrame, setEndFrame] = useState<number | null>(null);
+  const [previewTime_s, setPreviewTime_s] = useState(0);
 
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ExportProgress | null>(null);
@@ -28,33 +65,34 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
   const [error, setError] = useState<string | null>(null);
   const [canceled, setCanceled] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const backdropDownRef = useRef(false);
 
   const totalFrames = useMemo(
     () => Math.max(Math.round((videoInfo?.duration_s || 1) * fps), 1),
     [videoInfo?.duration_s, fps]
   );
-  const [endFrame, setEndFrame] = useState<number | null>(null);
   const effectiveEnd = endFrame ?? totalFrames - 1;
+
+  const layout = useMemo(() => computeBoardLayout(board, source), [board, source]);
 
   const run = async (): Promise<void> => {
     const api = window.api;
     if (!api) return;
 
     const config: ExportConfig = {
-      outputPath: '',
       format: 'mp4',
       codec: 'h264',
       fps,
-      width,
-      height,
-      bitrate: 0,
-      keyframeInterval_s: 2,
+      crf,
+      preset,
       startFrame,
       endFrame: Math.min(effectiveEnd, totalFrames - 1),
-      includedWidgets: includeWidgets ? widgets.filter((w) => w.visible).map((w) => w.id) : [],
-      includeBaseVideo,
+      layout,
+      widgets: visibleWidgets,
       includeOverlays,
       sessionLabel,
+      live: mode === 'live',
+      liveWindowMs,
     };
 
     setBusy(true);
@@ -76,90 +114,207 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
     }
   };
 
-  const cancel = (): void => {
-    abortRef.current?.abort();
-  };
-
   const save = async (): Promise<void> => {
     await window.api?.exportSave();
   };
 
   return (
-    <div className="dialog-backdrop" onClick={busy ? undefined : onClose}>
-      <div className="dialog-panel" onClick={(e) => e.stopPropagation()} style={{ width: 480 }}>
+    <div
+      className="dialog-backdrop"
+      onMouseDown={(e) => {
+        backdropDownRef.current = e.target === e.currentTarget;
+      }}
+      onClick={(e) => {
+        if (busy) return;
+        if (e.target !== e.currentTarget || !backdropDownRef.current) return;
+        backdropDownRef.current = false;
+        onClose();
+      }}
+    >
+      <div
+        className="dialog-panel"
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: 980, maxHeight: '92vh', overflow: 'auto' }}
+      >
         <h3 className="mb-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          Exportar vídeo con overlays
+          Exportar vídeo
         </h3>
 
-        <div className="dialog-row">
-          <div>
-            <label className="dialog-label">Ancho</label>
-            <input id="export-width" type="number" className="dialog-input" value={width} onChange={(e) => setWidth(Number(e.target.value))} />
-          </div>
-          <div>
-            <label className="dialog-label">Alto</label>
-            <input id="export-height" type="number" className="dialog-input" value={height} onChange={(e) => setHeight(Number(e.target.value))} />
-          </div>
-          <div>
-            <label className="dialog-label">FPS</label>
-            <input id="export-fps" type="number" className="dialog-input" value={fps} onChange={(e) => setFps(Number(e.target.value))} />
-          </div>
-        </div>
+        <ExportBoardEditor
+          board={board}
+          widgets={visibleWidgets}
+          source={source}
+          previewTime_s={previewTime_s}
+          live={mode === 'live'}
+          liveWindowMs={liveWindowMs}
+          includeOverlays={includeOverlays}
+          sessionLabel={sessionLabel}
+          onChange={updateBoard}
+        />
 
-        <div className="dialog-row">
-          <div>
-            <label className="dialog-label">Frame inicio</label>
-            <input id="export-start" type="number" className="dialog-input" value={startFrame} onChange={(e) => setStartFrame(Number(e.target.value))} />
+        <div className="mt-3 flex flex-col gap-2">
+          <div className="dialog-row">
+            <div>
+              <label className="dialog-label">Modo de gráficas</label>
+              <select
+                id="export-mode"
+                className="dialog-input"
+                value={mode}
+                onChange={(e) => setMode(e.target.value as 'live' | 'full')}
+              >
+                <option value="live">Directo (avanzan con el vídeo)</option>
+                <option value="full">Completo (traza entera)</option>
+              </select>
+            </div>
+            {mode === 'live' && (
+              <div>
+                <label className="dialog-label">Ventana</label>
+                <select
+                  id="export-live-window"
+                  className="dialog-input"
+                  value={liveWindowMs}
+                  onChange={(e) => setLiveWindowMs(Number(e.target.value))}
+                >
+                  <option value={5000}>5 s</option>
+                  <option value={10000}>10 s</option>
+                  <option value={20000}>20 s</option>
+                  <option value={30000}>30 s</option>
+                </select>
+              </div>
+            )}
+            <div>
+              <label className="dialog-label">Supersampling</label>
+              <select
+                className="dialog-input"
+                value={board.supersample}
+                onChange={(e) => updateBoard({ ...board, supersample: Number(e.target.value) })}
+              >
+                <option value={1}>1×</option>
+                <option value={2}>2×</option>
+              </select>
+            </div>
           </div>
+
+          <div className="dialog-row">
+            <div>
+              <label className="dialog-label">FPS</label>
+              <input
+                id="export-fps"
+                className="dialog-input"
+                type="number"
+                value={fps}
+                onChange={(e) => setFps(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="dialog-label">Frame inicio</label>
+              <input
+                id="export-start"
+                className="dialog-input"
+                type="number"
+                value={startFrame}
+                onChange={(e) => setStartFrame(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="dialog-label">Frame fin</label>
+              <input
+                id="export-end"
+                className="dialog-input"
+                type="number"
+                value={effectiveEnd}
+                onChange={(e) => setEndFrame(Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          <div className="dialog-row">
+            <div>
+              <label className="dialog-label">Calidad (CRF)</label>
+              <select
+                className="dialog-input"
+                value={crf}
+                onChange={(e) => setCrf(Number(e.target.value))}
+              >
+                {CRFS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                    {c === 18 ? ' (alta)' : c === 28 ? ' (baja)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="dialog-label">Preset</label>
+              <select
+                className="dialog-input"
+                value={preset}
+                onChange={(e) => setPreset(e.target.value)}
+              >
+                {PRESETS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div>
-            <label className="dialog-label">Frame fin</label>
+            <label className="dialog-label">Tiempo de previsualización (s)</label>
             <input
-              id="export-end"
-              type="number"
+              id="export-preview-time"
+              type="range"
+              min={0}
+              max={Math.max(videoInfo?.duration_s ?? 0, 0.1)}
+              step={0.1}
+              value={previewTime_s}
+              onChange={(e) => setPreviewTime_s(Number(e.target.value))}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div>
+            <label className="dialog-checkbox">
+              <input
+                type="checkbox"
+                checked={includeOverlays}
+                onChange={(e) => setIncludeOverlays(e.target.checked)}
+              />
+              <span className="text-xs">Etiqueta de sesión</span>
+            </label>
+            <input
+              id="export-label"
               className="dialog-input"
-              value={effectiveEnd}
-              onChange={(e) => setEndFrame(Number(e.target.value))}
+              value={sessionLabel}
+              disabled={!includeOverlays}
+              onChange={(e) => setSessionLabel(e.target.value)}
             />
           </div>
         </div>
 
-        <label className="dialog-label">Etiqueta de sesión (overlay)</label>
-        <input
-          id="export-label"
-          className="dialog-input"
-          value={sessionLabel}
-          onChange={(e) => setSessionLabel(e.target.value)}
-        />
-
-        <div className="mt-2 flex flex-col gap-1">
-          <label className="dialog-checkbox">
-            <input type="checkbox" checked={includeBaseVideo} onChange={(e) => setIncludeBaseVideo(e.target.checked)} />
-            <span className="text-xs">Incluir vídeo base</span>
-          </label>
-          <label className="dialog-checkbox">
-            <input type="checkbox" checked={includeWidgets} onChange={(e) => setIncludeWidgets(e.target.checked)} />
-            <span className="text-xs">Incluir widgets ({widgets.filter((w) => w.visible).length})</span>
-          </label>
-          <label className="dialog-checkbox">
-            <input type="checkbox" checked={includeOverlays} onChange={(e) => setIncludeOverlays(e.target.checked)} />
-            <span className="text-xs">Incluir overlay de etiqueta</span>
-          </label>
-        </div>
-
-        {progress && busy && (
+        {busy && (
           <div className="mt-3 flex items-center gap-3">
             <div className="flex-1">
-              <div className="h-2 w-full overflow-hidden rounded" style={{ backgroundColor: 'var(--bg-primary)' }}>
+              <div
+                className="h-2 w-full overflow-hidden rounded"
+                style={{ backgroundColor: 'var(--bg-primary)' }}
+              >
                 <div
                   className="h-full"
-                  style={{ width: `${progress.percent}%`, backgroundColor: '#3b82f6' }}
+                  style={{ width: `${progress?.percent ?? 0}%`, backgroundColor: '#3b82f6' }}
                 />
               </div>
               <div className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                {progress.currentFrame}/{progress.totalFrames} frames ({progress.percent}%)
+                {progress
+                  ? `${progress.currentFrame}/${progress.totalFrames} frames (${progress.percent}%)`
+                  : 'Preparando…'}
               </div>
             </div>
-            <button className="toolbar-button toolbar-button--compact" onClick={cancel}>
+            <button
+              className="toolbar-button toolbar-button--compact"
+              onClick={() => abortRef.current?.abort()}
+            >
               Cancelar
             </button>
           </div>
@@ -170,7 +325,6 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
             Exportación cancelada.
           </div>
         )}
-
         {outputPath && (
           <div className="mt-3 text-xs" style={{ color: '#4ade80' }}>
             Exportado en: {outputPath}
@@ -186,14 +340,14 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
           <button className="toolbar-button" onClick={onClose} disabled={busy}>
             Cerrar
           </button>
-          <button
-            className="toolbar-button"
-            onClick={() => void save()}
-            disabled={busy || !outputPath}
-          >
+          <button className="toolbar-button" onClick={() => void save()} disabled={busy || !outputPath}>
             Guardar como…
           </button>
-          <button className="toolbar-button toolbar-button-primary" onClick={() => void run()} disabled={busy}>
+          <button
+            className="toolbar-button toolbar-button-primary"
+            onClick={() => void run()}
+            disabled={busy || layout.items.length === 0}
+          >
             {busy ? 'Exportando…' : 'Iniciar exportación'}
           </button>
         </div>

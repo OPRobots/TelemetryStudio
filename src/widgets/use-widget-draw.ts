@@ -2,6 +2,18 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useFrameSubscription } from './frame-bus';
 
 /**
+ * Modo de dibujo inmediato (exportación): al publicar un frame, los widgets se
+ * redibujan **de forma síncrona** en lugar de agendarse por rAF. Así el
+ * compositor de exportación puede capturar el canvas justo después de fijar el
+ * timestamp, sin depender del ritmo de rAF (que se limita con ventanas ocultas).
+ */
+let immediateDraw = false;
+
+export function setWidgetDrawImmediate(value: boolean): void {
+  immediateDraw = value;
+}
+
+/**
  * Redibuja un widget canvas de forma imperativa:
  * - Agenda un `draw()` por frame de animación (coalesce varios eventos).
  * - Se dispara al cambiar las dependencias (props/datos/tamaño) y con cada
@@ -15,6 +27,10 @@ export function useWidgetDraw(draw: () => void, deps: unknown[]): () => void {
   const rafRef = useRef<number | null>(null);
 
   const schedule = useCallback(() => {
+    if (immediateDraw) {
+      drawRef.current();
+      return;
+    }
     if (rafRef.current != null) return;
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = null;

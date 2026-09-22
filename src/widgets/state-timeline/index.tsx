@@ -6,6 +6,7 @@ import { lighten, statePalette } from '../color-palette';
 import { makeRange } from '../zoom-range';
 import { resolveViewTimestamp, useFrameBus } from '../frame-bus';
 import { useWidgetDraw } from '../use-widget-draw';
+import { DEFAULT_LIVE_WINDOW_MS, liveRange } from '../live-view';
 import { collectStateKeys, resolveStateEntry, toStateValue } from './state-entry';
 import type { StateEntry, StateValue } from './state-entry';
 
@@ -43,6 +44,8 @@ export function StateTimeline({
   onCursorHover,
   zoomRange,
   onZoomRangeChange,
+  live,
+  liveWindowMs,
 }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
@@ -82,8 +85,28 @@ export function StateTimeline({
   });
   // Capa estática (fondo + segmentos + etiquetas), cacheada en un canvas aparte.
   const baseRef = useRef<{ canvas: HTMLCanvasElement | null; sig: string }>({ canvas: null, sig: '' });
-  const latest = useRef({ getFrames, field, hoverTimestamp_ms, zoomRange, cfg, selection, size });
-  latest.current = { getFrames, field, hoverTimestamp_ms, zoomRange, cfg, selection, size };
+  const latest = useRef({
+    getFrames,
+    field,
+    hoverTimestamp_ms,
+    zoomRange,
+    live,
+    liveWindowMs,
+    cfg,
+    selection,
+    size,
+  });
+  latest.current = {
+    getFrames,
+    field,
+    hoverTimestamp_ms,
+    zoomRange,
+    live,
+    liveWindowMs,
+    cfg,
+    selection,
+    size,
+  };
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -91,7 +114,8 @@ export function StateTimeline({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { getFrames, field, hoverTimestamp_ms, zoomRange, cfg, selection, size } = latest.current;
+    const { getFrames, field, hoverTimestamp_ms, zoomRange, live, liveWindowMs, cfg, selection, size } =
+      latest.current;
     const frames = getFrames();
     const stateMap = cfg.stateMap ?? {};
     const stateMapKey = Object.keys(stateMap).sort().join('|');
@@ -148,8 +172,14 @@ export function StateTimeline({
     const timelineWidth = Math.max(width - offsetX * 2, 1);
     const startMs = allFrames.length > 0 ? allFrames[0]!.timestamp_ms : 0;
     const endMs = allFrames.length > 0 ? allFrames[allFrames.length - 1]!.timestamp_ms : 0;
-    const viewStartMs = zoomRange ? Math.max(zoomRange.startMs, startMs) : startMs;
-    const viewEndMs = zoomRange ? Math.min(zoomRange.endMs, endMs) : endMs;
+    // Modo directo: la barra avanza hasta el timestamp visualizado.
+    const liveView =
+      live && viewTimestamp != null
+        ? liveRange(viewTimestamp, liveWindowMs ?? DEFAULT_LIVE_WINDOW_MS)
+        : null;
+    const viewRange = liveView ?? zoomRange;
+    const viewStartMs = viewRange ? Math.max(viewRange.startMs, startMs) : startMs;
+    const viewEndMs = viewRange ? Math.min(viewRange.endMs, endMs) : endMs;
     const span = Math.max(viewEndMs - viewStartMs, 1);
 
     // --- Capa estática (fondo + segmentos + etiquetas) ---
@@ -273,6 +303,8 @@ export function StateTimeline({
     field,
     hoverTimestamp_ms,
     zoomRange,
+    live,
+    liveWindowMs,
     selection,
     size.width,
     size.height,

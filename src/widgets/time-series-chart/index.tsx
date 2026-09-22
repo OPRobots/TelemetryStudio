@@ -8,6 +8,7 @@ import { valueAt } from '../frame-lookup';
 import { formatLegendValue } from '../format-value';
 import { useFrameBus } from '../frame-bus';
 import { useWidgetDraw } from '../use-widget-draw';
+import { DEFAULT_LIVE_WINDOW_MS, liveRange } from '../live-view';
 import { buildSampledData, type SampledData } from './sample-data';
 
 interface TimeSeriesConfig {
@@ -65,6 +66,8 @@ export function TimeSeriesChart({
   onCursorHover,
   zoomRange,
   onZoomRangeChange,
+  live,
+  liveWindowMs,
 }: WidgetProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const uplotRef = useRef<uPlot | null>(null);
@@ -84,14 +87,33 @@ export function TimeSeriesChart({
   const configKey = JSON.stringify(config ?? {});
   const fields = dataFields.length > 0 ? dataFields : [];
 
-  const latest = useRef({ getFrames, fields, fieldsKey, config, hoverTimestamp_ms, zoomRange });
-  latest.current = { getFrames, fields, fieldsKey, config, hoverTimestamp_ms, zoomRange };
+  const latest = useRef({
+    getFrames,
+    fields,
+    fieldsKey,
+    config,
+    hoverTimestamp_ms,
+    zoomRange,
+    live,
+    liveWindowMs,
+  });
+  latest.current = {
+    getFrames,
+    fields,
+    fieldsKey,
+    config,
+    hoverTimestamp_ms,
+    zoomRange,
+    live,
+    liveWindowMs,
+  };
 
   const sampledRef = useRef<{ sig: string; data: SampledData | null }>({ sig: '', data: null });
   const scaleSigRef = useRef<string>('');
 
   const draw = useCallback(() => {
-    const { getFrames, fields, fieldsKey, config, hoverTimestamp_ms, zoomRange } = latest.current;
+    const { getFrames, fields, fieldsKey, config, hoverTimestamp_ms, zoomRange, live, liveWindowMs } =
+      latest.current;
     const snapshot = bus?.getSnapshot();
 
     // Leyenda: valor real de cada campo en el timestamp efectivo (hover/vídeo/frame).
@@ -105,6 +127,13 @@ export function TimeSeriesChart({
       });
     }
 
+    // Modo directo (exportación/replay): ventana deslizante `[t − W, t]` que
+    // termina en el timestamp efectivo del FrameBus. Sin re-render por frame.
+    const effectiveZoom =
+      live && legendMs != null
+        ? liveRange(legendMs, liveWindowMs ?? DEFAULT_LIVE_WINDOW_MS)
+        : zoomRange;
+
     const u = uplotRef.current;
     if (!u) return;
 
@@ -113,8 +142,8 @@ export function TimeSeriesChart({
 
     // Firma del muestreo: con zoom, la ventana visible (+vecinos) y su último
     // timestamp; sin zoom, el dataset completo por longitud.
-    const bounds = zoomRange
-      ? frameRangeBounds(frames, zoomRange.startMs, zoomRange.endMs)
+    const bounds = effectiveZoom
+      ? frameRangeBounds(frames, effectiveZoom.startMs, effectiveZoom.endMs)
       : null;
     const sampleSig = bounds
       ? `${fieldsKey}|${cfgLocal.maxPoints}|${bounds.start}:${bounds.end}:${
@@ -124,7 +153,7 @@ export function TimeSeriesChart({
     if (sampledRef.current.sig !== sampleSig) {
       sampledRef.current = {
         sig: sampleSig,
-        data: buildSampledData(frames, fields, cfgLocal.maxPoints, zoomRange),
+        data: buildSampledData(frames, fields, cfgLocal.maxPoints, effectiveZoom, live === true),
       };
     }
 
@@ -143,15 +172,18 @@ export function TimeSeriesChart({
     }
 
     // Escalas: solo al cambiar datos, zoom o rango Y (no pisa el arrastre de zoom).
-    const xRange = zoomRange ? `${zoomRange.startMs}:${zoomRange.endMs}` : 'full';
+    const xRange = effectiveZoom ? `${effectiveZoom.startMs}:${effectiveZoom.endMs}` : 'full';
     const scaleSig = `${sampleSig}|${cfgLocal.yMin}:${cfgLocal.yMax}|${xRange}`;
     if (scaleSigRef.current !== scaleSig) {
       scaleSigRef.current = scaleSig;
       if (cfgLocal.yMin !== cfgLocal.yMax) {
         u.setScale('y', { min: cfgLocal.yMin, max: cfgLocal.yMax });
       }
-      if (zoomRange) {
-        u.setScale('x', { min: zoomRange.startMs / 1000, max: zoomRange.endMs / 1000 });
+      if (effectiveZoom) {
+        u.setScale('x', {
+          min: effectiveZoom.startMs / 1000,
+          max: effectiveZoom.endMs / 1000,
+        });
       } else if (sampled.x.length > 1) {
         u.setScale('x', { min: sampled.x[0], max: sampled.x[sampled.x.length - 1] });
       } else {
@@ -181,6 +213,8 @@ export function TimeSeriesChart({
     configKey,
     hoverTimestamp_ms,
     zoomRange,
+    live,
+    liveWindowMs,
   ]);
 
   // Crear / recrear uPlot cuando cambian los campos o la configuración.

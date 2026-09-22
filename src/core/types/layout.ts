@@ -1,3 +1,5 @@
+import type { ExportBoard } from '@shared/export-composition';
+
 /**
  * Layout completo del dashboard guardado en JSON.
  */
@@ -11,6 +13,8 @@ export interface DashboardLayout {
   widgets: WidgetConfig[];
   panels: LayoutPanels;
   global: GlobalConfig;
+  /** Board de exportación asociado al layout (opcional). */
+  exportBoard?: ExportBoard;
 }
 
 /**
@@ -58,21 +62,26 @@ export interface WidgetConfig {
   visible: boolean;
 }
 
+// Rejilla compartida con la exportación (`@shared/grid`). Se re-exporta con los
+// nombres históricos para no romper el resto del código.
+import {
+  GRID_COLUMNS,
+  GRID_WIDTH_PRESETS,
+  GRID_MIN_WIDTH,
+  GRID_ROW_UNIT,
+} from '@shared/grid';
+
 /** Número de columnas de la rejilla de widgets. */
-export const WIDGET_COLUMNS = 12;
+export const WIDGET_COLUMNS = GRID_COLUMNS;
 
 /** Anchos permitidos (columnas): completo, 3/4, 2/3, 1/2, 1/3, 1/4. */
-export const WIDTH_PRESETS = [12, 9, 8, 6, 4, 3] as const;
+export const WIDTH_PRESETS = GRID_WIDTH_PRESETS;
 
 /** Ancho mínimo global (1/4). */
-export const MIN_WIDTH = 3;
+export const MIN_WIDTH = GRID_MIN_WIDTH;
 
 /** Alto de fila en píxeles (unidad de los "saltos" de alto). */
-export const ROW_UNIT = 40;
-
-/** Alto mínimo y máximo globales (en filas). */
-export const MIN_ROWS = 2;
-export const MAX_ROWS = 16;
+export const ROW_UNIT = GRID_ROW_UNIT;
 
 export interface OverlayConfig {
   type: 'speed' | 'state' | 'vector' | 'custom';

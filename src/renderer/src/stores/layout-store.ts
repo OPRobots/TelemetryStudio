@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import type { DashboardLayout, LayoutPanels, WidgetConfig } from '@core/types/layout';
 import { DEFAULT_PANELS } from '@core/types/layout';
+import type { ExportBoard } from '@shared/export-composition';
 import { seriesPalette } from '@widgets/color-palette';
-import { clampHeight, clampWidth } from '../lib/widget-layout';
+import { clampGridHeight, clampGridWidth } from '@shared/grid';
 
 /**
  * Si el widget tiene colores explícitos por serie, extiende la lista hasta
@@ -27,8 +28,11 @@ interface LayoutState {
   layoutDescription: string;
   widgets: WidgetConfig[];
   panels: LayoutPanels;
+  /** Board del editor de exportación (persistido con el layout/sesión). */
+  exportBoard: ExportBoard | null;
 
   setLayout: (layout: DashboardLayout) => void;
+  setExportBoard: (board: ExportBoard | null) => void;
   addWidget: (widget: WidgetConfig) => void;
   removeWidget: (widgetId: string) => void;
   updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) => void;
@@ -50,6 +54,7 @@ export const useLayoutStore = create<LayoutState>((set) => ({
   layoutDescription: '',
   widgets: [],
   panels: { ...DEFAULT_PANELS },
+  exportBoard: null,
 
   setLayout: (layout) =>
     set({
@@ -57,7 +62,10 @@ export const useLayoutStore = create<LayoutState>((set) => ({
       layoutDescription: layout.description ?? '',
       widgets: layout.widgets.map((w) => ({ ...w })),
       panels: { ...DEFAULT_PANELS, ...layout.panels },
+      exportBoard: layout.exportBoard ?? null,
     }),
+
+  setExportBoard: (board) => set({ exportBoard: board }),
 
   addWidget: (widget) => set((s) => ({ widgets: [...s.widgets, widget] })),
 
@@ -90,13 +98,15 @@ export const useLayoutStore = create<LayoutState>((set) => ({
   setWidgetWidth: (widgetId, columns) =>
     set((s) => ({
       widgets: s.widgets.map((w) =>
-        w.id === widgetId ? { ...w, width: clampWidth(columns) } : w
+        w.id === widgetId ? { ...w, width: clampGridWidth(columns) } : w
       ),
     })),
 
   setWidgetHeight: (widgetId, rows) =>
     set((s) => ({
-      widgets: s.widgets.map((w) => (w.id === widgetId ? { ...w, height: clampHeight(rows) } : w)),
+      widgets: s.widgets.map((w) =>
+        w.id === widgetId ? { ...w, height: clampGridHeight(rows) } : w
+      ),
     })),
 
   addFieldToWidget: (widgetId, field) =>
@@ -131,7 +141,8 @@ export function toDashboardLayout(
   name: string,
   description: string,
   widgets: WidgetConfig[],
-  panels: LayoutPanels = DEFAULT_PANELS
+  panels: LayoutPanels = DEFAULT_PANELS,
+  exportBoard: ExportBoard | null = null
 ): DashboardLayout {
   const now = new Date().toISOString();
   return {
@@ -143,6 +154,7 @@ export function toDashboardLayout(
     videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: false, overlays: [] },
     widgets: widgets.map((w) => ({ ...w })),
     panels: { ...panels },
+    ...(exportBoard ? { exportBoard } : {}),
     global: {
       theme: 'dark',
       units: { speed: 'rpm', distance: 'm', angle: 'deg' },

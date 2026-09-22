@@ -82,6 +82,9 @@ app.whenReady().then(async () => {
       nodeIntegration: false,
       sandbox: false,
       webSecurity: false,
+      // Sin throttling: el window está oculto y el compositor de export
+      // necesita requestAnimationFrame/ResizeObserver a ritmo normal.
+      backgroundThrottling: false,
     },
   });
 
@@ -122,6 +125,15 @@ app.whenReady().then(async () => {
     return true;
   })()`;
 
+  const setSelect = (id, value) => `(() => {
+    const el = document.getElementById(${JSON.stringify(id)});
+    if (!el) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set;
+    setter.call(el, String(${JSON.stringify(value)}));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  })()`;
+
   try {
     await win.loadFile(join(root, 'out/renderer/index.html'));
     await new Promise((r) => setTimeout(r, 1000));
@@ -147,9 +159,8 @@ app.whenReady().then(async () => {
       `document.body.innerText.includes('Exportar vídeo')`
     );
 
-    // Configurar 10 frames a 160x90
-    await win.webContents.executeJavaScript(setInput('export-width', 160));
-    await win.webContents.executeJavaScript(setInput('export-height', 90));
+    // Configurar 10 frames a 720p
+    await win.webContents.executeJavaScript(setSelect('export-resolution', '720p'));
     await win.webContents.executeJavaScript(setInput('export-fps', 10));
     await win.webContents.executeJavaScript(setInput('export-start', 0));
     await win.webContents.executeJavaScript(setInput('export-end', 9));
@@ -177,15 +188,18 @@ app.whenReady().then(async () => {
     await win.webContents.executeJavaScript(setInput('export-end', 299));
     await new Promise((r) => setTimeout(r, 200));
     await win.webContents.executeJavaScript(clickByText('Iniciar exportación'));
-    await new Promise((r) => setTimeout(r, 700));
+    await new Promise((r) => setTimeout(r, 600));
     await win.webContents.executeJavaScript(clickByText('Cancelar'));
-    await new Promise((r) => setTimeout(r, 200));
     const framesAtCancel = sentFrames;
-    await new Promise((r) => setTimeout(r, 700));
+    let cancelText = false;
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 250));
+      cancelText = await win.webContents.executeJavaScript(
+        `document.body.innerText.includes('Exportación cancelada')`
+      );
+      if (cancelText) break;
+    }
     const framesAfterCancel = sentFrames;
-    const cancelText = await win.webContents.executeJavaScript(
-      `document.body.innerText.includes('Exportación cancelada')`
-    );
 
     console.log(
       'E2E_EXPORT ' +

@@ -15,6 +15,8 @@ export interface FfmpegArgsInput {
   outputPath: string;
   /** Calidad CRF (menor = mejor). Por defecto 18 para H.264, 30 para VP9. */
   crf?: number;
+  /** Preset de libx264 (ultrafast…veryslow). Por defecto `medium`. */
+  preset?: string;
 }
 
 /**
@@ -63,7 +65,7 @@ export function buildFfmpegArgs(input: FfmpegArgsInput): string[] {
     '-crf',
     String(crf),
     '-preset',
-    'fast',
+    input.preset ?? 'medium',
     '-movflags',
     '+faststart',
     outputPath,

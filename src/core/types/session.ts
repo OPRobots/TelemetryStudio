@@ -1,3 +1,5 @@
+import type { ExportBoard } from '@shared/export-composition';
+
 /** Versión del formato de sesión */
 export const SESSION_VERSION = 1;
 
@@ -30,6 +32,11 @@ export interface SessionFile {
   sync: SessionSync;
   telemetry: SessionTelemetry;
   layout: SessionLayout;
+  /**
+   * Board de exportación (editor de la composición de vídeo). Opcional: las
+   * sesiones antiguas no lo tienen y se usa un preset por defecto.
+   */
+  export?: ExportBoard;
 }
 
 export interface SessionVideo {
@@ -65,6 +72,8 @@ export interface SessionLayout {
 }
 
 export interface SessionWidget {
+  /** Identificador estable (para referencias del board de exportación). */
+  id?: string;
   t: string;
   size: [number, number];
   fields: string[];

@@ -108,7 +108,7 @@ export async function loadSession(jsonPath: string): Promise<void> {
   );
 
   const widgets: WidgetConfig[] = session.layout.widgets.map((w, i) => ({
-    id: `session-widget-${i}`,
+    id: w.id ?? `session-widget-${i}`,
     type: w.t,
     label: w.t,
     width: w.size[0],
@@ -123,6 +123,7 @@ export async function loadSession(jsonPath: string): Promise<void> {
     createdAt: session.created,
     modifiedAt: session.created,
     widgets,
+    ...(session.export ? { exportBoard: session.export } : {}),
   };
   useLayoutStore.getState().setLayout(layout);
   useAppStore.getState().setStatusMessage(`Sesión cargada: ${session.name}`);
@@ -140,7 +141,9 @@ export async function saveSession(name: string, outputDir: string): Promise<void
     return;
   }
 
-  const widgets: SessionWidget[] = useLayoutStore.getState().widgets.map((w) => ({
+  const layoutState = useLayoutStore.getState();
+  const widgets: SessionWidget[] = layoutState.widgets.map((w) => ({
+    id: w.id,
     t: w.type,
     size: [w.width, w.height],
     fields: w.dataFields,
@@ -161,7 +164,8 @@ export async function saveSession(name: string, outputDir: string): Promise<void
       rate: playbackRate,
     },
     widgets,
-    telemetryTimeReliable
+    telemetryTimeReliable,
+    layoutState.exportBoard
   );
   session.name = name;
 

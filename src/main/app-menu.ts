@@ -133,10 +133,10 @@ export function buildAppMenu(): void {
         { label: 'Explorar sesiones…', click: send('browse-sessions') },
         { type: 'separator' },
         {
+          // Siempre habilitado: la acción avisa si aún no hay vídeo/datos.
           id: 'export-video',
           label: 'Exportar vídeo…',
           accelerator: 'CmdOrCtrl+E',
-          enabled: false,
           click: send('export-video'),
         },
         ...quitItem,
@@ -226,7 +226,6 @@ function applyMenuState(state: Partial<MenuState>): void {
     set('stop-comparison', { enabled: state.comparisonActive });
   if (state.hasVideo !== undefined) {
     set('close-video', { enabled: state.hasVideo });
-    set('export-video', { enabled: state.hasVideo });
   }
   if (state.hasData !== undefined) {
     set('save-session', { enabled: state.hasData });
