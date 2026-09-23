@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   boardPadding,
   computeBoardLayout,
@@ -18,6 +18,7 @@ import { telemetryStore } from '@core/telemetry-store';
 import { videoSynchronizer } from '@core/video-synchronizer';
 import { columnsFromPixels } from '../../lib/widget-layout';
 import { createExportStage, type ExportStage } from '../../lib/export-stage';
+import { seekVideo } from '../../lib/video-seek';
 
 const PREVIEW_MAX_WIDTH = 720;
 const STAGE_DEBOUNCE_MS = 180;
@@ -108,9 +109,12 @@ export function ExportBoardEditor({
 
   const widgetById = useMemo(() => new Map(widgets.map((w) => [w.id, w])), [widgets]);
 
-  // Canvas: board retardado (no recompone en cada movimiento).
-  const stageBoard = useDebouncedValue(draft ?? board, STAGE_DEBOUNCE_MS);
+  // Canvas: directo en cambios estructurales (preset/añadir/eliminar/soltar) y
+  // retardado solo mientras se arrastra (para no recomponer en cada píxel).
+  const debouncedDraft = useDebouncedValue(draft ?? board, STAGE_DEBOUNCE_MS);
+  const stageBoard = draft ? debouncedDraft : board;
   const stageLayout = useMemo(() => computeBoardLayout(stageBoard, source), [stageBoard, source]);
+  const hasVideoItem = board.items.some((i) => i.kind === 'video');
   // Cajas: board en vivo (reflow inmediato con transiciones).
   const boxLayout = useMemo(
     () => computeBoardLayout(draft ?? board, source),
@@ -136,6 +140,33 @@ export function ExportBoardEditor({
     return () => ro.disconnect();
   }, []);
 
+  // Valores que usa el dibujado, siempre frescos (sin re-suscribir efectos).
+  const previewRef = useRef({ previewTime_s, hasVideoItem, includeOverlays, sessionLabel });
+  previewRef.current = { previewTime_s, hasVideoItem, includeOverlays, sessionLabel };
+
+  /** Dibuja el frame de preview con el stage actual (mueve el vídeo si aplica). */
+  const drawPreview = useCallback(async (): Promise<void> => {
+    const stage = stageRef.current;
+    const canvas = canvasRef.current;
+    if (!stage || !canvas) return;
+    const {
+      previewTime_s: time,
+      hasVideoItem: withVideo,
+      includeOverlays: overlays,
+      sessionLabel: label,
+    } = previewRef.current;
+    const video = document.querySelector<HTMLVideoElement>('video');
+    if (video && withVideo) {
+      await seekVideo(video, Math.min(time, video.duration || time));
+    }
+    const viewMs = videoSynchronizer.mapTime(time * 1000);
+    await stage.renderFrame(video, viewMs, overlays ? { label } : undefined);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(stage.getCanvas(), 0, 0);
+  }, []);
+
   // Crear el compositor cuando cambia el board (retardado) o el set de widgets.
   useEffect(() => {
     let disposed = false;
@@ -155,6 +186,8 @@ export function ExportBoardEditor({
         }
         stageRef.current = stage;
         setReady(true);
+        // Dibuja en cuanto el stage está listo (no depende de otra carrera).
+        void drawPreview();
       })
       .catch(() => setReady(false));
     return () => {
@@ -163,36 +196,28 @@ export function ExportBoardEditor({
       stageRef.current = null;
     };
     // `widgets` se usa por valor; `widgetsKey` captura cambios relevantes.
-  }, [stageLayout, widgetsKey, live, liveWindowMs]);
+  }, [stageLayout, widgetsKey, live, liveWindowMs, drawPreview]);
 
-  // Recomponer el frame de preview.
+  // Pausa el vídeo al abrir el editor y lo restaura al cerrarlo (la preview lo
+  // mueve al tiempo de previsualización).
+  useEffect(() => {
+    const video = document.querySelector<HTMLVideoElement>('video');
+    if (!video) return;
+    const originalTime = video.currentTime;
+    const wasPlaying = !video.paused;
+    video.pause();
+    return () => {
+      video.currentTime = originalTime;
+      if (wasPlaying) video.play().catch(() => undefined);
+    };
+  }, []);
+
+  // Recomponer cuando cambian el tiempo de preview, el vídeo o los ajustes.
   useEffect(() => {
     if (!ready) return;
-    const stage = stageRef.current;
-    const canvas = canvasRef.current;
-    if (!stage || !canvas) return;
-    let cancelled = false;
-    const handle = window.setTimeout(() => {
-      void (async () => {
-        const video = document.querySelector<HTMLVideoElement>('video');
-        const viewMs = videoSynchronizer.mapTime(previewTime_s * 1000);
-        await stage.renderFrame(
-          video,
-          viewMs,
-          includeOverlays ? { label: sessionLabel } : undefined
-        );
-        if (cancelled) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(stage.getCanvas(), 0, 0);
-      })();
-    }, 60);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(handle);
-    };
-  }, [ready, previewTime_s, includeOverlays, sessionLabel, stageLayout]);
+    const handle = window.setTimeout(() => void drawPreview(), 16);
+    return () => window.clearTimeout(handle);
+  }, [ready, previewTime_s, includeOverlays, sessionLabel, hasVideoItem, drawPreview]);
 
   const patchItem = (
     base: ExportBoard,
@@ -311,7 +336,6 @@ export function ExportBoardEditor({
       items: [...board.items, { id: newItemId(), kind: 'section', width: 6, height: 4 }],
     });
   };
-  const hasVideoItem = board.items.some((i) => i.kind === 'video');
   const toggleVideo = (on: boolean): void => {
     if (on && !hasVideoItem) {
       onChange({

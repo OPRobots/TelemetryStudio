@@ -2,36 +2,12 @@ import type { ExportConfig } from '@core/types/video';
 import { telemetryStore } from '@core/telemetry-store';
 import { videoSynchronizer } from '@core/video-synchronizer';
 import { createExportStage } from '@renderer/lib/export-stage';
+import { seekVideo } from '@renderer/lib/video-seek';
 
 export interface ExportProgress {
   percent: number;
   currentFrame: number;
   totalFrames: number;
-}
-
-/** Espera a que el vídeo termine de hacer seek a `time` (segundos). */
-function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
-  return new Promise((resolve) => {
-    let done = false;
-    const finish = (): void => {
-      if (done) return;
-      done = true;
-      video.removeEventListener('seeked', finish);
-      window.clearTimeout(timeout);
-      resolve();
-    };
-    const timeout = window.setTimeout(finish, 1500);
-    video.addEventListener('seeked', finish);
-    try {
-      if (Math.abs(video.currentTime - time) < 1e-4) {
-        finish();
-        return;
-      }
-      video.currentTime = time;
-    } catch {
-      finish();
-    }
-  });
 }
 
 /**
@@ -93,7 +69,7 @@ export async function exportVideo(
       if (signal?.aborted) throw new DOMException('Exportación cancelada', 'AbortError');
 
       const mediaTime_s = i / config.fps;
-      if (video) await seekTo(video, Math.min(mediaTime_s, video.duration || mediaTime_s));
+      if (video) await seekVideo(video, Math.min(mediaTime_s, video.duration || mediaTime_s));
 
       const mediaTime_ms = video ? video.currentTime * 1000 : mediaTime_s * 1000;
       const viewTimestamp_ms = videoSynchronizer.mapTime(mediaTime_ms);

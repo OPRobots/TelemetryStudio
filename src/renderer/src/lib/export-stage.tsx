@@ -279,14 +279,20 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForCells(cellRefs: Map<string, HTMLDivElement>): Promise<void> {
-  if (cellRefs.size === 0) return;
-  const deadline = performance.now() + 1500;
+async function waitForCells(
+  cellRefs: Map<string, HTMLDivElement>,
+  expected: number,
+  timeoutMs = 1500
+): Promise<void> {
+  if (expected <= 0) return;
+  const deadline = performance.now() + timeoutMs;
   while (performance.now() < deadline) {
-    const allSized = Array.from(cellRefs.values()).every((el) =>
-      Array.from(el.querySelectorAll('canvas')).some((c) => c.getBoundingClientRect().width > 0)
-    );
-    if (allSized) break;
+    const ready =
+      cellRefs.size >= expected &&
+      Array.from(cellRefs.values()).every((el) =>
+        Array.from(el.querySelectorAll('canvas')).some((c) => c.getBoundingClientRect().width > 0)
+      );
+    if (ready) break;
     await delay(16);
   }
   await delay(48);
@@ -342,7 +348,13 @@ export async function createExportStage(options: ExportStageOptions): Promise<Ex
   } catch {
     // Sin `document.fonts` seguimos igualmente.
   }
-  await waitForCells(cellRefs);
+  const widgetById = new Map(widgets.map((w) => [w.id, w]));
+  const expectedCells = layout.items.filter((item) => {
+    if (item.kind !== 'widget' || !item.widgetId) return false;
+    const widget = widgetById.get(item.widgetId);
+    return !!widget && !!widgetRegistry.get(widget.type);
+  }).length;
+  await waitForCells(cellRefs, expectedCells);
 
   const canvas = document.createElement('canvas');
   canvas.width = layout.width;
@@ -350,7 +362,6 @@ export async function createExportStage(options: ExportStageOptions): Promise<Ex
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) throw new Error('No se pudo crear el canvas de exportación');
 
-  const widgetById = new Map(widgets.map((w) => [w.id, w]));
   const font = chromeFont(layout.height);
 
   const drawVideoInto = (rect: Rect, video: HTMLVideoElement | null): void => {
