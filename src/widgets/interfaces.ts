@@ -82,6 +82,9 @@ export interface WidgetProps {
 
   /** Ventana visible (ms) del modo directo. Por defecto `DEFAULT_LIVE_WINDOW_MS`. */
   liveWindowMs?: number;
+
+  /** Grosor de trazo relativo (exportación). `1` = normal. */
+  lineScale?: number;
 }
 
 /**

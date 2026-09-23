@@ -68,6 +68,7 @@ export function TimeSeriesChart({
   onZoomRangeChange,
   live,
   liveWindowMs,
+  lineScale,
 }: WidgetProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const uplotRef = useRef<uPlot | null>(null);
@@ -225,6 +226,7 @@ export function TimeSeriesChart({
 
     const cfgLocal = { ...DEFAULT_CONFIG, ...(JSON.parse(configKey) as TimeSeriesConfig) };
     const fieldList = fieldsKey.length > 0 ? fieldsKey.split('|') : [];
+    const strokeScale = lineScale && lineScale > 0 ? lineScale : 1;
 
     // Sin colores configurados, paleta de series (viva) según el nº de series.
     const palette =
@@ -238,7 +240,7 @@ export function TimeSeriesChart({
       ...fieldList.map((field, i) => ({
         label: field,
         stroke: palette[i % palette.length],
-        width: 1.6,
+        width: 1.6 * strokeScale,
         // Anti-aliasing real: evita el snap a píxel entero del trazo.
         pxAlign: false,
         ...(smoothPath ? { paths: smoothPath } : {}),
@@ -351,7 +353,7 @@ export function TimeSeriesChart({
       u.destroy();
       uplotRef.current = null;
     };
-  }, [fieldsKey, configKey]);
+  }, [fieldsKey, configKey, lineScale]);
 
   // Redimensionar con el contenedor.
   useEffect(() => {

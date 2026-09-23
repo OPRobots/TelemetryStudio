@@ -28,6 +28,7 @@ function board(partial: Partial<ExportBoard>): ExportBoard {
     videoFit: 'contain',
     panel: 'translucent',
     supersample: 1,
+    lineScale: 1,
     background: '#0a0e17',
     items: [],
     ...partial,

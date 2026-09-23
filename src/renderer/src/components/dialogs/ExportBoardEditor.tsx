@@ -20,6 +20,7 @@ import { columnsFromPixels } from '../../lib/widget-layout';
 import { createExportStage, type ExportStage } from '../../lib/export-stage';
 
 const PREVIEW_MAX_WIDTH = 720;
+const STAGE_DEBOUNCE_MS = 180;
 
 const ASPECTS: AspectPreset[] = ['source', '16:9', '9:16', '1:1', '4:5', 'custom'];
 const RESOLUTIONS: ResolutionPreset[] = ['720p', '1080p', '1440p', '2160p', 'source'];
@@ -30,8 +31,24 @@ const PRESETS: Array<{ id: BoardPreset; label: string }> = [
   { id: 'charts-only', label: 'Solo gráficas' },
 ];
 
+const ITEM_ICON: Record<ExportItem['kind'], string> = {
+  widget: '▦',
+  video: '▶',
+  section: '␣',
+};
+
 function newItemId(): string {
   return `exp_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/** Valor `value` retardado `delay` ms (para no recomponer en cada píxel). */
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(handle);
+  }, [value, delay]);
+  return debounced;
 }
 
 interface DragState {
@@ -62,6 +79,8 @@ interface ExportBoardEditorProps {
 /**
  * Editor WYSIWYG del board de exportación: compone el board a resolución real
  * (canvas escalado por CSS) y superpone cajas para reordenar/redimensionar.
+ * Mientras se redimensiona, un board "borrador" reajusta en vivo los demás
+ * ítems (con transiciones), y el canvas se recompone con *debounce*.
  */
 export function ExportBoardEditor({
   board,
@@ -80,17 +99,29 @@ export function ExportBoardEditor({
   const [ready, setReady] = useState(false);
   const [containerWidth, setContainerWidth] = useState(PREVIEW_MAX_WIDTH);
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [draft, setDraft] = useState<ExportBoard | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const dragRef = useRef<DragState | null>(null);
-  const boardRef = useRef(board);
-  boardRef.current = board;
+  const draftRef = useRef<ExportBoard | null>(null);
+  draftRef.current = draft;
 
   const widgetById = useMemo(() => new Map(widgets.map((w) => [w.id, w])), [widgets]);
-  const layout = useMemo(() => computeBoardLayout(board, source), [board, source]);
-  const { pad, gap } = boardPadding(layout.width, layout.height);
-  const innerW = layout.width - pad * 2;
-  const k = Math.min(1, containerWidth / layout.width);
-  const displayW = Math.round(layout.width * k);
-  const displayH = Math.round(layout.height * k);
+
+  // Canvas: board retardado (no recompone en cada movimiento).
+  const stageBoard = useDebouncedValue(draft ?? board, STAGE_DEBOUNCE_MS);
+  const stageLayout = useMemo(() => computeBoardLayout(stageBoard, source), [stageBoard, source]);
+  // Cajas: board en vivo (reflow inmediato con transiciones).
+  const boxLayout = useMemo(
+    () => computeBoardLayout(draft ?? board, source),
+    [draft, board, source]
+  );
+
+  const { pad, gap } = boardPadding(stageLayout.width, stageLayout.height);
+  const innerW = stageLayout.width - pad * 2;
+  const k = Math.min(1, containerWidth / stageLayout.width);
+  const displayW = Math.round(stageLayout.width * k);
+  const displayH = Math.round(stageLayout.height * k);
   const widgetsKey = widgets.map((w) => w.id).join('|');
 
   // Medir el ancho disponible.
@@ -105,12 +136,12 @@ export function ExportBoardEditor({
     return () => ro.disconnect();
   }, []);
 
-  // Crear el compositor cuando cambia el board o el set de widgets.
+  // Crear el compositor cuando cambia el board (retardado) o el set de widgets.
   useEffect(() => {
     let disposed = false;
     setReady(false);
     createExportStage({
-      layout,
+      layout: stageLayout,
       widgets,
       getFrames: () => telemetryStore.getAllFrames(),
       live,
@@ -132,7 +163,7 @@ export function ExportBoardEditor({
       stageRef.current = null;
     };
     // `widgets` se usa por valor; `widgetsKey` captura cambios relevantes.
-  }, [layout, widgetsKey, live, liveWindowMs]);
+  }, [stageLayout, widgetsKey, live, liveWindowMs]);
 
   // Recomponer el frame de preview.
   useEffect(() => {
@@ -161,7 +192,16 @@ export function ExportBoardEditor({
       cancelled = true;
       window.clearTimeout(handle);
     };
-  }, [ready, previewTime_s, includeOverlays, sessionLabel, layout]);
+  }, [ready, previewTime_s, includeOverlays, sessionLabel, stageLayout]);
+
+  const patchItem = (
+    base: ExportBoard,
+    id: string,
+    patch: Partial<ExportItem>
+  ): ExportBoard => ({
+    ...base,
+    items: base.items.map((i) => (i.id === id ? { ...i, ...patch } : i)),
+  });
 
   // --- Interacción: reordenar / redimensionar ---
   useEffect(() => {
@@ -177,8 +217,15 @@ export function ExportBoardEditor({
         next.pointerY = e.clientY;
       } else if (d.kind === 'width') {
         next.ghostW = Math.max(24, d.startW + dx);
+        const cols = snapGridWidth(columnsFromPixels(next.ghostW, innerW, gap));
+        setDraft(patchItem(board, d.id, { width: clampGridWidth(cols) }));
       } else {
         next.ghostH = Math.max(24, d.startH + dy);
+        const item = board.items.find((i) => i.id === d.id);
+        if (item) {
+          const ratio = next.ghostH / Math.max(d.startH, 1);
+          setDraft(patchItem(board, d.id, { height: clampGridHeight(Math.round(item.height * ratio)) }));
+        }
       }
       dragRef.current = next;
       setDrag(next);
@@ -187,7 +234,30 @@ export function ExportBoardEditor({
       const d = dragRef.current;
       dragRef.current = null;
       setDrag(null);
-      if (d) commitDrag(d);
+      if (!d) return;
+      if (d.kind === 'reorder') {
+        const viewportTop = viewportRef.current?.getBoundingClientRect().top ?? 0;
+        const pointerRealY = (d.pointerY - viewportTop) / k;
+        const current = board;
+        const centers = boxLayout.items.map((it) => it.rect.y + it.rect.h / 2);
+        const index = current.items.findIndex((i) => i.id === d.id);
+        let target = current.items.length - 1;
+        for (let i = 0; i < centers.length; i++) {
+          if (pointerRealY < centers[i]!) {
+            target = i;
+            break;
+          }
+        }
+        const items = [...current.items];
+        const [moved] = items.splice(index, 1);
+        if (moved) items.splice(Math.max(0, Math.min(target, items.length)), 0, moved);
+        setDraft(null);
+        onChange({ ...current, items });
+        return;
+      }
+      const pending = draftRef.current;
+      setDraft(null);
+      if (pending) onChange(pending);
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
@@ -197,43 +267,7 @@ export function ExportBoardEditor({
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
     };
-  }, [drag, k]);
-
-  const commitDrag = (d: DragState): void => {
-    const current = boardRef.current;
-    const items = [...current.items];
-    const index = items.findIndex((i) => i.id === d.id);
-    if (index < 0) return;
-    const item = items[index]!;
-
-    if (d.kind === 'reorder') {
-      const centers = layout.items.map((it) => it.rect.y + it.rect.h / 2);
-      const pointerRealY = (d.pointerY - (viewportRef.current?.getBoundingClientRect().top ?? 0)) / k;
-      let target = items.length - 1;
-      for (let i = 0; i < centers.length; i++) {
-        if (pointerRealY < centers[i]!) {
-          target = i;
-          break;
-        }
-      }
-      const [moved] = items.splice(index, 1);
-      if (moved) items.splice(Math.max(0, Math.min(target, items.length)), 0, moved);
-      onChange({ ...current, items });
-      return;
-    }
-
-    if (d.kind === 'width') {
-      const cols = snapGridWidth(columnsFromPixels(d.ghostW, innerW, gap));
-      items[index] = { ...item, width: clampGridWidth(cols) };
-      onChange({ ...current, items });
-      return;
-    }
-
-    const ratio = d.ghostH / Math.max(d.startH, 1);
-    const rows = clampGridHeight(Math.round(item.height * ratio));
-    items[index] = { ...item, height: rows };
-    onChange({ ...current, items });
-  };
+  }, [drag, k, board, boxLayout, innerW, gap, onChange]);
 
   const startDrag = (
     kind: DragState['kind'],
@@ -243,6 +277,7 @@ export function ExportBoardEditor({
   ): void => {
     e.stopPropagation();
     e.preventDefault();
+    setSelectedId(itemId);
     const next: DragState = {
       kind,
       id: itemId,
@@ -260,9 +295,6 @@ export function ExportBoardEditor({
   };
 
   // --- Mutaciones del board ---
-  const patchItem = (id: string, patch: Partial<ExportItem>): void => {
-    onChange({ ...board, items: board.items.map((i) => (i.id === id ? { ...i, ...patch } : i)) });
-  };
   const removeItem = (id: string): void => {
     onChange({ ...board, items: board.items.filter((i) => i.id !== id) });
   };
@@ -284,19 +316,22 @@ export function ExportBoardEditor({
     if (on && !hasVideoItem) {
       onChange({
         ...board,
-        items: [...board.items, { id: newItemId(), kind: 'video', width: 12, height: 6 }],
+        items: [...board.items, { id: newItemId(), kind: 'video', width: 6, height: 6 }],
       });
     } else if (!on) {
       onChange({ ...board, items: board.items.filter((i) => i.kind !== 'video') });
     }
   };
+  const setBoard = (patch: Partial<ExportBoard>): void => onChange({ ...board, ...patch });
+  const patchItemBoard = (id: string, patch: Partial<ExportItem>): void =>
+    onChange(patchItem(board, id, patch));
 
   const placedWidgetIds = new Set(
     board.items.filter((i) => i.kind === 'widget').map((i) => i.widgetId)
   );
   const availableWidgets = widgets.filter((w) => !placedWidgetIds.has(w.id));
 
-  const setBoard = (patch: Partial<ExportBoard>): void => onChange({ ...board, ...patch });
+  const BOX_TRANSITION = 'left 140ms ease, top 140ms ease, width 140ms ease, height 140ms ease';
 
   return (
     <div className="flex flex-col gap-2">
@@ -421,15 +456,15 @@ export function ExportBoardEditor({
             height: displayH,
             position: 'relative',
             overflow: 'hidden',
-            borderRadius: 6,
+            borderRadius: 8,
             border: '1px solid var(--bg-border)',
             background: '#000',
           }}
         >
           <div
             style={{
-              width: layout.width,
-              height: layout.height,
+              width: stageLayout.width,
+              height: stageLayout.height,
               transform: `scale(${k})`,
               transformOrigin: 'top left',
               position: 'absolute',
@@ -437,58 +472,70 @@ export function ExportBoardEditor({
           >
             <canvas
               ref={canvasRef}
-              width={layout.width}
-              height={layout.height}
+              width={stageLayout.width}
+              height={stageLayout.height}
               style={{ position: 'absolute', top: 0, left: 0 }}
             />
-            {layout.items.map((item) => {
+            {boxLayout.items.map((item) => {
               const dragging = drag?.id === item.id;
               const placedWidget = item.widgetId ? widgetById.get(item.widgetId) : undefined;
               const title =
                 item.kind === 'video'
-                  ? '🎬 Vídeo'
+                  ? 'Vídeo'
                   : item.kind === 'section'
-                    ? '␣ Sección'
-                    : `📈 ${placedWidget?.label ?? item.widgetId ?? 'widget'} · ${
+                    ? 'Sección'
+                    : `${placedWidget?.label ?? item.widgetId ?? 'widget'} · ${
                         placedWidget?.type ?? ''
                       }`;
-              const wx = item.rect.x;
-              const wy = item.rect.y + (dragging && drag?.kind === 'reorder' ? drag.ghostY : 0);
-              const ww = dragging && drag?.kind === 'width' ? drag.ghostW : item.rect.w;
-              const wh = dragging && drag?.kind === 'height' ? drag.ghostH : item.rect.h;
+              const selected = selectedId === item.id;
+              const active = selected || hoveredId === item.id;
+              const rect = dragging && drag
+                ? {
+                    x: item.rect.x,
+                    y: item.rect.y + (drag.kind === 'reorder' ? drag.ghostY : 0),
+                    w: drag.kind === 'width' ? drag.ghostW : item.rect.w,
+                    h: drag.kind === 'height' ? drag.ghostH : item.rect.h,
+                  }
+                : item.rect;
               return (
                 <div
                   key={item.id}
+                  onPointerDown={() => setSelectedId(item.id)}
+                  onMouseEnter={() => setHoveredId(item.id)}
+                  onMouseLeave={() => setHoveredId((id) => (id === item.id ? null : id))}
                   style={{
                     position: 'absolute',
-                    left: wx,
-                    top: wy,
-                    width: ww,
-                    height: wh,
-                    border: '1px dashed rgba(59,130,246,0.7)',
+                    left: rect.x,
+                    top: rect.y,
+                    width: rect.w,
+                    height: rect.h,
                     boxSizing: 'border-box',
+                    borderRadius: 8,
+                    border: `1px solid ${active ? 'var(--accent)' : 'var(--bg-border)'}`,
+                    background: active ? 'rgba(59,130,246,0.06)' : 'rgba(17,21,29,0.18)',
+                    boxShadow: selected ? '0 0 0 1px var(--accent)' : 'none',
+                    overflow: 'hidden',
                     pointerEvents: 'auto',
+                    transition: dragging ? 'none' : BOX_TRANSITION,
                   }}
                 >
                   <div
                     onPointerDown={(e) => startDrag('reorder', item.id, item.rect, e)}
                     style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 22,
+                      height: 26,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0 4px',
-                      background: 'rgba(10,14,23,0.7)',
+                      gap: 6,
+                      padding: '0 6px',
+                      background: 'rgba(10,14,23,0.82)',
+                      borderBottom: '1px solid var(--bg-border)',
                       cursor: 'grab',
-                      fontSize: 11,
-                      color: '#cbd5e1',
+                      fontSize: 12,
+                      color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
                     }}
                   >
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ opacity: 0.8 }}>{ITEM_ICON[item.kind]}</span>
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {title}
                     </span>
                     <button
@@ -500,43 +547,49 @@ export function ExportBoardEditor({
                       ✕
                     </button>
                   </div>
-                  {/* Asa derecha */}
-                  <div
-                    onPointerDown={(e) => startDrag('width', item.id, item.rect, e)}
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      right: -4,
-                      width: 8,
-                      height: 24,
-                      marginTop: -12,
-                      background: 'rgba(59,130,246,0.9)',
-                      cursor: 'ew-resize',
-                    }}
-                  />
-                  {/* Asa inferior (el vídeo mantiene su aspecto: no se estira) */}
-                  {item.kind !== 'video' && (
+
+                  {item.kind === 'section' && (
+                    <input
+                      className="dialog-input"
+                      style={{ position: 'absolute', top: 30, left: 6, right: 6, width: 'auto', fontSize: 11 }}
+                      placeholder="etiqueta de sección"
+                      value={item.label ?? ''}
+                      onChange={(e) => patchItemBoard(item.id, { label: e.target.value })}
+                    />
+                  )}
+
+                  {active && item.kind !== 'video' && (
                     <div
                       onPointerDown={(e) => startDrag('height', item.id, item.rect, e)}
+                      title="Alto"
                       style={{
                         position: 'absolute',
-                        bottom: -4,
+                        bottom: -3,
                         left: '50%',
-                        width: 24,
-                        height: 8,
-                        marginLeft: -12,
-                        background: 'rgba(59,130,246,0.9)',
+                        width: 30,
+                        height: 6,
+                        marginLeft: -15,
+                        borderRadius: 3,
+                        background: 'var(--accent)',
                         cursor: 'ns-resize',
                       }}
                     />
                   )}
-                  {item.kind === 'section' && (
-                    <input
-                      className="dialog-input"
-                      style={{ position: 'absolute', top: 24, left: 4, right: 4, width: 'auto', fontSize: 11 }}
-                      placeholder="etiqueta de sección"
-                      value={item.label ?? ''}
-                      onChange={(e) => patchItem(item.id, { label: e.target.value })}
+                  {active && (
+                    <div
+                      onPointerDown={(e) => startDrag('width', item.id, item.rect, e)}
+                      title="Ancho"
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        right: -3,
+                        width: 6,
+                        height: 30,
+                        marginTop: -15,
+                        borderRadius: 3,
+                        background: 'var(--accent)',
+                        cursor: 'ew-resize',
+                      }}
                     />
                   )}
                 </div>
@@ -545,7 +598,7 @@ export function ExportBoardEditor({
           </div>
         </div>
         <div className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-          {layout.width}×{layout.height} · arrastra la cabecera para reordenar, las asas para redimensionar
+          {stageLayout.width}×{stageLayout.height} · arrastra la cabecera para reordenar, las asas para redimensionar
         </div>
       </div>
     </div>

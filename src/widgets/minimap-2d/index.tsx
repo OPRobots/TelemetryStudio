@@ -50,6 +50,7 @@ export function Minimap2D({
   hoverTimestamp_ms,
   zoomRange,
   live,
+  lineScale,
 }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
@@ -57,8 +58,26 @@ export function Minimap2D({
 
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<MinimapConfig>) };
 
-  const latest = useRef({ getFrames, dataFields, hoverTimestamp_ms, zoomRange, live, cfg, size });
-  latest.current = { getFrames, dataFields, hoverTimestamp_ms, zoomRange, live, cfg, size };
+  const latest = useRef({
+    getFrames,
+    dataFields,
+    hoverTimestamp_ms,
+    zoomRange,
+    live,
+    lineScale,
+    cfg,
+    size,
+  });
+  latest.current = {
+    getFrames,
+    dataFields,
+    hoverTimestamp_ms,
+    zoomRange,
+    live,
+    lineScale,
+    cfg,
+    size,
+  };
 
   // BBox cacheada (la parte O(n) al encuadrar la trayectoria).
   const bboxRef = useRef<{ sig: string; bounds: { minX: number; maxX: number; minY: number; maxY: number } }>({
@@ -89,7 +108,9 @@ export function Minimap2D({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { getFrames, dataFields, hoverTimestamp_ms, zoomRange, live, cfg, size } = latest.current;
+    const { getFrames, dataFields, hoverTimestamp_ms, zoomRange, live, lineScale, cfg, size } =
+      latest.current;
+    const trailScale = lineScale && lineScale > 0 ? lineScale : 1;
     const frames = getFrames();
     const fieldX = cfg.fieldX || dataFields[0] || 'position_x';
     const fieldY = cfg.fieldY || dataFields[1] || 'position_y';
@@ -244,7 +265,7 @@ export function Minimap2D({
         // Trayectoria.
         const strokeTrail = (include: (f: TelemetryFrame) => boolean, alpha: number): void => {
           bctx.strokeStyle = cfg.trailColor;
-          bctx.lineWidth = 2;
+          bctx.lineWidth = 2 * trailScale;
           bctx.globalAlpha = alpha;
           bctx.beginPath();
           let penDown = false;
@@ -308,7 +329,7 @@ export function Minimap2D({
     // --- Dinámico: rastro recorrido (modo directo) + robot ---
     if (live && viewTimestamp != null && frames.length > 1) {
       ctx.strokeStyle = cfg.trailColor;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 * trailScale;
       ctx.globalAlpha = 0.95;
       ctx.beginPath();
       let penDown = false;
@@ -359,6 +380,7 @@ export function Minimap2D({
     hoverTimestamp_ms,
     zoomRange,
     live,
+    lineScale,
     size.width,
     size.height,
     cfg.fieldX,

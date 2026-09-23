@@ -55,9 +55,19 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
   const [fps, setFps] = useState(30);
   const [crf, setCrf] = useState(18);
   const [preset, setPreset] = useState('medium');
-  const [startFrame, setStartFrame] = useState(0);
+  // Por defecto, el export empieza en el punto alineado menos 2 s de pre-roll,
+  // para que el vídeo arranque junto a las gráficas sin alargarse de más.
+  const PREROLL_MS = 2000;
+  const [startFrame, setStartFrame] = useState(() => {
+    const anchor = useAppStore.getState().syncAnchor;
+    if (!anchor) return 0;
+    return Math.max(0, Math.round(((anchor.video_ms - PREROLL_MS) / 1000) * fps));
+  });
   const [endFrame, setEndFrame] = useState<number | null>(null);
-  const [previewTime_s, setPreviewTime_s] = useState(0);
+  const [previewTime_s, setPreviewTime_s] = useState(() => {
+    const anchor = useAppStore.getState().syncAnchor;
+    return anchor ? Math.max(0, anchor.video_ms / 1000) : 0;
+  });
 
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ExportProgress | null>(null);
@@ -182,6 +192,20 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
                 </select>
               </div>
             )}
+            <div>
+              <label className="dialog-label">Grosor de líneas</label>
+              <select
+                id="export-line-scale"
+                className="dialog-input"
+                value={board.lineScale}
+                onChange={(e) => updateBoard({ ...board, lineScale: Number(e.target.value) })}
+              >
+                <option value={1}>1×</option>
+                <option value={1.5}>1.5×</option>
+                <option value={2}>2×</option>
+                <option value={2.5}>2.5×</option>
+              </select>
+            </div>
             <div>
               <label className="dialog-label">Supersampling</label>
               <select

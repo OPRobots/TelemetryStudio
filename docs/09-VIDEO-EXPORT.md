@@ -43,9 +43,22 @@ ExportDialog / ExportBoardEditor            Main Process
 - **Vídeo**: la fila que contiene el vídeo deriva su alto del **aspecto del vídeo**,
   así la celda **nunca se deforma** al cambiar el ancho (el asa de alto del vídeo
   está deshabilitada).
+- **Preview viva**: un board "borrador" durante el arrastre reajusta el resto de
+  ítems en vivo (transiciones CSS) para ver las proporciones; el canvas se
+  recompone al soltar y con *debounce* mientras se arrastra.
+- **Leyendas y trazos**: leyenda de la gráfica y readout del minimapa dibujados con
+  tamaño propio (se leen en vídeo) y valores por frame; grosor de líneas ajustable
+  (`lineScale`, solo exportación).
+  - Los anchos de los valores se **precalculan del dataset completo** (valor más
+    ancho) y se reservan, así las etiquetas **no se mueven** durante el vídeo.
+  - La leyenda de la gráfica **envuelve en varias filas**; el compositor **oculta el
+    chrome HTML** del widget y reserva su propia franja (la gráfica cede ese alto).
 - Controles: aspecto (`source/16:9/9:16/1:1/4:5/custom`), resolución, colocación
   del vídeo (`flow`/`background`), ajuste (`contain`/`cover`), panel
-  (`translucent`/`none`) y supersampling.
+  (`translucent`/`none`), **grosor de líneas** y supersampling.
+- **Rango alineado**: por defecto el export empieza en el punto de alineación
+  (`anchor.video_ms`) menos **2 s** de pre-roll, para que el vídeo arranque junto a
+  las gráficas sin alargarse (si no hay anclaje, empieza en 0).
 
 ## Modelo (puro)
 

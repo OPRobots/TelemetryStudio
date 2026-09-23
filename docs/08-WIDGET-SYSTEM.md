@@ -99,10 +99,18 @@ telemetría** que fija el `FrameBus` (en la exportación, mapeado desde el víde
   **resalta el rastro ya recorrido**; el tramo futuro se atenúa. El robot avanza.
 - **DigitalBitmask**: ya mostraba el valor actual (sin cambios).
 
-- **Leyendas en la exportación**: el compositor dibuja el *chrome* HTML del widget
-  (leyenda de la **TimeSeriesChart** y readout X/Y/θ del **Minimap2D**) sobre el
-  canvas, leyendo los textos que el widget actualiza por frame. Así los valores
-  van cambiando en el vídeo exportado igual que en la app.
+- **Leyendas en la exportación**: el compositor pinta su **propia leyenda** de la
+  **TimeSeriesChart** (muestra + nombre + valor) y el readout X/Y/θ del
+  **Minimap2D**, con tamaño proporcional a la resolución (se leen bien en vídeo) y
+  los **valores recalculados por frame**. Los trazos se engrosan con `lineScale`
+  (factor solo de exportación).
+  - **Anchos estables**: antes de exportar se analiza el dataset y se reserva, por
+    campo, el ancho del **valor formateado más ancho de todo el vídeo**, de modo que
+    etiquetas y valores **no se mueven** (los valores van alineados; en el minimapa
+    los valores van a la izquierda, como en la app).
+  - **Varias filas**: la leyenda de la gráfica **envuelve** en tantas filas como
+    haga falta (no encoge la fuente hasta ser ilegible). Para ello el compositor
+    **oculta la leyenda/readout HTML** del widget y reserva su propia franja.
 
 En la app interactiva (`live` sin definir) el comportamiento es el de siempre:
 dataset completo + `zoomRange` compartido.

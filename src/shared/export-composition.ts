@@ -66,6 +66,8 @@ export interface ExportBoard {
   videoFit: VideoFit;
   panel: PanelStyle;
   supersample: number;
+  /** Factor de grosor de líneas/trazos solo para la exportación (1 = normal). */
+  lineScale: number;
   background: string;
   items: ExportItem[];
 }
@@ -85,6 +87,8 @@ export interface ExportLayout {
   height: number;
   background: string;
   supersample: number;
+  /** Grosor de línea relativo para los widgets en la exportación. */
+  lineScale: number;
   videoPlacement: VideoPlacement;
   videoFit: VideoFit;
   /** Región del vídeo a sangre cuando `videoPlacement === 'background'`. */
@@ -284,6 +288,7 @@ export function computeBoardLayout(
     height,
     background: board.background,
     supersample: board.supersample,
+    lineScale: board.lineScale ?? 1,
     videoPlacement: board.videoPlacement,
     videoFit: board.videoFit,
     backgroundVideoRect: backgroundItem ? { x: 0, y: 0, w: width, h: height } : null,
@@ -339,7 +344,8 @@ export function createBoardPreset(preset: BoardPreset, options: PresetOptions): 
     videoPlacement: 'flow',
     videoFit: 'contain',
     panel: 'translucent',
-    supersample: 2,
+    supersample: 1,
+    lineScale: 1.5,
     background: DEFAULT_BACKGROUND,
     items: [],
   };
