@@ -162,6 +162,29 @@ describe('computeBoardLayout', () => {
     expect(widgetItem.rect.h).toBe(video.rect.h);
   });
 
+  it('reserva la franja de etiqueta y la de copyright (el board no las pisa)', () => {
+    const layout = computeBoardLayout(
+      board({
+        showLabel: true,
+        items: [{ id: 'a', kind: 'widget', widgetId: 'w0', width: 12, height: 6 }],
+      })
+    );
+    expect(layout.labelRect).not.toBeNull();
+    expect(layout.copyrightRect.w).toBe(layout.width);
+    expect(layout.copyrightRect.h).toBeGreaterThan(0);
+    const item = layout.items[0]!;
+    expect(item.rect.y).toBeGreaterThanOrEqual(layout.labelRect!.y + layout.labelRect!.h);
+    expect(item.rect.y + item.rect.h).toBeLessThanOrEqual(layout.copyrightRect.y + 1);
+  });
+
+  it('sin showLabel no hay franja superior pero sí copyright', () => {
+    const layout = computeBoardLayout(
+      board({ items: [{ id: 'a', kind: 'widget', widgetId: 'w0', width: 12, height: 6 }] })
+    );
+    expect(layout.labelRect).toBeNull();
+    expect(layout.copyrightRect.y).toBeLessThan(layout.height);
+  });
+
   it('respeta outputSize (previsualización) con dimensiones pares', () => {
     const layout = computeBoardLayout(
       board({ items: [{ id: 'a', kind: 'widget', widgetId: 'w0', width: 12, height: 6 }] }),

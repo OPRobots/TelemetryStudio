@@ -50,8 +50,8 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
 
   const [mode, setMode] = useState<'live' | 'full'>('live');
   const [liveWindowMs, setLiveWindowMs] = useState(10000);
-  const [includeOverlays, setIncludeOverlays] = useState(true);
   const [sessionLabel, setSessionLabel] = useState(dataset?.name ?? 'Telemetry Studio');
+  const showLabel = board.showLabel ?? true;
   const [fps, setFps] = useState(30);
   const [crf, setCrf] = useState(18);
   const [preset, setPreset] = useState('medium');
@@ -99,7 +99,7 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
       endFrame: Math.min(effectiveEnd, totalFrames - 1),
       layout,
       widgets: visibleWidgets,
-      includeOverlays,
+      includeOverlays: showLabel,
       sessionLabel,
       live: mode === 'live',
       liveWindowMs,
@@ -157,7 +157,7 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
           previewTime_s={previewTime_s}
           live={mode === 'live'}
           liveWindowMs={liveWindowMs}
-          includeOverlays={includeOverlays}
+          includeOverlays={showLabel}
           sessionLabel={sessionLabel}
           onChange={updateBoard}
         />
@@ -302,8 +302,8 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
             <label className="dialog-checkbox">
               <input
                 type="checkbox"
-                checked={includeOverlays}
-                onChange={(e) => setIncludeOverlays(e.target.checked)}
+                checked={showLabel}
+                onChange={(e) => updateBoard({ ...board, showLabel: e.target.checked })}
               />
               <span className="text-xs">Etiqueta de sesión</span>
             </label>
@@ -311,7 +311,7 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
               id="export-label"
               className="dialog-input"
               value={sessionLabel}
-              disabled={!includeOverlays}
+              disabled={!showLabel}
               onChange={(e) => setSessionLabel(e.target.value)}
             />
           </div>

@@ -68,6 +68,8 @@ export interface ExportBoard {
   supersample: number;
   /** Factor de grosor de líneas/trazos solo para la exportación (1 = normal). */
   lineScale: number;
+  /** Reserva una franja superior con la etiqueta de sesión. */
+  showLabel?: boolean;
   background: string;
   items: ExportItem[];
 }
@@ -93,8 +95,22 @@ export interface ExportLayout {
   videoFit: VideoFit;
   /** Región del vídeo a sangre cuando `videoPlacement === 'background'`. */
   backgroundVideoRect: Rect | null;
+  /** Franja superior de la etiqueta de sesión (si `showLabel`). */
+  labelRect: Rect | null;
+  /** Franja inferior del copyright (siempre presente). */
+  copyrightRect: Rect;
   /** Ítems en orden de pintado (los posteriores van encima). */
   items: PlacedItem[];
+}
+
+/** Alto de la franja de la etiqueta de sesión (px) para un alto de salida. */
+export function labelBarHeight(outputHeight: number): number {
+  return Math.max(20, Math.round(30 * (outputHeight / 1080)));
+}
+
+/** Alto de la franja del copyright (px) para un alto de salida. */
+export function copyrightBarHeight(outputHeight: number): number {
+  return Math.max(18, Math.round(30 * (outputHeight / 1080)));
 }
 
 const DEFAULT_BACKGROUND = '#0a0e17';
@@ -202,7 +218,20 @@ export function computeBoardLayout(
   const { width, height } = size;
 
   const { pad, gap } = boardPadding(width, height);
-  const inner: Rect = { x: pad, y: pad, w: width - pad * 2, h: height - pad * 2 };
+  const scale = height / 1080;
+  const showLabel = board.showLabel ?? false;
+  const labelHeight = showLabel ? labelBarHeight(height) : 0;
+  const copyrightHeight = copyrightBarHeight(height);
+  // El board se dispone entre la franja de la etiqueta (arriba) y la del
+  // copyright (abajo): así ninguna tapa widgets. El hueco bajo la etiqueta es
+  // pequeño (margen inferior reducido).
+  const topInset = showLabel ? labelHeight + Math.max(6, Math.round(10 * scale)) : pad;
+  const inner: Rect = {
+    x: pad,
+    y: topInset,
+    w: width - pad * 2,
+    h: Math.max(1, height - topInset - copyrightHeight - pad),
+  };
 
   const backgroundItem =
     board.videoPlacement === 'background'
@@ -292,6 +321,8 @@ export function computeBoardLayout(
     videoPlacement: board.videoPlacement,
     videoFit: board.videoFit,
     backgroundVideoRect: backgroundItem ? { x: 0, y: 0, w: width, h: height } : null,
+    labelRect: showLabel ? { x: 0, y: 0, w: width, h: labelHeight } : null,
+    copyrightRect: { x: 0, y: height - copyrightHeight, w: width, h: copyrightHeight },
     items,
   };
 }
@@ -346,6 +377,7 @@ export function createBoardPreset(preset: BoardPreset, options: PresetOptions): 
     panel: 'translucent',
     supersample: 1,
     lineScale: 1.5,
+    showLabel: true,
     background: DEFAULT_BACKGROUND,
     items: [],
   };

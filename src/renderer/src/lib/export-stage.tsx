@@ -14,12 +14,42 @@ import {
 } from '@shared/export-composition';
 import type { TelemetryFrame } from '@core/types/telemetry';
 import type { VideoFrameContext } from '@core/types/video';
+import appIconUrl from '../../../../build/icon.png';
+import oprobotsFaviconUrl from '../assets/oprobots-favicon.png';
+import robotalehLogoUrl from '../assets/robotaleh.svg';
 
 /** Fondo de las celdas de gráficas cuando el panel es translúcido. */
 const PANEL_COLOR = 'rgba(10, 14, 23, 0.72)';
-const LABEL_BAR_HEIGHT = 36;
 const REFERENCE_HEIGHT = 1080;
 const LEGEND_FONT_BASE = 17;
+
+// Logos del footer (se cargan una vez).
+const LOGO_URLS: Record<'app' | 'robotaleh' | 'oprobots', string> = {
+  app: appIconUrl,
+  robotaleh: robotalehLogoUrl,
+  oprobots: oprobotsFaviconUrl,
+};
+const logoImages: Partial<Record<keyof typeof LOGO_URLS, HTMLImageElement>> = {};
+let logoPromise: Promise<void> | null = null;
+function loadLogos(): Promise<void> {
+  if (!logoPromise) {
+    logoPromise = Promise.all(
+      (Object.keys(LOGO_URLS) as Array<keyof typeof LOGO_URLS>).map(
+        (key) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              logoImages[key] = img;
+              resolve();
+            };
+            img.onerror = () => resolve();
+            img.src = LOGO_URLS[key];
+          })
+      )
+    ).then(() => undefined);
+  }
+  return logoPromise;
+}
 
 /** Fuente del "chrome" (leyendas/readout), proporcional a la resolución. */
 function chromeFont(outputHeight: number): number {
@@ -348,6 +378,7 @@ export async function createExportStage(options: ExportStageOptions): Promise<Ex
   } catch {
     // Sin `document.fonts` seguimos igualmente.
   }
+  await loadLogos();
   const widgetById = new Map(widgets.map((w) => [w.id, w]));
   const expectedCells = layout.items.filter((item) => {
     if (item.kind !== 'widget' || !item.widgetId) return false;
@@ -548,17 +579,78 @@ export async function createExportStage(options: ExportStageOptions): Promise<Ex
     }
   };
 
-  const drawLabel = (label?: string): void => {
-    if (!label) return;
+  /** Franja opaca con la etiqueta de sesión (ocupa su propio espacio). */
+  const drawLabelBar = (label: string, rect: Rect): void => {
     const ratio = layout.height / REFERENCE_HEIGHT;
-    const barHeight = Math.max(1, Math.round(LABEL_BAR_HEIGHT * ratio));
-    ctx.fillStyle = 'rgba(10, 14, 23, 0.6)';
-    ctx.fillRect(0, 0, layout.width, barHeight);
+    ctx.fillStyle = layout.background;
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.fillRect(rect.x, rect.y + rect.h - 1, rect.w, 1);
     ctx.fillStyle = '#e2e8f0';
-    ctx.font = `${Math.round(18 * ratio)}px Inter, system-ui, sans-serif`;
+    ctx.font = `600 ${Math.max(12, Math.round(15 * ratio))}px Inter, system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, rect.x + rect.w / 2, rect.y + rect.h / 2);
+  };
+
+  /** Franja inferior con los tres créditos repartidos `space-evenly`:
+   * robotaleh.dev · TelemetryStudio · OPRobots.org. */
+  interface FooterGroup {
+    logo?: HTMLImageElement;
+    text: string;
+    color: string;
+    weight: number;
+  }
+
+  const drawCopyright = (rect: Rect): void => {
+    const ratio = layout.height / REFERENCE_HEIGHT;
+    ctx.fillStyle = layout.background;
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.fillRect(rect.x, rect.y, rect.w, 1);
+
+    const fontPx = Math.max(9, Math.round(12 * ratio));
+    const gap = fontPx * 0.55;
+    const logoH = Math.round(fontPx * 1.5);
+    const padX = Math.max(10, Math.round(16 * ratio));
+    const font = (weight: number): string =>
+      `${weight} ${fontPx}px Inter, system-ui, sans-serif`;
+    const groups: FooterGroup[] = [
+      { logo: logoImages.robotaleh, text: 'robotaleh.dev', color: '#6b7688', weight: 400 },
+      { logo: logoImages.app, text: 'TelemetryStudio', color: '#a2adc0', weight: 600 },
+      { logo: logoImages.oprobots, text: 'OPRobots.org', color: '#6b7688', weight: 400 },
+    ];
+
+    const widths = groups.map((group) => {
+      ctx.font = font(group.weight);
+      const textW = ctx.measureText(group.text).width;
+      const logoW = group.logo ? logoH + gap * 0.8 : 0;
+      return logoW + textW;
+    });
+    const total = widths.reduce((a, b) => a + b, 0);
+    // `space-evenly`: huecos iguales entre bordes e ítems.
+    const evenGap = Math.max(0, (rect.w - padX * 2 - total) / (groups.length + 1));
+    let x = rect.x + padX + evenGap;
+    const cy = rect.y + rect.h / 2;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(label, Math.round(16 * ratio), Math.round(barHeight / 2));
+    groups.forEach((group, i) => {
+      let tx = x;
+      if (group.logo) {
+        // Logos circulares (como en "Acerca de…").
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x + logoH / 2, cy, logoH / 2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(group.logo, x, cy - logoH / 2, logoH, logoH);
+        ctx.restore();
+        tx = x + logoH + gap * 0.8;
+      }
+      ctx.font = font(group.weight);
+      ctx.fillStyle = group.color;
+      ctx.fillText(group.text, tx, cy);
+      x += widths[i]! + evenGap;
+    });
   };
 
   const renderFrame = async (
@@ -597,7 +689,8 @@ export async function createExportStage(options: ExportStageOptions): Promise<Ex
 
     if (layout.backgroundVideoRect) drawVideoInto(layout.backgroundVideoRect, video);
     drawItems(video, timeMs);
-    drawLabel(overlay?.label);
+    if (layout.labelRect) drawLabelBar(overlay?.label ?? '', layout.labelRect);
+    drawCopyright(layout.copyrightRect);
   };
 
   const getImageData = (): Uint8ClampedArray =>

@@ -40,6 +40,11 @@ ExportDialog / ExportBoardEditor            Main Process
 - Las cajas muestran el **título del widget** (`label · tipo`) del layout principal.
 - **Presets** que inicializan el board (editables): Overlay, Vertical, Horizontal,
   Solo gráficas.
+- **Etiqueta y copyright en franjas propias**: la etiqueta de sesión ocupa una
+  **franja superior** (opaca, activable con `board.showLabel`) y el copyright una
+  **franja inferior** (siempre) con sus logos: `TelemetryStudio · robotaleh.dev ·
+  OPRobots.org`. El board se dispone **entre ambas**, así que **no tapan widgets**
+  (antes la etiqueta era un overlay que podía solapar la leyenda del minimapa).
 - **Vídeo**: la fila que contiene el vídeo deriva su alto del **aspecto del vídeo**,
   así la celda **nunca se deforma** al cambiar el ancho (el asa de alto del vídeo
   está deshabilitada).
