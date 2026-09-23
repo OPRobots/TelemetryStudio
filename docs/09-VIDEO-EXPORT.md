@@ -37,8 +37,12 @@ ExportDialog / ExportBoardEditor            Main Process
   coste a resolución alta).
 - **Añadir**: `+ Widget…` (de los widgets de la sesión), `+ Sección / Espacio`, y
   el **Vídeo** (con/sin ítem).
+- Las cajas muestran el **título del widget** (`label · tipo`) del layout principal.
 - **Presets** que inicializan el board (editables): Overlay, Vertical, Horizontal,
   Solo gráficas.
+- **Vídeo**: la fila que contiene el vídeo deriva su alto del **aspecto del vídeo**,
+  así la celda **nunca se deforma** al cambiar el ancho (el asa de alto del vídeo
+  está deshabilitada).
 - Controles: aspecto (`source/16:9/9:16/1:1/4:5/custom`), resolución, colocación
   del vídeo (`flow`/`background`), ajuste (`contain`/`cover`), panel
   (`translucent`/`none`) y supersampling.
@@ -76,9 +80,12 @@ computeBoardLayout(board, source?, outputSize?) → ExportLayout   // rects en p
 - Monta los widgets del board en un contenedor oculto a tamaño de celda ×
   `supersample`, con un **`FrameBus` dedicado**; al publicar el frame los widgets
   se repintan **de forma síncrona** (`setWidgetDrawImmediate`), sin depender de `rAF`.
-- Captura el **canvas de cada widget** a su rect dentro de la celda. El vídeo se
-  dibuja con `contain`/`cover` real (sin deformar); `section` no dibuja nada.
-- **Modo directo** (`live`): las gráficas avanzan con el vídeo (ver `docs/08`).
+- Captura el **canvas de cada widget** a su rect dentro de la celda y, sobre él, el
+  **chrome HTML** (leyenda de la gráfica temporal, readout del minimapa) leyendo
+  los textos que el widget actualiza por frame. El vídeo se dibuja con
+  `contain`/`cover` real; `section` no dibuja nada.
+- **Modo directo** (`live`): las gráficas avanzan con el vídeo —página que crece
+  desde la izquierda y luego se desplaza— (ver `docs/08`).
 
 ## Orquestador (renderer)
 

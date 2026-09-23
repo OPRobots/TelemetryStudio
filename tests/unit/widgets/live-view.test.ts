@@ -15,4 +15,13 @@ describe('liveRange', () => {
     expect(liveRange(0, 0)).toEqual({ startMs: -10000, endMs: 0 });
     expect(liveRange(0, Number.NaN)).toEqual({ startMs: -10000, endMs: 0 });
   });
+
+  it('ancla la página al inicio: crece desde la izquierda antes de llenarse', () => {
+    expect(liveRange(3000, 10000, 0)).toEqual({ startMs: 0, endMs: 10000 });
+  });
+
+  it('una vez llena, la página se desplaza de forma continua', () => {
+    expect(liveRange(12000, 10000, 0)).toEqual({ startMs: 2000, endMs: 12000 });
+    expect(liveRange(25000, 10000, 0)).toEqual({ startMs: 15000, endMs: 25000 });
+  });
 });

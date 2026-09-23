@@ -87,15 +87,22 @@ como si llegaran en vivo desde el robot. El "reloj" es el **timestamp de
 telemetría** que fija el `FrameBus` (en la exportación, mapeado desde el vídeo con
 `videoSynchronizer.mapTime`).
 
-- **TimeSeriesChart**: ventana deslizante `[t − W, t]`; muestrea y escala solo esa
-  ventana (la traza termina en `t`, sin "futuro") y el cursor auto-follow va en el
-  borde derecho. Se deriva del timestamp efectivo, así que **no hay re-render por
-  frame**. Con `strictRange`, antes del primer dato la ventana queda vacía (no cae
-  al dataset completo).
-- **StateTimeline**: la barra avanza mostrando los estados hasta `t`.
+- **TimeSeriesChart**: **página** de ancho `W` anclada al inicio: la traza **crece
+  desde la izquierda**; cuando `t` llena la página, ésta **se desplaza de forma
+  continua**. Los datos nunca superan `t` (sin "futuro"); la escala usa la página
+  completa. El cursor auto-follow va en `t` (borde). Se deriva del timestamp
+  efectivo, así que **no hay re-render por frame**. Con `strictRange`, antes del
+  primer dato la página queda vacía (no cae al dataset completo).
+- **StateTimeline**: la barra avanza igual (crece y luego se desplaza) mostrando
+  los estados hasta `t` (la capa base se cachea incluyendo la ventana directa).
 - **Minimap2D**: se mantiene la **trayectoria completa** (sin perder valores) y se
   **resalta el rastro ya recorrido**; el tramo futuro se atenúa. El robot avanza.
 - **DigitalBitmask**: ya mostraba el valor actual (sin cambios).
+
+- **Leyendas en la exportación**: el compositor dibuja el *chrome* HTML del widget
+  (leyenda de la **TimeSeriesChart** y readout X/Y/θ del **Minimap2D**) sobre el
+  canvas, leyendo los textos que el widget actualiza por frame. Así los valores
+  van cambiando en el vídeo exportado igual que en la app.
 
 En la app interactiva (`live` sin definir) el comportamiento es el de siempre:
 dataset completo + `zoomRange` compartido.

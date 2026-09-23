@@ -212,23 +212,54 @@ export function computeBoardLayout(
   const items: PlacedItem[] = [];
 
   if (flowItems.length > 0) {
-    const rows = packGridRows(flowItems.map((i) => ({ ...i, width: clampGridWidth(i.width) })));
-    const rowWeights = rows.map((row) =>
-      Math.max(...row.map((i) => clampGridHeight(i.height)), 1)
-    );
-    const totalWeight = rowWeights.reduce((a, b) => a + b, 0) || 1;
-    const totalGap = gap * Math.max(rows.length - 1, 0);
-    const unit = Math.max(inner.h - totalGap, 1) / totalWeight;
-
     const colUnit = (inner.w - gap * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
+    const cellWidth = (cols: number): number => cols * colUnit + (cols - 1) * gap;
+    const videoAspect =
+      source && source.width > 0 && source.height > 0 ? source.width / source.height : null;
+
+    const rows = packGridRows(flowItems.map((i) => ({ ...i, width: clampGridWidth(i.width) })));
+
+    // Altura por fila: las que contienen el vídeo la derivan de su aspecto (la
+    // celda del vídeo nunca se deforma); el resto son "flexibles" (pesos) y se
+    // reparten el alto restante.
+    const rowDefs = rows.map((row) => {
+      const videoItem = row.find((i) => i.kind === 'video');
+      const weight = Math.max(...row.map((i) => clampGridHeight(i.height)), 1);
+      if (videoItem && videoAspect) {
+        return {
+          row,
+          weight,
+          fixedHeight: cellWidth(clampGridWidth(videoItem.width)) / videoAspect,
+        };
+      }
+      return { row, weight, fixedHeight: null as number | null };
+    });
+
+    const totalGap = gap * Math.max(rows.length - 1, 0);
+    const maxAvailable = Math.max(inner.h - totalGap, 1);
+    let fixedTotal = rowDefs.reduce((sum, def) => sum + (def.fixedHeight ?? 0), 0);
+    if (fixedTotal > maxAvailable && fixedTotal > 0) {
+      const scaleDown = maxAvailable / fixedTotal;
+      for (const def of rowDefs) {
+        if (def.fixedHeight != null) def.fixedHeight *= scaleDown;
+      }
+      fixedTotal = maxAvailable;
+    }
+    const flexWeight = rowDefs.reduce(
+      (sum, def) => sum + (def.fixedHeight == null ? def.weight : 0),
+      0
+    );
+    const unit = flexWeight > 0 ? Math.max(maxAvailable - fixedTotal, 0) / flexWeight : 0;
 
     let y = inner.y;
-    rows.forEach((row, rowIndex) => {
+    for (const def of rowDefs) {
+      const rowHeight = def.fixedHeight ?? def.weight * unit;
       let usedCols = 0;
-      for (const item of row) {
+      for (const item of def.row) {
         const cols = clampGridWidth(item.width);
         const x = inner.x + usedCols * (colUnit + gap);
-        const w = cols * colUnit + (cols - 1) * gap;
+        const w = cellWidth(cols);
+        const h = def.fixedHeight != null ? rowHeight : clampGridHeight(item.height) * unit;
         items.push({
           id: item.id,
           kind: item.kind,
@@ -238,14 +269,14 @@ export function computeBoardLayout(
             x: Math.round(x),
             y: Math.round(y),
             w: Math.round(w),
-            h: Math.max(1, Math.round(clampGridHeight(item.height) * unit)),
+            h: Math.max(1, Math.round(h)),
           },
           panel: board.panel,
         });
         usedCols += cols;
       }
-      y += rowWeights[rowIndex] * unit + gap;
-    });
+      y += Math.max(1, rowHeight) + gap;
+    }
   }
 
   return {
@@ -325,7 +356,9 @@ export function createBoardPreset(preset: BoardPreset, options: PresetOptions): 
     for (const id of widgetIds) base.items.push(widget(id, 12, 5));
   } else if (preset === 'horizontal') {
     base.aspect = options.aspect ?? '16:9';
-    if (hasVideo) base.items.push(video());
+    // El vídeo ocupa 6 columnas; el primer widget comparte su fila y el resto
+    // van debajo a dos columnas.
+    if (hasVideo) base.items.push({ ...video(), width: 6 });
     for (const id of widgetIds) base.items.push(widget(id, 6, 6));
   } else {
     // charts-only

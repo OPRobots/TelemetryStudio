@@ -212,6 +212,46 @@ export async function createExportStage(options: ExportStageOptions): Promise<Ex
     ctx.restore();
   };
 
+  /**
+   * Copia el "chrome" HTML del widget (leyenda de la gráfica temporal y readout
+   * del minimapa) al canvas. El widget ya actualiza esos textos por frame, así
+   * que los valores del vídeo exportado van cambiando igual que en la app.
+   */
+  const drawChrome = (cellEl: HTMLDivElement, cell: Rect, cellRect: DOMRect): void => {
+    const chrome = cellEl.querySelectorAll<HTMLElement>('.chart-legend, .minimap-readout');
+    for (const root of Array.from(chrome)) {
+      for (const node of Array.from(root.querySelectorAll<HTMLElement>('*'))) {
+        const r = node.getBoundingClientRect();
+        if (r.width <= 0 || r.height <= 0) continue;
+        const style = window.getComputedStyle(node);
+        const x = cell.x + (r.left - cellRect.left) / scale;
+        const y = cell.y + (r.top - cellRect.top) / scale;
+        const w = r.width / scale;
+        const h = r.height / scale;
+
+        const bg = style.backgroundColor;
+        if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+          ctx.fillStyle = bg;
+          ctx.fillRect(x, y, w, h);
+        }
+
+        const text = Array.from(node.childNodes)
+          .filter((n) => n.nodeType === Node.TEXT_NODE)
+          .map((n) => n.textContent ?? '')
+          .join('')
+          .trim();
+        if (text) {
+          const fontSize = parseFloat(style.fontSize) || 12;
+          ctx.fillStyle = style.color || '#e6eaf2';
+          ctx.font = `${style.fontWeight || '400'} ${fontSize / scale}px ${style.fontFamily}`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, x, y + h / 2);
+        }
+      }
+    }
+  };
+
   const drawWidgetCell = (widgetId: string, rect: Rect, panel: string): void => {
     const cellEl = cellRefs.get(widgetId);
     if (!cellEl) return;
@@ -235,6 +275,7 @@ export async function createExportStage(options: ExportStageOptions): Promise<Ex
         // Canvas no dibujable (p. ej. sin bitmap): se ignora.
       }
     }
+    drawChrome(cellEl, rect, cellRect);
   };
 
   const drawItems = (video: HTMLVideoElement | null): void => {

@@ -115,35 +115,37 @@ export function TimeSeriesChart({
     const { getFrames, fields, fieldsKey, config, hoverTimestamp_ms, zoomRange, live, liveWindowMs } =
       latest.current;
     const snapshot = bus?.getSnapshot();
+    const frames = getFrames();
+    const anchorMs = frames.length > 0 ? frames[0]!.timestamp_ms : undefined;
 
     // Leyenda: valor real de cada campo en el timestamp efectivo (hover/vídeo/frame).
     const legendMs =
       hoverTimestamp_ms ?? snapshot?.context?.viewTimestamp_ms ?? snapshot?.frame?.timestamp_ms ?? null;
     if (legendMs != null) {
-      const legendFrames = getFrames();
       fields.forEach((field, i) => {
         const el = legendValueRefs.current[i];
-        if (el) el.textContent = formatLegendValue(valueAt(legendFrames, field, legendMs));
+        if (el) el.textContent = formatLegendValue(valueAt(frames, field, legendMs));
       });
     }
 
-    // Modo directo (exportación/replay): ventana deslizante `[t − W, t]` que
-    // termina en el timestamp efectivo del FrameBus. Sin re-render por frame.
-    const effectiveZoom =
+    // Modo directo: la página crece desde el inicio y luego se desplaza. Los
+    // datos nunca superan `now` (`sampleRange`); la escala usa la página entera.
+    const livePage =
       live && legendMs != null
-        ? liveRange(legendMs, liveWindowMs ?? DEFAULT_LIVE_WINDOW_MS)
-        : zoomRange;
+        ? liveRange(legendMs, liveWindowMs ?? DEFAULT_LIVE_WINDOW_MS, anchorMs)
+        : null;
+    const sampleRange = livePage ? { startMs: livePage.startMs, endMs: legendMs! } : zoomRange;
+    const scaleRange = livePage ?? zoomRange;
 
     const u = uplotRef.current;
     if (!u) return;
 
-    const frames = getFrames();
     const cfgLocal = { ...DEFAULT_CONFIG, ...(config as TimeSeriesConfig) };
 
     // Firma del muestreo: con zoom, la ventana visible (+vecinos) y su último
     // timestamp; sin zoom, el dataset completo por longitud.
-    const bounds = effectiveZoom
-      ? frameRangeBounds(frames, effectiveZoom.startMs, effectiveZoom.endMs)
+    const bounds = sampleRange
+      ? frameRangeBounds(frames, sampleRange.startMs, sampleRange.endMs)
       : null;
     const sampleSig = bounds
       ? `${fieldsKey}|${cfgLocal.maxPoints}|${bounds.start}:${bounds.end}:${
@@ -153,7 +155,7 @@ export function TimeSeriesChart({
     if (sampledRef.current.sig !== sampleSig) {
       sampledRef.current = {
         sig: sampleSig,
-        data: buildSampledData(frames, fields, cfgLocal.maxPoints, effectiveZoom, live === true),
+        data: buildSampledData(frames, fields, cfgLocal.maxPoints, sampleRange, live === true),
       };
     }
 
@@ -172,17 +174,17 @@ export function TimeSeriesChart({
     }
 
     // Escalas: solo al cambiar datos, zoom o rango Y (no pisa el arrastre de zoom).
-    const xRange = effectiveZoom ? `${effectiveZoom.startMs}:${effectiveZoom.endMs}` : 'full';
+    const xRange = scaleRange ? `${scaleRange.startMs}:${scaleRange.endMs}` : 'full';
     const scaleSig = `${sampleSig}|${cfgLocal.yMin}:${cfgLocal.yMax}|${xRange}`;
     if (scaleSigRef.current !== scaleSig) {
       scaleSigRef.current = scaleSig;
       if (cfgLocal.yMin !== cfgLocal.yMax) {
         u.setScale('y', { min: cfgLocal.yMin, max: cfgLocal.yMax });
       }
-      if (effectiveZoom) {
+      if (scaleRange) {
         u.setScale('x', {
-          min: effectiveZoom.startMs / 1000,
-          max: effectiveZoom.endMs / 1000,
+          min: scaleRange.startMs / 1000,
+          max: scaleRange.endMs / 1000,
         });
       } else if (sampled.x.length > 1) {
         u.setScale('x', { min: sampled.x[0], max: sampled.x[sampled.x.length - 1] });

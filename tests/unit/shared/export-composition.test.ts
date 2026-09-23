@@ -145,6 +145,22 @@ describe('computeBoardLayout', () => {
     expect(a.rect.x).toBeGreaterThan(layout.width / 2 - 100);
   });
 
+  it('la fila del vídeo conserva el aspecto del vídeo (con `source`)', () => {
+    const layout = computeBoardLayout(
+      board({
+        items: [
+          { id: 'v', kind: 'video', width: 6, height: 6 },
+          { id: 'a', kind: 'widget', widgetId: 'w0', width: 6, height: 6 },
+        ],
+      }),
+      { width: 1920, height: 1080 }
+    );
+    const video = layout.items.find((i) => i.id === 'v')!;
+    const widgetItem = layout.items.find((i) => i.id === 'a')!;
+    expect(video.rect.w / video.rect.h).toBeCloseTo(16 / 9, 1);
+    expect(widgetItem.rect.h).toBe(video.rect.h);
+  });
+
   it('respeta outputSize (previsualización) con dimensiones pares', () => {
     const layout = computeBoardLayout(
       board({ items: [{ id: 'a', kind: 'widget', widgetId: 'w0', width: 12, height: 6 }] }),

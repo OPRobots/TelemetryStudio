@@ -84,6 +84,7 @@ export function ExportBoardEditor({
   const boardRef = useRef(board);
   boardRef.current = board;
 
+  const widgetById = useMemo(() => new Map(widgets.map((w) => [w.id, w])), [widgets]);
   const layout = useMemo(() => computeBoardLayout(board, source), [board, source]);
   const { pad, gap } = boardPadding(layout.width, layout.height);
   const innerW = layout.width - pad * 2;
@@ -442,6 +443,15 @@ export function ExportBoardEditor({
             />
             {layout.items.map((item) => {
               const dragging = drag?.id === item.id;
+              const placedWidget = item.widgetId ? widgetById.get(item.widgetId) : undefined;
+              const title =
+                item.kind === 'video'
+                  ? '🎬 Vídeo'
+                  : item.kind === 'section'
+                    ? '␣ Sección'
+                    : `📈 ${placedWidget?.label ?? item.widgetId ?? 'widget'} · ${
+                        placedWidget?.type ?? ''
+                      }`;
               const wx = item.rect.x;
               const wy = item.rect.y + (dragging && drag?.kind === 'reorder' ? drag.ghostY : 0);
               const ww = dragging && drag?.kind === 'width' ? drag.ghostW : item.rect.w;
@@ -479,7 +489,7 @@ export function ExportBoardEditor({
                     }}
                   >
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.kind === 'video' ? '🎬 Vídeo' : item.kind === 'section' ? '␣ Sección' : '📈 Widget'}
+                      {title}
                     </span>
                     <button
                       className="icon-button icon-button--compact"
@@ -504,20 +514,22 @@ export function ExportBoardEditor({
                       cursor: 'ew-resize',
                     }}
                   />
-                  {/* Asa inferior */}
-                  <div
-                    onPointerDown={(e) => startDrag('height', item.id, item.rect, e)}
-                    style={{
-                      position: 'absolute',
-                      bottom: -4,
-                      left: '50%',
-                      width: 24,
-                      height: 8,
-                      marginLeft: -12,
-                      background: 'rgba(59,130,246,0.9)',
-                      cursor: 'ns-resize',
-                    }}
-                  />
+                  {/* Asa inferior (el vídeo mantiene su aspecto: no se estira) */}
+                  {item.kind !== 'video' && (
+                    <div
+                      onPointerDown={(e) => startDrag('height', item.id, item.rect, e)}
+                      style={{
+                        position: 'absolute',
+                        bottom: -4,
+                        left: '50%',
+                        width: 24,
+                        height: 8,
+                        marginLeft: -12,
+                        background: 'rgba(59,130,246,0.9)',
+                        cursor: 'ns-resize',
+                      }}
+                    />
+                  )}
                   {item.kind === 'section' && (
                     <input
                       className="dialog-input"

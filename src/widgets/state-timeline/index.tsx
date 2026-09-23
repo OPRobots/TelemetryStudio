@@ -172,15 +172,20 @@ export function StateTimeline({
     const timelineWidth = Math.max(width - offsetX * 2, 1);
     const startMs = allFrames.length > 0 ? allFrames[0]!.timestamp_ms : 0;
     const endMs = allFrames.length > 0 ? allFrames[allFrames.length - 1]!.timestamp_ms : 0;
-    // Modo directo: la barra avanza hasta el timestamp visualizado.
-    const liveView =
+    // Modo directo: la página crece desde el inicio y luego se desplaza; los
+    // segmentos nunca superan el timestamp visualizado (no se muestra "futuro").
+    const livePage =
       live && viewTimestamp != null
-        ? liveRange(viewTimestamp, liveWindowMs ?? DEFAULT_LIVE_WINDOW_MS)
+        ? liveRange(viewTimestamp, liveWindowMs ?? DEFAULT_LIVE_WINDOW_MS, startMs)
         : null;
-    const viewRange = liveView ?? zoomRange;
+    const viewRange = livePage ?? zoomRange;
     const viewStartMs = viewRange ? Math.max(viewRange.startMs, startMs) : startMs;
-    const viewEndMs = viewRange ? Math.min(viewRange.endMs, endMs) : endMs;
-    const span = Math.max(viewEndMs - viewStartMs, 1);
+    const viewEndMs = livePage
+      ? Math.min(viewTimestamp ?? endMs, endMs)
+      : viewRange
+        ? Math.min(viewRange.endMs, endMs)
+        : endMs;
+    const span = Math.max(viewRange ? viewRange.endMs - viewRange.startMs : endMs - startMs, 1);
 
     // --- Capa estática (fondo + segmentos + etiquetas) ---
     let base = baseRef.current.canvas;
@@ -188,8 +193,8 @@ export function StateTimeline({
       base = document.createElement('canvas');
       baseRef.current.canvas = base;
     }
-    const baseSig = `${frames.length}|${field ?? ''}|${stateMapKey}|${
-      zoomRange ? `${viewStartMs}:${viewEndMs}` : 'full'
+    const baseSig = `${live ? 'live' : 'static'}|${frames.length}|${field ?? ''}|${stateMapKey}|${
+      viewRange ? `${viewStartMs}:${viewEndMs}:${Math.round(span)}` : 'full'
     }|${Math.round(width)}x${Math.round(height)}|${cfg.barHeight}|${cfg.showLabels}`;
     if (baseRef.current.sig !== baseSig) {
       base.width = Math.max(width * dpr, 1);
