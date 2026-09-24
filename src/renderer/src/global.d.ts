@@ -82,10 +82,12 @@ export interface TelemetryAPI {
     csvLabels?: string[];
   }) => Promise<void>;
   exportStart: (config: unknown) => Promise<{ success: boolean; error?: string }>;
+  exportChooseDestination: (
+    options?: unknown
+  ) => Promise<{ canceled: boolean; filePath?: string }>;
   exportWriteFrame: (buffer: ArrayBuffer) => Promise<{ success: boolean; error?: string }>;
   exportFinalize: () => Promise<{ success: boolean; outputPath?: string; error?: string }>;
   exportAbort: () => Promise<{ success: boolean }>;
-  exportSave: () => Promise<{ canceled: boolean; savedPath?: string; error?: string }>;
 }
 
 declare global {

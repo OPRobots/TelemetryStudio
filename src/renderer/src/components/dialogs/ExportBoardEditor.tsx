@@ -9,7 +9,6 @@ import {
   type ExportBoard,
   type ExportItem,
   type PanelStyle,
-  type ResolutionPreset,
   type Size,
   type VideoFit,
 } from '@shared/export-composition';
@@ -24,7 +23,6 @@ const PREVIEW_MAX_WIDTH = 720;
 const STAGE_DEBOUNCE_MS = 180;
 
 const ASPECTS: AspectPreset[] = ['source', '16:9', '9:16', '1:1', '4:5', 'custom'];
-const RESOLUTIONS: ResolutionPreset[] = ['720p', '1080p', '1440p', '2160p', 'source'];
 const PRESETS: Array<{ id: BoardPreset; label: string }> = [
   { id: 'overlay', label: 'Overlay' },
   { id: 'vertical', label: 'Vertical' },
@@ -387,21 +385,6 @@ export function ExportBoardEditor({
             {ASPECTS.map((a) => (
               <option key={a} value={a}>
                 {a}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="dialog-label">Resolución</label>
-          <select
-            id="export-resolution"
-            className="dialog-input"
-            value={board.resolution}
-            onChange={(e) => setBoard({ resolution: e.target.value as ResolutionPreset })}
-          >
-            {RESOLUTIONS.map((r) => (
-              <option key={r} value={r}>
-                {r}
               </option>
             ))}
           </select>

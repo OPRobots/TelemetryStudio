@@ -119,13 +119,15 @@ const api = {
   // === Export ===
   exportStart: (config: unknown): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('export:start', config),
+  exportChooseDestination: (
+    options?: unknown
+  ): Promise<{ canceled: boolean; filePath?: string }> =>
+    ipcRenderer.invoke('export:choose-destination', options),
   exportWriteFrame: (buffer: ArrayBuffer): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('export:writeFrame', buffer),
   exportFinalize: (): Promise<{ success: boolean; outputPath?: string; error?: string }> =>
     ipcRenderer.invoke('export:finalize'),
   exportAbort: (): Promise<{ success: boolean }> => ipcRenderer.invoke('export:abort'),
-  exportSave: (): Promise<{ canceled: boolean; savedPath?: string; error?: string }> =>
-    ipcRenderer.invoke('export:save'),
 };
 
 if (process.contextIsolated) {

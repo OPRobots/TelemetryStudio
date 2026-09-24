@@ -105,12 +105,30 @@ computeBoardLayout(board, source?, outputSize?) → ExportLayout   // rects en p
 - **Modo directo** (`live`): las gráficas avanzan con el vídeo —página que crece
   desde la izquierda y luego se desplaza— (ver `docs/08`).
 
+## Asistente en 2 pasos
+
+`ExportDialog` es un asistente:
+
+1. **Layout**: presets, editor del board (aspecto, vídeo, panel, añadir/quitar/
+   redimensionar), **título** (etiqueta de sesión) y el slider de previsualización.
+   Botones: *Cerrar* · *Siguiente*.
+2. **Salida**: resolución, modo de gráficas/ventana, grosor de líneas,
+   supersampling, FPS, calidad (CRF)/preset y rango de frames. Botones:
+   *Cerrar* · *← Atrás* · *Exportar…*.
+
+**Exportación directa**: *Exportar…* abre un `dialog.showSaveDialog` nativo
+(`export:choose-destination`) con un nombre por defecto
+(`telemetria_<sesión>_<fecha>.mp4`) y FFmpeg escribe **directamente** en la ruta
+elegida (sin temporales ni copia). Si se cancela o falla, se **borra el fichero
+parcial**.
+
 ## Orquestador (renderer)
 
 `src/services/video-exporter.ts` → `exportVideo(config, onProgress?, signal?)`:
-por frame hace `seekTo`, calcula el timestamp de telemetría con
+por frame hace `seekVideo`, calcula el timestamp de telemetría con
 **`videoSynchronizer.mapTime`** (vídeo → telemetría, respeta anclaje/drift) y
-compone. Envía cada frame como raw RGBA y reporta progreso.
+compone. Envía cada frame como raw RGBA y reporta progreso. `config.outputPath`
+se pasa a `export:start`, que lanza FFmpeg hacia ese destino.
 
 ## Persistencia
 

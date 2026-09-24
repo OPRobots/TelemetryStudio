@@ -58,6 +58,7 @@ export async function exportVideo(
     codec: config.codec,
     crf: config.crf,
     preset: config.preset,
+    outputPath: config.outputPath,
   });
   if (!start.success) {
     stage.dispose();

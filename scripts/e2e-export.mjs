@@ -68,7 +68,10 @@ function registerMocks(win) {
     aborted += 1;
     return { success: true };
   });
-  ipcMain.handle('export:save', () => ({ canceled: true }));
+  ipcMain.handle('export:choose-destination', () => ({
+    canceled: false,
+    filePath: '/tmp/opencode/export-e2e.mp4',
+  }));
 }
 
 app.whenReady().then(async () => {
@@ -159,15 +162,17 @@ app.whenReady().then(async () => {
       `document.body.innerText.includes('Exportar vídeo')`
     );
 
-    // Configurar 10 frames a 720p
+    // Paso 2 (salida) y configuración: 10 frames a 720p
+    await win.webContents.executeJavaScript(clickByText('Siguiente'));
+    await new Promise((r) => setTimeout(r, 250));
     await win.webContents.executeJavaScript(setSelect('export-resolution', '720p'));
     await win.webContents.executeJavaScript(setInput('export-fps', 10));
     await win.webContents.executeJavaScript(setInput('export-start', 0));
     await win.webContents.executeJavaScript(setInput('export-end', 9));
     await new Promise((r) => setTimeout(r, 200));
 
-    // Iniciar exportación
-    await win.webContents.executeJavaScript(clickByText('Iniciar exportación'));
+    // Exportar (elige destino con el diálogo nativo y escribe directo)
+    await win.webContents.executeJavaScript(clickByText('Exportar…'));
 
     // Esperar a que aparezca "Exportado en"
     let done = false;
@@ -187,7 +192,7 @@ app.whenReady().then(async () => {
     await win.webContents.executeJavaScript(setInput('export-start', 0));
     await win.webContents.executeJavaScript(setInput('export-end', 299));
     await new Promise((r) => setTimeout(r, 200));
-    await win.webContents.executeJavaScript(clickByText('Iniciar exportación'));
+    await win.webContents.executeJavaScript(clickByText('Exportar…'));
     await new Promise((r) => setTimeout(r, 600));
     await win.webContents.executeJavaScript(clickByText('Cancelar'));
     const framesAtCancel = sentFrames;

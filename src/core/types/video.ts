@@ -37,6 +37,8 @@ export interface PlaybackState {
  * el main process.
  */
 export interface ExportConfig {
+  /** Ruta de destino elegida por el usuario (se escribe directamente ahí). */
+  outputPath: string;
   format: 'mp4' | 'webm';
   codec: 'h264' | 'vp9';
   fps: number;
