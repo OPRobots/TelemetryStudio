@@ -298,25 +298,23 @@ Pipeline de exportación de vídeo con gráficos superpuestos para crear conteni
 
 ### Semana 1: Core Export
 - [x] `src/services/video-exporter.ts` — Orquestador (renderer)
-  - Composición en canvas (vídeo base + widgets + overlay)
-  - Progress reporting
-  - Soporte para `sessionLabel` en overlays
+  - Composición por **board** (`ExportStage`): vídeo + widgets + leyendas
+  - Modo directo (replay) sincronizado por timestamp
+  - Progress reporting y `sessionLabel` en franja propia
 - [x] `src/main/export-service.ts` — Servicio en Main Process
-  - `export:start`, `export:writeFrame`, `export:finalize`, `export:save`, `export:abort`
-  - Backpressure con callback de escritura de stdin
-- [x] `src/shared/export-args.ts` — Construcción de argumentos FFmpeg (pura)
+  - `export:choose-destination`, `export:start`, `export:writeFrame`, `export:finalize`, `export:abort`
+  - Escritura **directa** al destino elegido (sin temporales); borra el parcial al fallar/cancelar
+- [x] `src/shared/export-composition.ts` — Board, empaquetado **staggered (skyline)** y argumentos FFmpeg
 - [x] Preload bridge para exportación
 
 ### Semana 2: UI + FFmpeg
-- [x] `src/renderer/src/components/dialogs/ExportDialog.tsx`
-  - Configuración: resolución, fps, rango de frames
-  - Selección de widgets a incluir
-  - Campo para nombre de sesión (overlay)
-  - Barra de progreso
+- [x] `ExportDialog` — **asistente de 2 pasos** (Layout / Salida)
+  - Paso 1: editor de board (aspecto, vídeo, panel, añadir/reordenar/redimensionar)
+  - Paso 2: resolución, fps, rango, calidad/preset y **previsualización del frame medio**
+- [x] Franjas propias de **etiqueta** y **copyright** (logos) en todos los vídeos
 - [x] Exportación con **FFmpeg** empaquetado como sidecar (raw RGBA por stdin)
-  - FFmpeg directo: robusto y portable, validado en el PoC 3
-- [x] Test unitario de argumentos + test de integración con FFmpeg real (MP4 + ffprobe)
-- [x] E2E de exportación (composición del renderer + envío de frames)
+- [x] Test unitario de composición/argumentos + test de integración con FFmpeg real (MP4 + ffprobe)
+- [x] E2E de exportación (composición del renderer + envío de frames + cancelación)
 
 ### Validación
 ```bash
