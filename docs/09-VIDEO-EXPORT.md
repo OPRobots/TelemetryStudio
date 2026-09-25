@@ -35,19 +35,31 @@ ExportDialog / ExportBoardEditor            Main Process
   - **quitar** el ítem.
   Al arrastrar solo se mueve el contorno; al soltar se **recompone** (evita el
   coste a resolución alta).
-- **Añadir**: `+ Widget…` (de los widgets de la sesión), `+ Sección / Espacio`, y
-  el **Vídeo** (con/sin ítem).
+- **Añadir**: un único desplegable con `Sección / Espacio` + los widgets de la
+  sesión.
 - Las cajas muestran el **título del widget** (`label · tipo`) del layout principal.
-- **Presets** que inicializan el board (editables): Overlay, Vertical, Horizontal,
-  Solo gráficas.
+- **Un único layout, sin presets**: se configuran **Aspect ratio**
+  (`16:9/9:16/1:1/4:5/custom`; por defecto **16:9**), **Vídeo** (`Oculto · Primer
+  plano · Segundo plano`) y **Panel** (`Translúcido · Sin panel`).
+  - **Vídeo**: `Primer plano` = ítem del layout; `Segundo plano` = a sangre detrás
+    de los widgets; `Oculto` = no se dibuja. Forzado a `Oculto` si no hay vídeo.
+  - **Panel** solo se muestra con el vídeo en `Segundo plano`; en el resto es
+    siempre translúcido. Aplica a **todos** los widgets (los widgets de canvas no
+    pintan su fondo en exportación, vía `transparentBackground`); el espacio/sección
+    es siempre transparente.
+- **Reempaquetar al cambiar el aspecto**: se reaplican las anchuras por regla
+  (**16:9 → media anchura `w6`**; resto → **ancho completo `w12`**) y se recoloca
+  todo (se conservan orden, secciones y alturas).
+- **Rejilla *staggered* (skyline/bottom-left)**: cada ítem se coloca en la posición
+  más alta posible sin solape, **rellenando huecos** (p. ej. un `w6 h2` se apila
+  debajo de otro `w6 h2` dentro de la fila de un `w6 h4`).
 - **Etiqueta y copyright en franjas propias**: la etiqueta de sesión ocupa una
   **franja superior** (opaca, activable con `board.showLabel`) y el copyright una
   **franja inferior** (siempre) con sus logos: `TelemetryStudio · robotaleh.dev ·
   OPRobots.org`. El board se dispone **entre ambas**, así que **no tapan widgets**
   (antes la etiqueta era un overlay que podía solapar la leyenda del minimapa).
-- **Vídeo**: la fila que contiene el vídeo deriva su alto del **aspecto del vídeo**,
-  así la celda **nunca se deforma** al cambiar el ancho (el asa de alto del vídeo
-  está deshabilitada).
+- **Vídeo**: siempre conserva su aspecto; en flujo tiene **ancho libre** y su alto se
+  deriva del aspecto (la unidad de fila se resuelve por iteración).
 - **Preview viva**: un board "borrador" durante el arrastre reajusta el resto de
   ítems en vivo (transiciones CSS) para ver las proporciones; el canvas se
   recompone al soltar y con *debounce* mientras se arrastra.
@@ -58,9 +70,6 @@ ExportDialog / ExportBoardEditor            Main Process
     ancho) y se reservan, así las etiquetas **no se mueven** durante el vídeo.
   - La leyenda de la gráfica **envuelve en varias filas**; el compositor **oculta el
     chrome HTML** del widget y reserva su propia franja (la gráfica cede ese alto).
-- Controles: aspecto (`source/16:9/9:16/1:1/4:5/custom`), resolución, colocación
-  del vídeo (`flow`/`background`), ajuste (`contain`/`cover`), panel
-  (`translucent`/`none`), **grosor de líneas** y supersampling.
 - **Rango alineado**: por defecto el export empieza en el punto de alineación
   (`anchor.video_ms`) menos **2 s** de pre-roll, para que el vídeo arranque junto a
   las gráficas sin alargarse (si no hay anclaje, empieza en 0).
@@ -76,16 +85,21 @@ type ExportItem =
   | { id; kind: 'section'; label?;           width; height };  // transparente
 
 interface ExportBoard {
-  aspect; resolution; videoPlacement: 'flow' | 'background';
-  videoFit: 'contain' | 'cover'; panel: 'translucent' | 'none';
-  supersample: 1 | 2; background: string; items: ExportItem[];
+  aspect; resolution; videoMode: 'hidden' | 'flow' | 'background';
+  panel: 'translucent' | 'none';  // solo aplica con videoMode 'background'
+  supersample; lineScale; showLabel; background; items: ExportItem[];
 }
 computeBoardLayout(board, source?, outputSize?) → ExportLayout   // rects en px
+skylinePack(entries)                             // empaquetado staggered
+defaultItemWidth(aspect)                         // w6 en 16:9, w12 en el resto
+createDefaultBoard(aspect, widgets, hasVideo)    // única plantilla inicial
+normalizeBoard(raw, hasVideo)                    // compat. y valores por defecto
 ```
 
-- Empaqueta los ítems en **filas de 12 columnas** (flujo, igual que el dashboard).
-- La **unidad de fila** se auto-ajusta para que el board **siempre llene** el
-  lienzo (los altos son relativos).
+- Empaqueta los ítems con **skyline/bottom-left** en una rejilla de 12 columnas
+  (rellena huecos; *staggered*).
+- La **unidad de fila** se auto-ajusta para que la columna más alta **llene** el
+  lienzo; con el vídeo de ancho libre se resuelve por **iteración**.
 - **Alinear a izquierda/derecha** sobre el vídeo se hace con `section` (p. ej.
   `[sección 6][widget 6]` alinea a la derecha; `[sección 12 h4]` empuja hacia abajo).
 - El vídeo `background` se saca del flujo y se dibuja **a sangre** por detrás.
@@ -109,12 +123,13 @@ computeBoardLayout(board, source?, outputSize?) → ExportLayout   // rects en p
 
 `ExportDialog` es un asistente:
 
-1. **Layout**: presets, editor del board (aspecto, vídeo, panel, añadir/quitar/
-   redimensionar), **título** (etiqueta de sesión) y el slider de previsualización.
-   Botones: *Cerrar* · *Siguiente*.
-2. **Salida**: resolución, modo de gráficas/ventana, grosor de líneas,
-   supersampling, FPS, calidad (CRF)/preset y rango de frames. Botones:
-   *Cerrar* · *← Atrás* · *Exportar…*.
+1. **Layout**: editor del board (**aspect ratio**, **vídeo** Oculto/Primer
+   plano/Segundo plano, panel, añadir/quitar/redimensionar), **título** (etiqueta
+   de sesión) y el slider de previsualización. Botones: *Cerrar* · *Siguiente*.
+2. **Salida**: **previsualización del frame medio** del rango (mismo compositor),
+   resolución, modo de gráficas/ventana, grosor de líneas, supersampling, FPS,
+   calidad (CRF)/preset y rango de frames. Los ajustes de salida **no** cambian el
+   reparto del layout. Botones: *Cerrar* · *← Atrás* · *Exportar…*.
 
 **Exportación directa**: *Exportar…* abre un `dialog.showSaveDialog` nativo
 (`export:choose-destination`) con un nombre por defecto

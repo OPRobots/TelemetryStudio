@@ -51,6 +51,7 @@ export function Minimap2D({
   zoomRange,
   live,
   lineScale,
+  transparentBackground,
 }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
@@ -65,6 +66,7 @@ export function Minimap2D({
     zoomRange,
     live,
     lineScale,
+    transparentBackground,
     cfg,
     size,
   });
@@ -75,6 +77,7 @@ export function Minimap2D({
     zoomRange,
     live,
     lineScale,
+    transparentBackground,
     cfg,
     size,
   };
@@ -108,8 +111,17 @@ export function Minimap2D({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { getFrames, dataFields, hoverTimestamp_ms, zoomRange, live, lineScale, cfg, size } =
-      latest.current;
+    const {
+      getFrames,
+      dataFields,
+      hoverTimestamp_ms,
+      zoomRange,
+      live,
+      lineScale,
+      transparentBackground,
+      cfg,
+      size,
+    } = latest.current;
     const trailScale = lineScale && lineScale > 0 ? lineScale : 1;
     const frames = getFrames();
     const fieldX = cfg.fieldX || dataFields[0] || 'position_x';
@@ -180,8 +192,10 @@ export function Minimap2D({
     }
 
     if (!boundsOk && (typeof cx !== 'number' || typeof cy !== 'number')) {
-      ctx.fillStyle = '#0a0e17';
-      ctx.fillRect(0, 0, width, height);
+      if (!transparentBackground) {
+        ctx.fillStyle = '#0a0e17';
+        ctx.fillRect(0, 0, width, height);
+      }
       ctx.fillStyle = '#475569';
       ctx.font = '12px Inter, sans-serif';
       ctx.textAlign = 'center';
@@ -220,7 +234,9 @@ export function Minimap2D({
       base = document.createElement('canvas');
       baseRef.current.canvas = base;
     }
-    const baseSig = `${live ? 'live' : 'static'}|${frames.length}|${fieldX}|${fieldY}|${
+    const baseSig = `${live ? 'live' : 'static'}|${transparentBackground ? 'tr' : 'op'}|${
+      frames.length
+    }|${fieldX}|${fieldY}|${
       zoomRange ? `${zoomRange.startMs}:${zoomRange.endMs}` : 'full'
     }|${Math.round(width)}x${Math.round(height)}|${scale.toFixed(3)}|${centerX.toFixed(2)}|${centerY.toFixed(
       2
@@ -233,8 +249,11 @@ export function Minimap2D({
       const bctx = base.getContext('2d');
       if (bctx) {
         bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        bctx.fillStyle = '#0a0e17';
-        bctx.fillRect(0, 0, width, height);
+        // En exportación el fondo lo pone el panel de composición.
+        if (!transparentBackground) {
+          bctx.fillStyle = '#0a0e17';
+          bctx.fillRect(0, 0, width, height);
+        }
 
         // Grid en coordenadas de datos.
         if (cfg.showGrid && cfg.gridSize > 0) {

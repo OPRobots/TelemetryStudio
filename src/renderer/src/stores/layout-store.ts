@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { DashboardLayout, LayoutPanels, WidgetConfig } from '@core/types/layout';
 import { DEFAULT_PANELS } from '@core/types/layout';
-import type { ExportBoard } from '@shared/export-composition';
+import { normalizeBoard, type ExportBoard } from '@shared/export-composition';
 import { seriesPalette } from '@widgets/color-palette';
 import { clampGridHeight, clampGridWidth } from '@shared/grid';
 
@@ -62,7 +62,7 @@ export const useLayoutStore = create<LayoutState>((set) => ({
       layoutDescription: layout.description ?? '',
       widgets: layout.widgets.map((w) => ({ ...w })),
       panels: { ...DEFAULT_PANELS, ...layout.panels },
-      exportBoard: layout.exportBoard ?? null,
+      exportBoard: layout.exportBoard ? normalizeBoard(layout.exportBoard) : null,
     }),
 
   setExportBoard: (board) => set({ exportBoard: board }),

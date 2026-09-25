@@ -46,6 +46,7 @@ export function StateTimeline({
   onZoomRangeChange,
   live,
   liveWindowMs,
+  transparentBackground,
 }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
@@ -92,6 +93,7 @@ export function StateTimeline({
     zoomRange,
     live,
     liveWindowMs,
+    transparentBackground,
     cfg,
     selection,
     size,
@@ -103,6 +105,7 @@ export function StateTimeline({
     zoomRange,
     live,
     liveWindowMs,
+    transparentBackground,
     cfg,
     selection,
     size,
@@ -114,8 +117,18 @@ export function StateTimeline({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { getFrames, field, hoverTimestamp_ms, zoomRange, live, liveWindowMs, cfg, selection, size } =
-      latest.current;
+    const {
+      getFrames,
+      field,
+      hoverTimestamp_ms,
+      zoomRange,
+      live,
+      liveWindowMs,
+      transparentBackground,
+      cfg,
+      selection,
+      size,
+    } = latest.current;
     const frames = getFrames();
     const stateMap = cfg.stateMap ?? {};
     const stateMapKey = Object.keys(stateMap).sort().join('|');
@@ -151,8 +164,10 @@ export function StateTimeline({
     const state = toStateValue(sampled ?? (field ? snapshot.frame?.data[field] : undefined));
 
     if (state == null) {
-      ctx.fillStyle = '#0a0e17';
-      ctx.fillRect(0, 0, width, height);
+      if (!transparentBackground) {
+        ctx.fillStyle = '#0a0e17';
+        ctx.fillRect(0, 0, width, height);
+      }
       ctx.fillStyle = '#475569';
       ctx.font = '12px Inter, sans-serif';
       ctx.textAlign = 'center';
@@ -193,7 +208,9 @@ export function StateTimeline({
       base = document.createElement('canvas');
       baseRef.current.canvas = base;
     }
-    const baseSig = `${live ? 'live' : 'static'}|${frames.length}|${field ?? ''}|${stateMapKey}|${
+    const baseSig = `${live ? 'live' : 'static'}|${transparentBackground ? 'tr' : 'op'}|${
+      frames.length
+    }|${field ?? ''}|${stateMapKey}|${
       viewRange ? `${viewStartMs}:${viewEndMs}:${Math.round(span)}` : 'full'
     }|${Math.round(width)}x${Math.round(height)}|${cfg.barHeight}|${cfg.showLabels}`;
     if (baseRef.current.sig !== baseSig) {
@@ -202,8 +219,11 @@ export function StateTimeline({
       const bctx = base.getContext('2d');
       if (bctx) {
         bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        bctx.fillStyle = '#0a0e17';
-        bctx.fillRect(0, 0, width, height);
+        // En exportación el fondo lo pone el panel de composición.
+        if (!transparentBackground) {
+          bctx.fillStyle = '#0a0e17';
+          bctx.fillRect(0, 0, width, height);
+        }
 
         if (allFrames.length > 1) {
           let segStartMs = startMs;

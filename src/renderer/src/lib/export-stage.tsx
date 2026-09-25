@@ -273,6 +273,7 @@ function StageView({
                 live={live}
                 liveWindowMs={liveWindowMs}
                 lineScale={layout.lineScale}
+                transparentBackground
               />
             </div>
           );
@@ -397,11 +398,8 @@ export async function createExportStage(options: ExportStageOptions): Promise<Ex
 
   const drawVideoInto = (rect: Rect, video: HTMLVideoElement | null): void => {
     if (!video || video.videoWidth <= 0) return;
-    const fitted = fitRect(
-      { width: video.videoWidth, height: video.videoHeight },
-      rect,
-      layout.videoFit
-    );
+    // El vídeo siempre conserva su relación de aspecto.
+    const fitted = fitRect({ width: video.videoWidth, height: video.videoHeight }, rect, 'contain');
     ctx.save();
     ctx.beginPath();
     ctx.rect(rect.x, rect.y, rect.w, rect.h);

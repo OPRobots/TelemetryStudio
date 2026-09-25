@@ -2,8 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import type { ExportConfig } from '@core/types/video';
 import {
   computeBoardLayout,
-  createBoardPreset,
-  type CompositionWidget,
+  createDefaultBoard,
+  normalizeBoard,
   type ExportBoard,
   type ResolutionPreset,
 } from '@shared/export-composition';
@@ -11,6 +11,7 @@ import { exportVideo, type ExportProgress } from '@services/video-exporter';
 import { useAppStore } from '../../stores/app-store';
 import { useLayoutStore } from '../../stores/layout-store';
 import { ExportBoardEditor } from './ExportBoardEditor';
+import { ExportFramePreview } from './ExportFramePreview';
 
 interface ExportDialogProps {
   onClose: () => void;
@@ -40,22 +41,20 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
     () => (videoInfo ? { width: videoInfo.width, height: videoInfo.height } : null),
     [videoInfo?.width, videoInfo?.height]
   );
-  const visibleWidgets = useMemo(
-    () => widgets.filter((w) => w.visible),
-    [widgets]
-  ) as CompositionWidget[];
+  const visibleWidgets = useMemo(() => widgets.filter((w) => w.visible), [widgets]);
 
   const setExportBoard = useLayoutStore((s) => s.setExportBoard);
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [board, setBoard] = useState<ExportBoard>(
-    () =>
-      useLayoutStore.getState().exportBoard ??
-      createBoardPreset('overlay', {
-        widgetIds: visibleWidgets.map((w) => w.id),
-        hasVideo: !!source,
-      })
-  );
+  const [board, setBoard] = useState<ExportBoard>(() => {
+    const stored = useLayoutStore.getState().exportBoard;
+    if (stored) return normalizeBoard(stored, !!source);
+    return createDefaultBoard(
+      '16:9',
+      visibleWidgets.map((w) => ({ id: w.id, height: w.height })),
+      !!source
+    );
+  });
 
   const updateBoard = (next: ExportBoard): void => {
     setBoard(next);
@@ -96,6 +95,9 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
     [videoInfo?.duration_s, fps]
   );
   const effectiveEnd = endFrame ?? totalFrames - 1;
+  const clampedEnd = Math.min(effectiveEnd, totalFrames - 1);
+  const midFrame = Math.round((startFrame + clampedEnd) / 2);
+  const previewMediaTime_s = midFrame / fps;
   const layout = useMemo(() => computeBoardLayout(board, source), [board, source]);
   const noItems = layout.items.length === 0;
 
@@ -227,6 +229,20 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
           </>
         ) : (
           <div className="flex flex-col gap-2">
+            <div>
+              <label className="dialog-label">
+                Previsualización (frame {midFrame} de {totalFrames})
+              </label>
+              <ExportFramePreview
+                layout={layout}
+                widgets={visibleWidgets}
+                mediaTime_s={previewMediaTime_s}
+                live={mode === 'live'}
+                liveWindowMs={liveWindowMs}
+                sessionLabel={sessionLabel}
+              />
+            </div>
+
             <div className="dialog-row">
               <div>
                 <label className="dialog-label">Resolución</label>

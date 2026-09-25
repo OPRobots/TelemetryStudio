@@ -2,15 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   boardPadding,
   computeBoardLayout,
-  createBoardPreset,
+  defaultItemWidth,
   type AspectPreset,
-  type BoardPreset,
   type CompositionWidget,
   type ExportBoard,
   type ExportItem,
   type PanelStyle,
   type Size,
-  type VideoFit,
+  type VideoMode,
 } from '@shared/export-composition';
 import { clampGridHeight, clampGridWidth, snapGridWidth } from '@shared/grid';
 import { telemetryStore } from '@core/telemetry-store';
@@ -22,13 +21,7 @@ import { seekVideo } from '../../lib/video-seek';
 const PREVIEW_MAX_WIDTH = 720;
 const STAGE_DEBOUNCE_MS = 180;
 
-const ASPECTS: AspectPreset[] = ['source', '16:9', '9:16', '1:1', '4:5', 'custom'];
-const PRESETS: Array<{ id: BoardPreset; label: string }> = [
-  { id: 'overlay', label: 'Overlay' },
-  { id: 'vertical', label: 'Vertical' },
-  { id: 'horizontal', label: 'Horizontal' },
-  { id: 'charts-only', label: 'Solo gráficas' },
-];
+const ASPECTS: AspectPreset[] = ['16:9', '9:16', '1:1', '4:5', 'custom'];
 
 const ITEM_ICON: Record<ExportItem['kind'], string> = {
   widget: '▦',
@@ -112,7 +105,8 @@ export function ExportBoardEditor({
   const debouncedDraft = useDebouncedValue(draft ?? board, STAGE_DEBOUNCE_MS);
   const stageBoard = draft ? debouncedDraft : board;
   const stageLayout = useMemo(() => computeBoardLayout(stageBoard, source), [stageBoard, source]);
-  const hasVideoItem = board.items.some((i) => i.kind === 'video');
+  const hasVideoItem =
+    board.videoMode !== 'hidden' && board.items.some((i) => i.kind === 'video');
   // Cajas: board en vivo (reflow inmediato con transiciones).
   const boxLayout = useMemo(
     () => computeBoardLayout(draft ?? board, source),
@@ -334,15 +328,17 @@ export function ExportBoardEditor({
       items: [...board.items, { id: newItemId(), kind: 'section', width: 6, height: 4 }],
     });
   };
-  const toggleVideo = (on: boolean): void => {
-    if (on && !hasVideoItem) {
-      onChange({
-        ...board,
-        items: [...board.items, { id: newItemId(), kind: 'video', width: 6, height: 6 }],
-      });
-    } else if (!on) {
-      onChange({ ...board, items: board.items.filter((i) => i.kind !== 'video') });
+  const setVideoMode = (mode: VideoMode): void => {
+    let items = board.items;
+    if (mode !== 'hidden' && !items.some((i) => i.kind === 'video')) {
+      items = [...items, { id: newItemId(), kind: 'video', width: 12, height: 6 }];
     }
+    onChange({ ...board, videoMode: mode, items });
+  };
+  // Reempaquetar al cambiar el aspecto: se reaplican las anchuras por regla.
+  const applyAspect = (aspect: AspectPreset): void => {
+    const width = defaultItemWidth(aspect);
+    onChange({ ...board, aspect, items: board.items.map((item) => ({ ...item, width })) });
   };
   const setBoard = (patch: Partial<ExportBoard>): void => onChange({ ...board, ...patch });
   const patchItemBoard = (id: string, patch: Partial<ExportItem>): void =>
@@ -358,29 +354,13 @@ export function ExportBoardEditor({
   return (
     <div className="flex flex-col gap-2">
       {/* Presets + controles del board */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {PRESETS.map((p) => (
-          <button
-            key={p.id}
-            className="toolbar-button toolbar-button--compact"
-            onClick={() =>
-              onChange(
-                createBoardPreset(p.id, { widgetIds: widgets.map((w) => w.id), hasVideo: !!source })
-              )
-            }
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-
       <div className="dialog-row">
         <div>
-          <label className="dialog-label">Aspecto</label>
+          <label className="dialog-label">Aspect ratio</label>
           <select
             className="dialog-input"
             value={board.aspect}
-            onChange={(e) => setBoard({ aspect: e.target.value as AspectPreset })}
+            onChange={(e) => applyAspect(e.target.value as AspectPreset)}
           >
             {ASPECTS.map((a) => (
               <option key={a} value={a}>
@@ -389,70 +369,94 @@ export function ExportBoardEditor({
             ))}
           </select>
         </div>
-        <div>
-          <label className="dialog-label">Vídeo</label>
-          <select
-            className="dialog-input"
-            value={board.videoPlacement}
-            onChange={(e) => setBoard({ videoPlacement: e.target.value as 'flow' | 'background' })}
-          >
-            <option value="flow">En flujo</option>
-            <option value="background">Fondo (overlay)</option>
-          </select>
-        </div>
-        <div>
-          <label className="dialog-label">Vídeo ajuste</label>
-          <select
-            className="dialog-input"
-            value={board.videoFit}
-            onChange={(e) => setBoard({ videoFit: e.target.value as VideoFit })}
-          >
-            <option value="contain">Ajustar</option>
-            <option value="cover">Rellenar</option>
-          </select>
-        </div>
-        <div>
-          <label className="dialog-label">Panel</label>
-          <select
-            className="dialog-input"
-            value={board.panel}
-            onChange={(e) => setBoard({ panel: e.target.value as PanelStyle })}
-          >
-            <option value="translucent">Translúcido</option>
-            <option value="none">Sin panel</option>
-          </select>
-        </div>
+        {source && (
+          <div>
+            <label className="dialog-label">Vídeo</label>
+            <select
+              id="export-video-mode"
+              className="dialog-input"
+              value={board.videoMode}
+              onChange={(e) => setVideoMode(e.target.value as VideoMode)}
+            >
+              <option value="hidden">Oculto</option>
+              <option value="flow">Primer plano</option>
+              <option value="background">Segundo plano</option>
+            </select>
+          </div>
+        )}
+        {board.videoMode === 'background' && (
+          <div>
+            <label className="dialog-label">Panel</label>
+            <select
+              className="dialog-input"
+              value={board.panel}
+              onChange={(e) => setBoard({ panel: e.target.value as PanelStyle })}
+            >
+              <option value="translucent">Translúcido</option>
+              <option value="none">Sin panel</option>
+            </select>
+          </div>
+        )}
       </div>
+
+      {board.aspect === 'custom' && (
+        <div className="dialog-row">
+          <div>
+            <label className="dialog-label">Aspecto ancho</label>
+            <input
+              className="dialog-input"
+              type="number"
+              value={board.customAspect?.width ?? 1080}
+              onChange={(e) =>
+                setBoard({
+                  customAspect: {
+                    width: Number(e.target.value),
+                    height: board.customAspect?.height ?? 1350,
+                  },
+                })
+              }
+            />
+          </div>
+          <div>
+            <label className="dialog-label">Aspecto alto</label>
+            <input
+              className="dialog-input"
+              type="number"
+              value={board.customAspect?.height ?? 1350}
+              onChange={(e) =>
+                setBoard({
+                  customAspect: {
+                    width: board.customAspect?.width ?? 1080,
+                    height: Number(e.target.value),
+                  },
+                })
+              }
+            />
+          </div>
+        </div>
+      )}
 
       {/* Añadir ítems */}
       <div className="flex flex-wrap items-center gap-2">
         <select
           className="dialog-input"
-          style={{ width: 200 }}
+          style={{ width: 240 }}
           value=""
           onChange={(e) => {
-            addWidget(e.target.value);
+            const value = e.target.value;
             e.target.value = '';
+            if (value === '__section__') addSection();
+            else if (value) addWidget(value);
           }}
         >
-          <option value="">+ Widget…</option>
+          <option value="">+ Añadir…</option>
+          <option value="__section__">Sección / Espacio</option>
           {availableWidgets.map((w) => (
             <option key={w.id} value={w.id}>
               {w.label} · {w.type}
             </option>
           ))}
         </select>
-        <button className="toolbar-button toolbar-button--compact" onClick={addSection}>
-          + Sección / Espacio
-        </button>
-        <label className="dialog-checkbox">
-          <input
-            type="checkbox"
-            checked={hasVideoItem}
-            onChange={(e) => toggleVideo(e.target.checked)}
-          />
-          <span className="text-xs">Vídeo</span>
-        </label>
       </div>
 
       {/* Lienzo WYSIWYG */}

@@ -85,6 +85,12 @@ export interface WidgetProps {
 
   /** Grosor de trazo relativo (exportación). `1` = normal. */
   lineScale?: number;
+
+  /**
+   * Exportación: no pintar el fondo propio del widget (el panel/ composición se
+   * ve por detrás).
+   */
+  transparentBackground?: boolean;
 }
 
 /**

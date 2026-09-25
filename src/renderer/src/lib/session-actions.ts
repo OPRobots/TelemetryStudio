@@ -4,6 +4,7 @@ import { videoSynchronizer } from '@core/video-synchronizer';
 import { createEmptyLayout } from '@services/layout-manager';
 import { sessionManager } from '@services/session-manager';
 import type { SessionWidget } from '@core/types/session';
+import { normalizeBoard } from '@shared/export-composition';
 import type { DashboardLayout, WidgetConfig } from '@core/types/layout';
 import type { TelemetryDataset } from '@core/types/telemetry';
 import { useAppStore } from '../stores/app-store';
@@ -123,7 +124,9 @@ export async function loadSession(jsonPath: string): Promise<void> {
     createdAt: session.created,
     modifiedAt: session.created,
     widgets,
-    ...(session.export ? { exportBoard: session.export } : {}),
+    ...(session.export
+      ? { exportBoard: normalizeBoard(session.export, !!session.video.file) }
+      : {}),
   };
   useLayoutStore.getState().setLayout(layout);
   useAppStore.getState().setStatusMessage(`Sesión cargada: ${session.name}`);

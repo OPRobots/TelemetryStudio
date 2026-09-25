@@ -151,6 +151,7 @@ telemetry-studio/
 │   │       │       ├── ComparisonDialog.tsx    # Activar comparación
 │   │       │       ├── ExportDialog.tsx        # Exportar: editor de board, preview y calidad
 │   │       │       ├── ExportBoardEditor.tsx   # Editor WYSIWYG del board de exportación
+│   │       │       ├── ExportFramePreview.tsx  # Preview del frame medio (paso 2)
 │   │       │       └── PrepareVideoDialog.tsx   # Progreso de conversión + cancelar
 │   │       ├── hooks/
 │   │       │   ├── useEventListener.ts  # Suscripción al EventBus

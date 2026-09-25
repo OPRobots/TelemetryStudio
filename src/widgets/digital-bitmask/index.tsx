@@ -61,6 +61,7 @@ export function DigitalBitmask({
   dataFields,
   getFrames,
   hoverTimestamp_ms,
+  transparentBackground,
 }: WidgetProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useCanvasSize(canvasRef);
@@ -69,8 +70,8 @@ export function DigitalBitmask({
   const cfg = { ...DEFAULT_CONFIG, ...(config as Partial<BitmaskConfig>) };
   const field = dataFields[0];
 
-  const latest = useRef({ getFrames, field, hoverTimestamp_ms, cfg, size });
-  latest.current = { getFrames, field, hoverTimestamp_ms, cfg, size };
+  const latest = useRef({ getFrames, field, hoverTimestamp_ms, cfg, size, transparentBackground });
+  latest.current = { getFrames, field, hoverTimestamp_ms, cfg, size, transparentBackground };
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -78,7 +79,8 @@ export function DigitalBitmask({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { getFrames, field, hoverTimestamp_ms, cfg, size } = latest.current;
+    const { getFrames, field, hoverTimestamp_ms, cfg, size, transparentBackground } =
+      latest.current;
     const frames = getFrames();
     const snapshot = bus?.getSnapshot() ?? { frame: null, context: null };
     const viewTimestamp = resolveViewTimestamp(frames, hoverTimestamp_ms, snapshot);
@@ -92,8 +94,11 @@ export function DigitalBitmask({
     canvas.height = Math.max(height * dpr, 1);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    ctx.fillStyle = cfg.backgroundColor;
-    ctx.fillRect(0, 0, width, height);
+    // En exportación el fondo lo pone el panel de composición.
+    if (!transparentBackground) {
+      ctx.fillStyle = cfg.backgroundColor;
+      ctx.fillRect(0, 0, width, height);
+    }
 
     const sampled = valueAt(frames, field, viewTimestamp);
     const value = sampled ?? (field ? snapshot.frame?.data[field] : null);

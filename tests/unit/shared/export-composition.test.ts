@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   computeBoardLayout,
-  createBoardPreset,
+  createDefaultBoard,
+  normalizeBoard,
   fitRect,
   resolveOutputSize,
   toEven,
@@ -24,8 +25,7 @@ function board(partial: Partial<ExportBoard>): ExportBoard {
   return {
     aspect: '16:9',
     resolution: '1080p',
-    videoPlacement: 'flow',
-    videoFit: 'contain',
+    videoMode: 'flow',
     panel: 'translucent',
     supersample: 1,
     lineScale: 1,
@@ -107,7 +107,7 @@ describe('computeBoardLayout', () => {
   it('el vídeo en background sale del flujo y va a sangre', () => {
     const layout = computeBoardLayout(
       board({
-        videoPlacement: 'background',
+        videoMode: 'background',
         items: [
           { id: 'v', kind: 'video', width: 12, height: 6 },
           { id: 'a', kind: 'widget', widgetId: 'w0', width: 12, height: 6 },
@@ -116,6 +116,43 @@ describe('computeBoardLayout', () => {
     );
     expect(layout.backgroundVideoRect).toEqual({ x: 0, y: 0, w: 1920, h: 1080 });
     expect(layout.items.map((i) => i.kind)).toEqual(['widget']);
+  });
+
+  it('videoMode hidden no dibuja ni incluye el vídeo', () => {
+    const layout = computeBoardLayout(
+      board({
+        videoMode: 'hidden',
+        items: [
+          { id: 'v', kind: 'video', width: 12, height: 6 },
+          { id: 'a', kind: 'widget', widgetId: 'w0', width: 12, height: 6 },
+        ],
+      })
+    );
+    expect(layout.backgroundVideoRect).toBeNull();
+    expect(layout.items.map((i) => i.kind)).toEqual(['widget']);
+  });
+
+  it('el panel solo aplica con el vídeo de fondo', () => {
+    const flow = computeBoardLayout(
+      board({
+        videoMode: 'flow',
+        panel: 'none',
+        items: [{ id: 'a', kind: 'widget', widgetId: 'w0', width: 12, height: 6 }],
+      })
+    );
+    expect(flow.items[0]!.panel).toBe('translucent');
+
+    const background = computeBoardLayout(
+      board({
+        videoMode: 'background',
+        panel: 'none',
+        items: [
+          { id: 'v', kind: 'video', width: 12, height: 6 },
+          { id: 'a', kind: 'widget', widgetId: 'w0', width: 12, height: 6 },
+        ],
+      })
+    );
+    expect(background.items[0]!.panel).toBe('none');
   });
 
   it('una sección delante empuja el widget hacia abajo (y es transparente)', () => {
@@ -146,7 +183,7 @@ describe('computeBoardLayout', () => {
     expect(a.rect.x).toBeGreaterThan(layout.width / 2 - 100);
   });
 
-  it('la fila del vídeo conserva el aspecto del vídeo (con `source`)', () => {
+  it('el vídeo en flujo conserva su aspecto', () => {
     const layout = computeBoardLayout(
       board({
         items: [
@@ -157,9 +194,7 @@ describe('computeBoardLayout', () => {
       { width: 1920, height: 1080 }
     );
     const video = layout.items.find((i) => i.id === 'v')!;
-    const widgetItem = layout.items.find((i) => i.id === 'a')!;
     expect(video.rect.w / video.rect.h).toBeCloseTo(16 / 9, 1);
-    expect(widgetItem.rect.h).toBe(video.rect.h);
   });
 
   it('reserva la franja de etiqueta y la de copyright (el board no las pisa)', () => {
@@ -185,6 +220,26 @@ describe('computeBoardLayout', () => {
     expect(layout.copyrightRect.y).toBeLessThan(layout.height);
   });
 
+  it('empaquetado staggered: rellena el hueco de la fila anterior', () => {
+    const layout = computeBoardLayout(
+      board({
+        items: [
+          { id: 'a', kind: 'widget', widgetId: 'w0', width: 6, height: 4 },
+          { id: 'b', kind: 'widget', widgetId: 'w1', width: 6, height: 2 },
+          { id: 'c', kind: 'widget', widgetId: 'w2', width: 6, height: 2 },
+        ],
+      })
+    );
+    const a = layout.items.find((i) => i.id === 'a')!;
+    const b = layout.items.find((i) => i.id === 'b')!;
+    const c = layout.items.find((i) => i.id === 'c')!;
+    // A a la izquierda; B y C apilados en la mitad derecha.
+    expect(a.rect.x).toBeLessThan(b.rect.x);
+    expect(c.rect.x).toBe(b.rect.x);
+    expect(c.rect.y).toBeGreaterThanOrEqual(b.rect.y + b.rect.h - 1);
+    expect(c.rect.y + c.rect.h).toBeLessThanOrEqual(a.rect.y + a.rect.h + 1);
+  });
+
   it('respeta outputSize (previsualización) con dimensiones pares', () => {
     const layout = computeBoardLayout(
       board({ items: [{ id: 'a', kind: 'widget', widgetId: 'w0', width: 12, height: 6 }] }),
@@ -196,30 +251,43 @@ describe('computeBoardLayout', () => {
   });
 });
 
-describe('createBoardPreset', () => {
-  it('overlay: vídeo de fondo + sección + widgets', () => {
-    const b = createBoardPreset('overlay', { widgetIds: ['w0', 'w1'], hasVideo: true });
-    expect(b.videoPlacement).toBe('background');
+describe('createDefaultBoard', () => {
+  it('16:9: vídeo y widgets a media anchura, alturas del layout', () => {
+    const b = createDefaultBoard('16:9', [{ id: 'w0', height: 4 }], true);
+    expect(b.videoMode).toBe('flow');
+    expect(b.aspect).toBe('16:9');
     expect(b.items[0]!.kind).toBe('video');
-    expect(b.items.some((i) => i.kind === 'section')).toBe(true);
-    expect(b.items.filter((i) => i.kind === 'widget')).toHaveLength(2);
+    expect(b.items[0]!.width).toBe(6);
+    const w0 = b.items.find((i) => i.widgetId === 'w0')!;
+    expect(w0.width).toBe(6);
+    expect(w0.height).toBe(4);
   });
 
-  it('vertical: vídeo en flujo y aspecto 9:16', () => {
-    const b = createBoardPreset('vertical', { widgetIds: ['w0'], hasVideo: true });
+  it('9:16: items a ancho completo', () => {
+    const b = createDefaultBoard('9:16', [{ id: 'w0', height: 4 }], true);
     expect(b.aspect).toBe('9:16');
-    expect(b.videoPlacement).toBe('flow');
-    expect(b.items[0]!.kind).toBe('video');
+    expect(b.items[0]!.width).toBe(12);
+    expect(b.items.find((i) => i.widgetId === 'w0')!.width).toBe(12);
   });
 
-  it('charts-only: sin vídeo', () => {
-    const b = createBoardPreset('charts-only', { widgetIds: ['w0', 'w1'], hasVideo: true });
+  it('sin vídeo: oculto y sin ítem de vídeo', () => {
+    const b = createDefaultBoard('16:9', [{ id: 'w0', height: 4 }], false);
+    expect(b.videoMode).toBe('hidden');
     expect(b.items.some((i) => i.kind === 'video')).toBe(false);
-    expect(b.items).toHaveLength(2);
+    expect(b.items).toHaveLength(1);
+  });
+});
+
+describe('normalizeBoard', () => {
+  it('deriva videoMode del videoPlacement antiguo y rellena defaults', () => {
+    const b = normalizeBoard({ videoPlacement: 'background' }, true);
+    expect(b.videoMode).toBe('background');
+    expect(b.panel).toBe('translucent');
+    expect(b.lineScale).toBe(1.5);
+    expect(b.supersample).toBe(1);
   });
 
-  it('sin vídeo no añade ítem de vídeo', () => {
-    const b = createBoardPreset('vertical', { widgetIds: ['w0'], hasVideo: false });
-    expect(b.items.some((i) => i.kind === 'video')).toBe(false);
+  it('sin vídeo fuerza videoMode hidden', () => {
+    expect(normalizeBoard({ videoMode: 'flow' }, false).videoMode).toBe('hidden');
   });
 });
