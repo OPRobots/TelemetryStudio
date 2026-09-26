@@ -153,7 +153,7 @@ Dos workflows:
   `CSC_IDENTITY_AUTO_DISCOVERY=false` (no hay certificado Apple); el hook `afterPack`
   aplica la firma ad-hoc en macOS.
   - **No** se suben `latest*.yml` ni `*.blockmap` (la app no usa auto-update).
-  - El **mensaje del release** se redactará más adelante (se moverá la tag al último commit).
+  - El **cuerpo del release** se toma de [`.github/release-notes.md`](../.github/release-notes.md).
 
 Artefactos por plataforma:
 
