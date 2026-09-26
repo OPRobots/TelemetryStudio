@@ -39,7 +39,8 @@ El vídeo **siempre** es pregrabado. La telemetría llega por serial en vivo y s
 
 1. Cargar el `session.json` (el vídeo se resuelve en la misma carpeta)
 2. Se restaura todo automáticamente: telemetría, widgets, sincronización, layout y
-   (si existe) el board de exportación
+   (si existe) el board de exportación. El vídeo se **coloca en el anchor**, de modo
+   que la reproducción empieza en `00:00` relativo.
 3. Revisar datos, ajustar drift si es necesario
 4. Analizar frame-a-frame como en el Flujo A
 

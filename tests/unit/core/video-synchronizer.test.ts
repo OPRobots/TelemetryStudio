@@ -106,4 +106,70 @@ describe('VideoSynchronizer', () => {
     expect(primary.driftOffset).toBe(100);
     expect(comparison.driftOffset).toBe(200);
   });
+
+  it('seekToStart aplica el seek cuando el vídeo ya tiene metadatos', () => {
+    const sync = new VideoSynchronizer();
+    const { video } = makeFakeVideo(1);
+    sync.attach(video);
+    sync.seekToStart(3.5);
+    expect(video.currentTime).toBe(3.5);
+  });
+
+  it('seekToStart espera a loadedmetadata si el vídeo no está listo', () => {
+    const sync = new VideoSynchronizer();
+    const { video, emit } = makeFakeVideo(0);
+    sync.attach(video);
+    sync.seekToStart(4);
+    expect(video.currentTime).toBe(0);
+    emit('loadedmetadata');
+    expect(video.currentTime).toBe(4);
+  });
+
+  it('attach aplica un seek pendiente solicitado antes de adjuntar', () => {
+    const sync = new VideoSynchronizer();
+    const { video } = makeFakeVideo(1);
+    sync.seekToStart(2);
+    sync.attach(video);
+    expect(video.currentTime).toBe(2);
+  });
+
+  it('clearAnchor cancela un seek pendiente', () => {
+    const sync = new VideoSynchronizer();
+    const { video, emit } = makeFakeVideo(0);
+    sync.attach(video);
+    sync.seekToStart(5);
+    sync.clearAnchor();
+    emit('loadedmetadata');
+    expect(video.currentTime).toBe(0);
+  });
 });
+
+function makeFakeVideo(readyState: number): {
+  video: HTMLVideoElement;
+  emit: (type: string) => void;
+} {
+  const listeners = new Map<string, Array<() => void>>();
+  const video = {
+    readyState,
+    duration: 10,
+    currentTime: 0,
+    videoWidth: 1920,
+    videoHeight: 1080,
+    playbackRate: 1,
+    paused: true,
+    requestVideoFrameCallback: (): number => 0,
+    cancelVideoFrameCallback: (): void => undefined,
+    addEventListener: (type: string, cb: () => void): void => {
+      const arr = listeners.get(type) ?? [];
+      arr.push(cb);
+      listeners.set(type, arr);
+    },
+    removeEventListener: (): void => undefined,
+  } as unknown as HTMLVideoElement;
+  return {
+    video,
+    emit: (type: string): void => {
+      for (const cb of listeners.get(type) ?? []) cb();
+    },
+  };
+}

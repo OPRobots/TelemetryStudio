@@ -87,6 +87,8 @@ export class VideoSynchronizer {
   private driftOffset_ms = 0;
   private anchorPoint: { video_ms: number; telemetry_ms: number } | null = null;
   private declaredFps = 30;
+  /** Posición de arranque pendiente (s) hasta que el vídeo esté listo. */
+  private pendingSeek_s: number | null = null;
 
   private readonly frameEvent: 'sync:frame' | 'comparison:frame';
   private readonly datasetSource: 'primary' | 'comparison';
@@ -108,6 +110,7 @@ export class VideoSynchronizer {
     this.installPolyfillIfNeeded();
     this.video = video;
     this.startLoop();
+    this.applyPendingSeek();
   }
 
   /**
@@ -116,6 +119,49 @@ export class VideoSynchronizer {
   detach(): void {
     this.stopLoop();
     this.video = null;
+  }
+
+  /**
+   * Posiciona el vídeo en `seconds` en cuanto esté disponible: lo aplica ya si
+   * hay metadatos, o espera a `loadedmetadata`. Se usa al cargar una sesión para
+   * arrancar la reproducción en el anchor (t=0 relativo).
+   */
+  seekToStart(seconds: number): void {
+    if (!Number.isFinite(seconds) || seconds <= 0) {
+      this.pendingSeek_s = null;
+      return;
+    }
+    this.pendingSeek_s = seconds;
+    this.applyPendingSeek();
+  }
+
+  /** Cancela un arranque pendiente. */
+  clearPendingSeek(): void {
+    this.pendingSeek_s = null;
+  }
+
+  private applyPendingSeek(): void {
+    const requested = this.pendingSeek_s;
+    const video = this.video;
+    if (requested == null || !video) return;
+
+    if (video.readyState >= 1) {
+      this.pendingSeek_s = null;
+      video.currentTime = Math.min(requested, video.duration || requested);
+      this.refresh();
+      return;
+    }
+
+    video.addEventListener(
+      'loadedmetadata',
+      () => {
+        if (this.video !== video || this.pendingSeek_s !== requested) return;
+        this.pendingSeek_s = null;
+        video.currentTime = Math.min(requested, video.duration || requested);
+        this.refresh();
+      },
+      { once: true }
+    );
   }
 
   setDataset(): void {
@@ -137,6 +183,7 @@ export class VideoSynchronizer {
 
   clearAnchor(): void {
     this.anchorPoint = null;
+    this.pendingSeek_s = null;
   }
 
   setDeclaredFps(fps: number): void {

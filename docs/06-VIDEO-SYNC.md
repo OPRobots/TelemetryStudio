@@ -34,6 +34,7 @@ stepForward(); stepBackward();      // avanza/retrocede 1 frame (1 / declaredFps
 refresh();                          // reevalúa el frame actual (pausa/seek)
 mapTime(mediaTime_ms);
 unmapTime(telemetry_ms);            // inverso: telemetría → media time de vídeo
+seekToStart(seconds);               // posición inicial (diferida hasta loadedmetadata)
 
 // getters: driftOffset, currentTime, duration, isPlaying, fps, playbackRate,
 //          anchor, averageDrift, maxDrift
@@ -62,6 +63,9 @@ estuviera disponible, `VideoPlayer` lo estima con RVFC midiendo el delta de
 - **«Alinear aquí»** (`src/renderer/src/lib/sync-actions.ts`): fija el frame actual
   del vídeo como `t=0` de la telemetría → `anchorPoint = { video_ms, telemetry_ms: 0 }`,
   y además **pone el drift a 0** y refresca el frame actual.
+- **Al cargar una sesión**: se aplica el anchor y el vídeo se **posiciona en él**
+  (`videoSynchronizer.seekToStart`, diferido si aún no hay metadatos), de modo que la
+  reproducción arranca en `00:00` relativo y no en un valor negativo.
 - **Reset**: `resetSync()` llama a `clearAnchor()` **y** `setDriftOffset(0)` (y limpia el
   anchor del store). `clearAnchor()` por sí solo no toca el drift.
 - `setDriftOffset` existe en la API, pero **no hay control de UI** para un drift

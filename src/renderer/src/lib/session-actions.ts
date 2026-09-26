@@ -102,11 +102,15 @@ export async function loadSession(jsonPath: string): Promise<void> {
   }
 
   videoSynchronizer.setPlaybackRate(session.sync.rate);
-  applySyncAnchor(
-    session.sync.anchor
-      ? { video_ms: session.sync.anchor[0] * 1000, telemetry_ms: session.sync.anchor[1] }
-      : null
-  );
+  const anchor = session.sync.anchor
+    ? { video_ms: session.sync.anchor[0] * 1000, telemetry_ms: session.sync.anchor[1] }
+    : null;
+  applySyncAnchor(anchor);
+  // Arranca la reproducción en el anchor (t=0 relativo): así el contador empieza
+  // en 00:00 y no en un valor negativo.
+  if (session.video.file && anchor && anchor.video_ms > 0) {
+    videoSynchronizer.seekToStart(anchor.video_ms / 1000);
+  }
 
   const widgets: WidgetConfig[] = session.layout.widgets.map((w, i) => ({
     id: w.id ?? `session-widget-${i}`,
