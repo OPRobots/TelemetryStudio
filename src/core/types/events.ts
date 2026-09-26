@@ -43,7 +43,12 @@ export interface EventMap {
 
   // === Export ===
   'export:start': { config: import('./video').ExportConfig };
-  'export:progress': { percent: number; currentFrame: number; totalFrames: number };
+  'export:progress': {
+    percent: number;
+    currentFrame: number;
+    totalFrames: number;
+    etaMs: number | null;
+  };
   'export:complete': { outputPath: string };
   'export:error': { message: string };
 

@@ -15,6 +15,7 @@ import {
   framesRangeMs,
   telemetryToVideoRangeMs,
 } from '../../lib/telemetry-range';
+import { formatEta } from '../../lib/time-format';
 import { useAppStore } from '../../stores/app-store';
 import { useLayoutStore } from '../../stores/layout-store';
 import { ExportBoardEditor } from './ExportBoardEditor';
@@ -455,7 +456,9 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
               </div>
               <div className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
                 {progress
-                  ? `${progress.currentFrame}/${progress.totalFrames} frames (${progress.percent}%)`
+                  ? `${progress.currentFrame}/${progress.totalFrames} frames (${progress.percent}%)${
+                      progress.etaMs ? ` · ~${formatEta(progress.etaMs)} restantes` : ''
+                    }`
                   : 'Preparando…'}
               </div>
             </div>

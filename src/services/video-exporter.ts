@@ -8,6 +8,8 @@ export interface ExportProgress {
   percent: number;
   currentFrame: number;
   totalFrames: number;
+  /** Tiempo restante estimado en ms (`null` mientras no hay muestra fiable). */
+  etaMs: number | null;
 }
 
 /**
@@ -49,6 +51,8 @@ export async function exportVideo(
   const overlay = config.includeOverlays ? { label: config.sessionLabel } : undefined;
 
   const total = Math.max(config.endFrame - config.startFrame + 1, 1);
+  // Se descarta el primer frame del promedio (incluye warm-up de seek/decode).
+  let baselineAt: number | null = null;
 
   const start = await api.exportStart({
     width: layout.width,
@@ -82,10 +86,19 @@ export async function exportVideo(
       if (!written.success) throw new Error(written.error ?? 'Error al escribir el frame');
 
       const currentFrame = i - config.startFrame + 1;
+      const now = performance.now();
+      let etaMs: number | null = null;
+      if (currentFrame === 1) {
+        baselineAt = now;
+      } else if (baselineAt !== null) {
+        const avgMsPerFrame = (now - baselineAt) / (currentFrame - 1);
+        etaMs = Math.round(avgMsPerFrame * (total - currentFrame));
+      }
       onProgress?.({
         percent: Math.round((currentFrame / total) * 100),
         currentFrame,
         totalFrames: total,
+        etaMs,
       });
     }
   } catch (error) {

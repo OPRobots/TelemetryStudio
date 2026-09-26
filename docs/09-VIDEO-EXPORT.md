@@ -149,8 +149,10 @@ parcial**.
 `src/services/video-exporter.ts` → `exportVideo(config, onProgress?, signal?)`:
 por frame hace `seekVideo`, calcula el timestamp de telemetría con
 **`videoSynchronizer.mapTime`** (vídeo → telemetría, respeta anclaje/drift) y
-compone. Envía cada frame como raw RGBA y reporta progreso. `config.outputPath`
-se pasa a `export:start`, que lanza FFmpeg hacia ese destino.
+compone. Envía cada frame como raw RGBA y reporta progreso (`percent`,
+`currentFrame`, `totalFrames` y `etaMs`; el ETA es la media móvil acumulada de
+ms/frame, descartando el primer frame por warm-up). `config.outputPath` se pasa a
+`export:start`, que lanza FFmpeg hacia ese destino.
 
 ## Persistencia
 

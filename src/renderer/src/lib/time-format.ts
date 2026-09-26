@@ -12,3 +12,16 @@ export function formatTime(seconds: number): string {
     .toString()
     .padStart(3, '0')}`;
 }
+
+/**
+ * Formatea un tiempo restante en ms de forma corta: `12 s`, `1 min 05 s`.
+ * Devuelve cadena vacía si no hay estimación válida.
+ */
+export function formatEta(ms: number | null): string {
+  if (ms === null || !Number.isFinite(ms) || ms < 0) return '';
+  const total_s = Math.round(ms / 1000);
+  if (total_s < 60) return `${total_s} s`;
+  const m = Math.floor(total_s / 60);
+  const s = total_s % 60;
+  return s === 0 ? `${m} min` : `${m} min ${s.toString().padStart(2, '0')} s`;
+}
