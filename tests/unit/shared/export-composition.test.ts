@@ -50,12 +50,6 @@ describe('resolveOutputSize', () => {
   it('1080p en 9:16 son 1080x1920', () => {
     expect(resolveOutputSize('1080p', 9 / 16)).toEqual({ width: 1080, height: 1920 });
   });
-  it('source usa el lado corto del vídeo', () => {
-    expect(resolveOutputSize('source', 4 / 3, { width: 640, height: 480 })).toEqual({
-      width: 640,
-      height: 480,
-    });
-  });
 });
 
 describe('fitRect', () => {
@@ -289,5 +283,17 @@ describe('normalizeBoard', () => {
 
   it('sin vídeo fuerza videoMode hidden', () => {
     expect(normalizeBoard({ videoMode: 'flow' }, false).videoMode).toBe('hidden');
+  });
+
+  it('conserva resoluciones válidas', () => {
+    expect(normalizeBoard({ resolution: '1440p' }, true).resolution).toBe('1440p');
+  });
+
+  it('migra la resolución antigua source a 1080p', () => {
+    expect(normalizeBoard({ resolution: 'source' }, true).resolution).toBe('1080p');
+  });
+
+  it('resuelve resoluciones desconocidas a 1080p', () => {
+    expect(normalizeBoard({ resolution: '8k' }, true).resolution).toBe('1080p');
   });
 });

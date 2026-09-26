@@ -138,6 +138,11 @@ normalizeBoard(raw, hasVideo)                    // compat. y valores por defect
    que reparten el ancho y se reajustan al redimensionar la ventana (`.dialog-grid`).
    Botones: *Cerrar* · *← Atrás* · *Exportar…*.
 
+Los ajustes de **Calidad (CRF)**, **Preset**, **Supersampling**, **Modo de
+gráficas**, **Ventana** y **Rango de exportación** incluyen un icono **`i`** con una
+explicación emergente. La **Resolución** de salida ofrece `720p`, `1080p`, `1440p`
+y `2160p`.
+
 **Exportación directa**: *Exportar…* abre un `dialog.showSaveDialog` nativo
 (`export:choose-destination`) con un nombre por defecto
 (`telemetria_<sesión>_<fecha>.mp4`) y FFmpeg escribe **directamente** en la ruta

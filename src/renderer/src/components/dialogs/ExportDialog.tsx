@@ -20,6 +20,7 @@ import { useAppStore } from '../../stores/app-store';
 import { useLayoutStore } from '../../stores/layout-store';
 import { ExportBoardEditor } from './ExportBoardEditor';
 import { ExportFramePreview } from './ExportFramePreview';
+import { InfoHint } from './InfoHint';
 import { RangeSlider } from './RangeSlider';
 
 interface ExportDialogProps {
@@ -30,7 +31,7 @@ const PRESETS = ['veryfast', 'fast', 'medium', 'slow'];
 const CRFS = [18, 20, 23, 28];
 const FPS_OPTIONS = [30, 60] as const;
 const RANGE_MARGIN_MS = 2000;
-const RESOLUTIONS: ResolutionPreset[] = ['720p', '1080p', '1440p', '2160p', 'source'];
+const RESOLUTIONS: ResolutionPreset[] = ['720p', '1080p', '1440p', '2160p'];
 
 function formatSeconds(value_s: number): string {
   return `${value_s.toFixed(2)} s`;
@@ -320,7 +321,10 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
                 </select>
               </div>
               <div>
-                <label className="dialog-label">Calidad (CRF)</label>
+                <div className="dialog-label-row">
+                  <label className="dialog-label">Calidad (CRF)</label>
+                  <InfoHint text="Calidad de codificación H.264 (CRF): valores bajos = más calidad y archivo más grande; 18 alta, 28 baja." />
+                </div>
                 <select
                   className="dialog-input"
                   value={crf}
@@ -335,7 +339,10 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
                 </select>
               </div>
               <div>
-                <label className="dialog-label">Preset</label>
+                <div className="dialog-label-row">
+                  <label className="dialog-label">Preset</label>
+                  <InfoHint text="Velocidad de codificación de FFmpeg: más lento da mejor compresión (archivo más pequeño) a igual calidad." />
+                </div>
                 <select
                   className="dialog-input"
                   value={preset}
@@ -366,7 +373,10 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
                 </select>
               </div>
               <div>
-                <label className="dialog-label">Supersampling</label>
+                <div className="dialog-label-row">
+                  <label className="dialog-label">Supersampling</label>
+                  <InfoHint text="Renderiza los widgets a doble resolución y los reduce al componer: líneas y textos más suaves. Aumenta el tiempo de exportación." />
+                </div>
                 <select
                   className="dialog-input"
                   value={board.supersample}
@@ -377,7 +387,10 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
                 </select>
               </div>
               <div>
-                <label className="dialog-label">Modo de gráficas</label>
+                <div className="dialog-label-row">
+                  <label className="dialog-label">Modo de gráficas</label>
+                  <InfoHint text="Directo: la gráfica avanza con el vídeo (ventana deslizante). Completo: se dibuja la traza entera de telemetría, sin desplazamiento." />
+                </div>
                 <select
                   id="export-mode"
                   className="dialog-input"
@@ -390,7 +403,10 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
               </div>
               {mode === 'live' && (
                 <div>
-                  <label className="dialog-label">Ventana</label>
+                  <div className="dialog-label-row">
+                    <label className="dialog-label">Ventana</label>
+                    <InfoHint text="Duración de la traza visible en modo Directo; la ventana avanza con el vídeo." />
+                  </div>
                   <select
                     id="export-live-window"
                     className="dialog-input"
@@ -408,7 +424,10 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
 
             {hasVideo && (
               <div>
-                <label className="dialog-label">Rango de exportación</label>
+                <div className="dialog-label-row">
+                  <label className="dialog-label">Rango de exportación</label>
+                  <InfoHint text="Recorta o prolonga el tramo a exportar. La banda azul marca dónde hay datos de telemetría; por defecto se añaden 2 s antes y después." />
+                </div>
                 <RangeSlider
                   min={0}
                   max={videoDuration_s}

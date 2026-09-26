@@ -12,7 +12,7 @@ import { GRID_COLUMNS, clampGridHeight, clampGridWidth } from './grid';
 
 export type VideoFit = 'contain' | 'cover';
 export type PanelStyle = 'translucent' | 'none';
-export type ResolutionPreset = '720p' | '1080p' | '1440p' | '2160p' | 'source';
+export type ResolutionPreset = '720p' | '1080p' | '1440p' | '2160p';
 export type AspectPreset = '16:9' | '9:16' | '1:1' | '4:5' | 'custom';
 /** `hidden` = sin vídeo; `flow` = ítem del layout; `background` = a sangre detrás. */
 export type VideoMode = 'hidden' | 'flow' | 'background';
@@ -108,15 +108,14 @@ export function copyrightBarHeight(outputHeight: number): number {
 const DEFAULT_BACKGROUND = '#0a0e17';
 
 /**
- * Longitud del **lado corto** para cada preset (`source` = lado corto nativo).
+ * Longitud del **lado corto** para cada preset.
  * Así `1080p` es 1920×1080 en 16:9, 1080×1920 en 9:16 y 1080×1080 en 1:1.
  */
-const RESOLUTION_SHORT_EDGE: Record<ResolutionPreset, number | null> = {
+const RESOLUTION_SHORT_EDGE: Record<ResolutionPreset, number> = {
   '720p': 720,
   '1080p': 1080,
   '1440p': 1440,
   '2160p': 2160,
-  source: null,
 };
 
 const NAMED_ASPECT: Record<'16:9' | '9:16' | '1:1' | '4:5', number> = {
@@ -143,15 +142,10 @@ function aspectRatio(aspect: AspectPreset, customAspect?: Size): number {
 
 /**
  * Resolución final (pares) a partir del **lado corto** del preset y la relación
- * de aspecto. `source` usa el lado corto del vídeo (o 1080 si no hay vídeo).
+ * de aspecto.
  */
-export function resolveOutputSize(
-  resolution: ResolutionPreset,
-  ratio: number,
-  source?: Size | null
-): Size {
-  const short =
-    RESOLUTION_SHORT_EDGE[resolution] ?? (source ? Math.min(source.width, source.height) : 1080);
+export function resolveOutputSize(resolution: ResolutionPreset, ratio: number): Size {
+  const short = RESOLUTION_SHORT_EDGE[resolution];
   const safeRatio = ratio > 0 ? ratio : 16 / 9;
   const width = safeRatio >= 1 ? short * safeRatio : short;
   const height = safeRatio >= 1 ? short : short / safeRatio;
@@ -249,7 +243,7 @@ export function computeBoardLayout(
   const ratio = aspectRatio(board.aspect, board.customAspect);
   const size = outputSize
     ? { width: toEven(outputSize.width), height: toEven(outputSize.height) }
-    : resolveOutputSize(board.resolution, ratio, source);
+    : resolveOutputSize(board.resolution, ratio);
   const { width, height } = size;
 
   const { pad, gap } = boardPadding(width, height);
@@ -403,11 +397,27 @@ export function createDefaultBoard(
 }
 
 /**
+ * Valida una resolución guardada. Migra la antigua `source` (y valores
+ * desconocidos) a `1080p`.
+ */
+function toResolutionPreset(value: string | undefined): ResolutionPreset {
+  return value === '720p' || value === '1080p' || value === '1440p' || value === '2160p'
+    ? value
+    : '1080p';
+}
+
+/**
  * Normaliza un board guardado (p. ej. de una versión anterior con
  * `videoPlacement`/`videoFit`) y aplica valores por defecto.
  */
 export function normalizeBoard(
-  raw: (Partial<ExportBoard> & { videoPlacement?: string }) | null | undefined,
+  raw:
+    | (Partial<Omit<ExportBoard, 'resolution'>> & {
+        videoPlacement?: string;
+        resolution?: string;
+      })
+    | null
+    | undefined,
   hasVideo = true
 ): ExportBoard {
   const legacy =
@@ -428,7 +438,7 @@ export function normalizeBoard(
   return {
     aspect,
     customAspect: raw?.customAspect,
-    resolution: raw?.resolution ?? '1080p',
+    resolution: toResolutionPreset(raw?.resolution),
     videoMode,
     panel: raw?.panel ?? 'translucent',
     supersample: raw?.supersample ?? 1,

@@ -152,6 +152,7 @@ telemetry-studio/
 │   │       │       ├── ExportDialog.tsx        # Exportar: editor de board, preview y calidad
 │   │       │       ├── ExportBoardEditor.tsx   # Editor WYSIWYG del board de exportación
 │   │       │       ├── ExportFramePreview.tsx  # Preview del frame medio (paso 2)
+│   │       │       ├── InfoHint.tsx           # Icono (i) con tooltip de ayuda
 │   │       │       ├── RangeSlider.tsx         # Slider de dos asas (rango de exportación)
 │   │       │       └── PrepareVideoDialog.tsx   # Progreso de conversión + cancelar
 │   │       ├── hooks/
