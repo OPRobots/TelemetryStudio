@@ -748,11 +748,11 @@ select.dialog-input {
 .range-slider__band {
   position: absolute;
   top: 50%;
-  height: 12px;
+  height: 16px;
   transform: translateY(-50%);
   border-radius: 999px;
-  background: rgba(59, 130, 246, 0.16);
-  border: 1px solid var(--accent-border);
+  background: color-mix(in srgb, var(--warn) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 55%, transparent);
   pointer-events: none;
 }
 .range-slider input[type='range'] {

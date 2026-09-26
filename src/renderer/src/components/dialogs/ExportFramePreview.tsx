@@ -109,13 +109,14 @@ export function ExportFramePreview({
         width={layout.width}
         height={layout.height}
         style={{
-          width: '100%',
+          display: 'block',
+          margin: '0 auto',
+          width: 'auto',
           height: 'auto',
+          maxWidth: '100%',
           maxHeight: '46vh',
-          objectFit: 'contain',
           borderRadius: 8,
           border: '1px solid var(--bg-border)',
-          background: '#000',
         }}
       />
       <div className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>

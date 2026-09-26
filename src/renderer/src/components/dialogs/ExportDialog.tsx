@@ -414,7 +414,7 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
               <div>
                 <div className="dialog-label-row">
                   <label className="dialog-label">Rango de exportación</label>
-                  <InfoHint text="Recorta o prolonga el tramo a exportar. La banda azul marca dónde hay datos de telemetría; por defecto se añaden 2 s antes y después." />
+                  <InfoHint text="Recorta o prolonga el tramo a exportar. La banda amarilla marca dónde hay datos de telemetría; por defecto se añaden 2 s antes y después." />
                 </div>
                 <RangeSlider
                   min={0}
@@ -450,10 +450,10 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
         )}
 
         {busy && (
-          <div className="mt-3 flex items-center gap-3">
-            <div className="flex-1">
+          <div className="mt-3">
+            <div className="flex items-center gap-3">
               <div
-                className="h-2 w-full overflow-hidden rounded"
+                className="h-2 flex-1 overflow-hidden rounded"
                 style={{ backgroundColor: 'var(--bg-primary)' }}
               >
                 <div
@@ -461,20 +461,26 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
                   style={{ width: `${progress?.percent ?? 0}%`, backgroundColor: '#3b82f6' }}
                 />
               </div>
-              <div className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                {progress
-                  ? `${progress.currentFrame}/${progress.totalFrames} frames (${progress.percent}%)${
-                      progress.etaMs ? ` · ~${formatEta(progress.etaMs)} restantes` : ''
-                    }`
-                  : 'Preparando…'}
-              </div>
+              <button
+                className="toolbar-button toolbar-button--compact"
+                onClick={() => abortRef.current?.abort()}
+              >
+                Cancelar
+              </button>
             </div>
-            <button
-              className="toolbar-button toolbar-button--compact"
-              onClick={() => abortRef.current?.abort()}
+            <div
+              className="mt-1 flex items-center justify-between text-[10px] tabular-nums"
+              style={{ color: 'var(--text-tertiary)' }}
             >
-              Cancelar
-            </button>
+              <span>
+                {progress
+                  ? `${progress.currentFrame}/${progress.totalFrames} frames (${progress.percent}%)`
+                  : 'Preparando…'}
+              </span>
+              {progress?.etaMs ? (
+                <span className="shrink-0 pl-3">~{formatEta(progress.etaMs)} restantes</span>
+              ) : null}
+            </div>
           </div>
         )}
 

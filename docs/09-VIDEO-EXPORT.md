@@ -131,14 +131,15 @@ normalizeBoard(raw, hasVideo)                    // compat. y valores por defect
    plano) y **añadir**, todo en **una sola fila**; después el editor del board
    (panel, quitar/redimensionar) y el slider de previsualización (por defecto, el
    punto medio del rango de exportación). Botones: *Cerrar* · *Siguiente*.
-2. **Salida**: **previsualización del frame medio** del rango (mismo compositor) y
-   dos filas de ajustes: **Resolución · FPS (30/60) · Calidad (CRF) · Preset** y
+2. **Salida**: **previsualización del frame medio** del rango (mismo compositor,
+   ajustada al contenido, sin fondo negro) y dos filas de ajustes:
+   **Resolución · FPS (30/60) · Calidad (CRF) · Preset** y
    **Grosor de línea · Supersampling · Modo de gráficas · Ventana**. Debajo, el
    **slider start–end** de exportación sobre toda la duración del vídeo, con la
-   **banda fija de telemetría** (recortable/prolongable). Los ajustes de salida
-   **no** cambian el reparto del layout. Los campos se disponen en filas lógicas
-   que reparten el ancho y se reajustan al redimensionar la ventana (`.dialog-grid`).
-   Botones: *Cerrar* · *← Atrás* · *Exportar…*.
+   **banda amarilla fija de telemetría** (recortable/prolongable). Los ajustes de
+   salida **no** cambian el reparto del layout. Los campos se disponen en filas
+   lógicas que reparten el ancho y se reajustan al redimensionar la ventana
+   (`.dialog-grid`). Botones: *Cerrar* · *← Atrás* · *Exportar…*.
 
 Los ajustes de **Calidad (CRF)**, **Preset**, **Supersampling**, **Modo de
 gráficas**, **Ventana** y **Rango de exportación** incluyen un icono **`i`** con una
