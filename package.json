@@ -48,8 +48,6 @@
   },
   "dependencies": {
     "@electron-toolkit/utils": "^3.0.0",
-    "@serialport/list": "^13.0.0",
-    "electron-store": "^10.0.0",
     "serialport": "^13.0.0"
   },
   "devDependencies": {

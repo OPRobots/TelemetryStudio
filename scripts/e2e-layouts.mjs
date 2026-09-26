@@ -117,6 +117,14 @@ app.whenReady().then(async () => {
     el.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
   })()`;
+  const setLayoutDescription = (value) => `(() => {
+    const el = document.querySelector('input[placeholder="Descripción (opcional)"]');
+    if (!el) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(el, ${JSON.stringify(value)});
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  })()`;
 
   try {
     await win.loadFile(join(root, 'out/renderer/index.html'));
@@ -142,9 +150,12 @@ app.whenReady().then(async () => {
     await wait(400);
     const dialogOpen = await layoutDialogOpen();
     await run(setLayoutName('Prueba de layout'));
+    await run(setLayoutDescription('Layout de prueba e2e'));
     await run(clickByText('Guardar'));
     await wait(600);
-    const savedVisible = (await bodyText()).includes('Prueba de layout');
+    const text = await bodyText();
+    const savedVisible = text.includes('Prueba de layout');
+    const descriptionVisible = text.includes('Layout de prueba e2e');
     const persistedCount = savedLayouts.length;
 
     const result = {
@@ -153,6 +164,7 @@ app.whenReady().then(async () => {
       dialogForNew,
       dialogOpen,
       savedVisible,
+      descriptionVisible,
       persistedCount,
     };
     console.log('E2E_LAYOUTS ' + JSON.stringify(result));
@@ -164,6 +176,7 @@ app.whenReady().then(async () => {
       !dialogForNew &&
       dialogOpen &&
       savedVisible &&
+      descriptionVisible &&
       persistedCount >= 1 &&
       errors.length === 0;
 

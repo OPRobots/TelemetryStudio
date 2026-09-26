@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import {
   decodeSession,
   encodeSession,
@@ -158,5 +160,23 @@ describe('session-codec round-trip', () => {
 
   it('should reject wrong version', () => {
     expect(() => decodeSession(JSON.stringify({ v: 99 }))).toThrow('Unsupported session version');
+  });
+});
+
+describe('session-codec fixture', () => {
+  it('decodes the canonical example session', () => {
+    const json = readFileSync(join(__dirname, '../../fixtures/session.json'), 'utf-8');
+    const session = decodeSession(json);
+
+    expect(session.v).toBe(1);
+    expect(session.name).toBe('Test Session');
+    expect(session.video.duration_s).toBe(10);
+    expect(session.video.resolution).toEqual([1920, 1080]);
+    expect(session.telemetry.frames).toHaveLength(5);
+    expect(session.layout.widgets[0]?.fields).toContain('speed_rpm');
+
+    const dataset = sessionToDataset(session);
+    expect(dataset.frameCount).toBe(5);
+    expect(dataset.duration_ms).toBe(40);
   });
 });

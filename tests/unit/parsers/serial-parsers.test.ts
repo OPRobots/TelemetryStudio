@@ -144,4 +144,11 @@ describe('MacroArrayParser', () => {
     expect(p.parseLine('a:1')).toBeNull();
     expect(p.parseLine('>a')).toBeNull();
   });
+
+  it('buildDataset usa el puerto y baud indicados', () => {
+    const p = new KeyValueParser(true);
+    p.parseLine('T:0,speed:1');
+    const dataset = p.buildDataset('m', { port: '/dev/ttyUSB0', baudRate: 57600 });
+    expect(dataset.source).toEqual({ type: 'serial', port: '/dev/ttyUSB0', baudRate: 57600 });
+  });
 });

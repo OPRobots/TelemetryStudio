@@ -28,7 +28,7 @@ export interface LayoutPanels {
   inspectorVisible: boolean;
   /** Proporción de alto del panel de vídeo respecto a la columna (0.15–0.8). */
   videoRatio: number;
-  /** Proporción de alto del panel A en comparación (0.3–0.7). */
+  /** Proporción de ancho del panel A en comparación (0.3–0.7). */
   comparisonRatio: number;
 }
 

@@ -1,3 +1,4 @@
+import { SESSION_VERSION } from './types/session';
 import type {
   SessionFile,
   SessionFieldSchema,
@@ -16,7 +17,7 @@ import type { ExportBoard } from '@shared/export-composition';
 export function decodeSession(json: string): SessionFile {
   const raw = JSON.parse(json) as Partial<SessionFile> & { v?: number };
 
-  if (raw.v !== 1) {
+  if (raw.v !== SESSION_VERSION) {
     throw new Error(`Unsupported session version: ${raw.v}`);
   }
   if (!raw.telemetry || !Array.isArray(raw.telemetry.frames) || !Array.isArray(raw.telemetry.schema)) {
@@ -24,7 +25,7 @@ export function decodeSession(json: string): SessionFile {
   }
 
   return {
-    v: 1,
+    v: SESSION_VERSION,
     name: raw.name ?? 'Untitled',
     created: raw.created ?? new Date().toISOString(),
     video: {
@@ -178,7 +179,7 @@ export function datasetToSession(
   exportBoard?: ExportBoard | null
 ): SessionFile {
   return {
-    v: 1,
+    v: SESSION_VERSION,
     name: dataset.name,
     created: new Date().toISOString(),
     video,

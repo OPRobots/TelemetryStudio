@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { LayoutManager, BUILT_IN_LAYOUTS, createEmptyLayout } from '@services/layout-manager';
+import { LayoutManager, createEmptyLayout } from '@services/layout-manager';
 import type { DashboardLayout, WidgetConfig } from '@core/types/layout';
 
 class MockPersistence {
@@ -37,9 +37,8 @@ describe('LayoutManager', () => {
     manager = new LayoutManager(persistence);
   });
 
-  it('exposes built-in layouts', () => {
-    expect(BUILT_IN_LAYOUTS.length).toBeGreaterThanOrEqual(2);
-    expect(manager.getAllLayouts().length).toBeGreaterThanOrEqual(2);
+  it('starts with no saved layouts', () => {
+    expect(manager.getAllLayouts()).toHaveLength(0);
   });
 
   it('creates a new empty layout', () => {
@@ -68,6 +67,25 @@ describe('LayoutManager', () => {
 
     expect(persistence.saved.has('Persisted')).toBe(true);
     expect(manager.getSavedLayouts().some((l) => l.name === 'Persisted')).toBe(true);
+  });
+
+  it('persists the layout description', async () => {
+    manager.createNew('Con descripción', 'IR + PWM');
+    await manager.saveLayout('Con descripción');
+
+    expect(persistence.saved.get('Con descripción')?.description).toBe('IR + PWM');
+  });
+
+  it('preserves createdAt when overwriting a layout', async () => {
+    manager.createNew('Durable');
+    await manager.saveLayout('Durable');
+    const firstCreatedAt = manager.getSavedLayouts()[0]?.createdAt;
+
+    await new Promise((r) => setTimeout(r, 5));
+    await manager.saveLayout('Durable');
+    const secondCreatedAt = manager.getSavedLayouts()[0]?.createdAt;
+
+    expect(secondCreatedAt).toBe(firstCreatedAt);
   });
 
   it('loads a layout as current', () => {
@@ -102,12 +120,5 @@ describe('LayoutManager', () => {
     expect(layout.panels.inspectorVisible).toBe(true);
     expect(layout.panels.videoRatio).toBeCloseTo(0.42);
     expect(layout.panels.comparisonRatio).toBeCloseTo(0.5);
-  });
-
-  it('built-in layouts include panel sizes', () => {
-    for (const layout of BUILT_IN_LAYOUTS) {
-      expect(layout.panels).toBeDefined();
-      expect(layout.panels.inspectorWidth).toBeGreaterThan(0);
-    }
   });
 });

@@ -235,7 +235,10 @@ export abstract class SerialParserBase implements ITelemetryParser {
     return Array.from(this.fieldSchemas.values());
   }
 
-  buildDataset(name: string): TelemetryDataset {
+  buildDataset(
+    name: string,
+    source?: { port?: string; baudRate?: number }
+  ): TelemetryDataset {
     const frames = [...this.frames];
     frames.sort((a, b) => a.timestamp_ms - b.timestamp_ms);
 
@@ -253,7 +256,11 @@ export abstract class SerialParserBase implements ITelemetryParser {
       duration_ms,
       avgSampleRate_hz: duration_ms > 0 ? (frames.length / duration_ms) * 1000 : 0,
       frameCount: frames.length,
-      source: { type: 'serial', port: '', baudRate: 115200 },
+      source: {
+        type: 'serial',
+        port: source?.port ?? '',
+        baudRate: source?.baudRate ?? 115200,
+      },
     };
   }
 

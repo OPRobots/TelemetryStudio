@@ -16,6 +16,15 @@ export class ComparisonManager {
     reference: SessionFile,
     currentWidgets: SessionWidget[]
   ): WidgetCompatibilityResult {
+    if (this.active) {
+      return {
+        compatible: false,
+        differences: ['Ya hay una comparación activa; ciérrala antes de iniciar otra.'],
+        sessionAWidgets: reference.layout.widgets,
+        sessionBWidgets: currentWidgets,
+      };
+    }
+
     const result = this.validateWidgetCompatibility(
       reference.layout.widgets,
       currentWidgets
@@ -43,14 +52,13 @@ export class ComparisonManager {
   }
 
   stopComparison(): void {
+    // `clearComparison()` ya emite `comparison:stop`.
     telemetryStore.clearComparison();
     this.referenceSession = null;
     this.active = false;
-
-    eventBus.emit('comparison:stop', {});
   }
 
-  private validateWidgetCompatibility(
+  validateWidgetCompatibility(
     widgetsA: SessionWidget[],
     widgetsB: SessionWidget[]
   ): WidgetCompatibilityResult {

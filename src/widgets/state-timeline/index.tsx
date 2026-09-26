@@ -399,7 +399,7 @@ export const stateTimelineDefinition: WidgetDefinition = {
     category: 'temporal',
     acceptedFieldTypes: ['number', 'boolean', 'string'],
     minSize: { width: 6, height: 2 },
-    defaultSize: { width: 16, height: 3 },
+    defaultSize: { width: 12, height: 3 },
     defaultConfig: { ...DEFAULT_CONFIG },
     priority: 40,
   },

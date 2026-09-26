@@ -23,6 +23,8 @@ const DEFAULT_CONFIG: SerialParserConfig = { kind: 'keyvalue', hasTimestamp: tru
 class SerialIngestService {
   private parser: SerialParserBase = createSerialParser(DEFAULT_CONFIG);
   private config: SerialParserConfig = DEFAULT_CONFIG;
+  private port = '';
+  private baudRate = 115200;
   private unsubData: (() => void) | null = null;
   private unsubStatus: (() => void) | null = null;
   private listening = false;
@@ -50,6 +52,8 @@ class SerialIngestService {
     if (!window.api) return { success: false, error: 'API no disponible' };
     this.ensureListening();
     this.config = config;
+    this.port = path;
+    this.baudRate = baudRate;
     this.reset();
 
     const result = await window.api.serialOpen(path, baudRate);
@@ -163,7 +167,10 @@ class SerialIngestService {
     const schema = this.parser.getDiscoveredSchema();
 
     if (frames > 0) {
-      const dataset = this.parser.buildDataset('Captura Serial');
+      const dataset = this.parser.buildDataset('Captura Serial', {
+        port: this.port,
+        baudRate: this.baudRate,
+      });
       useAppStore.getState().setDataset(dataset, schema);
       useAppStore.getState().setStatusMessage('');
     }

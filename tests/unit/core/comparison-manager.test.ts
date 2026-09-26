@@ -82,4 +82,20 @@ describe('ComparisonManager', () => {
     const manager = new ComparisonManager();
     expect(manager.isActive).toBe(false);
   });
+
+  it('should reject a second comparison while one is active', () => {
+    const manager = new ComparisonManager();
+    const widgets: SessionWidget[] = [{ t: 'timeseries', size: [4, 2], fields: ['value'] }];
+
+    const first = manager.startComparison(makeSession(widgets), widgets);
+    expect(first.compatible).toBe(true);
+    expect(manager.isActive).toBe(true);
+
+    const second = manager.startComparison(makeSession(widgets), widgets);
+    expect(second.compatible).toBe(false);
+    expect(second.differences.some((d) => d.includes('comparación activa'))).toBe(true);
+
+    manager.stopComparison();
+    expect(manager.isActive).toBe(false);
+  });
 });

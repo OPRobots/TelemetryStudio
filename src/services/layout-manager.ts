@@ -2,98 +2,6 @@ import type { DashboardLayout, WidgetConfig } from '@core/types/layout';
 import { DEFAULT_PANELS } from '@core/types/layout';
 import { eventBus } from '@core/event-bus';
 
-/**
- * Layouts predefinidos por disciplina de robótica.
- */
-export const BUILT_IN_LAYOUTS: DashboardLayout[] = [
-  {
-    version: 1,
-    name: 'Siguelíneas',
-    description: 'IR sensors + PWM + estados para robots Siguelíneas',
-    createdAt: '2026-01-01T00:00:00Z',
-    modifiedAt: '2026-01-01T00:00:00Z',
-    videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: false, overlays: [] },
-    widgets: [
-      {
-        id: 'w-ir',
-        type: 'DigitalBitmask',
-        label: 'Sensores IR',
-        width: 12,
-        height: 3,
-        dataFields: [],
-        config: {},
-        visible: true,
-      },
-      {
-        id: 'w-chart',
-        type: 'TimeSeriesChart',
-        label: 'Señales',
-        width: 12,
-        height: 6,
-        dataFields: [],
-        config: {},
-        visible: true,
-      },
-      {
-        id: 'w-state',
-        type: 'StateTimeline',
-        label: 'Estado',
-        width: 12,
-        height: 3,
-        dataFields: [],
-        config: {},
-        visible: true,
-      },
-    ],
-    panels: { ...DEFAULT_PANELS },
-    global: {
-      theme: 'dark',
-      units: { speed: 'rpm', distance: 'm', angle: 'deg' },
-      showGrid: true,
-      snapToGrid: false,
-      gridSize: 40,
-    },
-  },
-  {
-    version: 1,
-    name: 'Micromouse',
-    description: 'Minimapa 2D + velocidad + sensores para Micromouse',
-    createdAt: '2026-01-01T00:00:00Z',
-    modifiedAt: '2026-01-01T00:00:00Z',
-    videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: false, overlays: [] },
-    widgets: [
-      {
-        id: 'w-map',
-        type: 'Minimap2D',
-        label: 'Trayectoria',
-        width: 12,
-        height: 8,
-        dataFields: [],
-        config: {},
-        visible: true,
-      },
-      {
-        id: 'w-speed',
-        type: 'TimeSeriesChart',
-        label: 'Velocidad',
-        width: 12,
-        height: 4,
-        dataFields: [],
-        config: {},
-        visible: true,
-      },
-    ],
-    panels: { ...DEFAULT_PANELS },
-    global: {
-      theme: 'dark',
-      units: { speed: 'cm/s', distance: 'cm', angle: 'deg' },
-      showGrid: true,
-      snapToGrid: false,
-      gridSize: 40,
-    },
-  },
-];
-
 interface LayoutPersistence {
   save(layout: DashboardLayout): Promise<void>;
   loadAll(): Promise<DashboardLayout[]>;
@@ -124,12 +32,7 @@ export class LayoutManager {
   }
 
   getAllLayouts(): DashboardLayout[] {
-    const names = new Set(this.savedLayouts.map((l) => l.name));
-    return [...BUILT_IN_LAYOUTS.filter((l) => !names.has(l.name)), ...this.savedLayouts];
-  }
-
-  getBuiltInLayouts(): DashboardLayout[] {
-    return BUILT_IN_LAYOUTS;
+    return this.savedLayouts;
   }
 
   getSavedLayouts(): DashboardLayout[] {
@@ -183,9 +86,12 @@ export class LayoutManager {
 
   async saveLayout(name?: string): Promise<void> {
     if (!this.currentLayout) return;
+    const targetName = name ?? this.currentLayout.name;
+    const existing = this.savedLayouts.find((l) => l.name === targetName);
     const toSave: DashboardLayout = {
       ...cloneLayout(this.currentLayout),
-      name: name ?? this.currentLayout.name,
+      name: targetName,
+      createdAt: existing?.createdAt ?? this.currentLayout.createdAt,
       modifiedAt: new Date().toISOString(),
     };
 
