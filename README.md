@@ -5,10 +5,9 @@
   <p>Aplicación de escritorio <b>multiplataforma</b>, <b>100&nbsp;% offline</b> y <b>portable</b>: captura por UART en vivo o abre sesiones guardadas, visualiza los datos en gráficas y widgets, compáralos en paralelo y exporta vídeo con la telemetría superpuesta.</p>
   <p>
     <a href="https://github.com/OPRobots/TelemetryStudio/releases"><img src="https://img.shields.io/github/v/release/OPRobots/TelemetryStudio?include_prereleases&label=release&sort=semver" alt="Release" /></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License" /></a>
     <a href="https://github.com/OPRobots/TelemetryStudio/actions/workflows/ci.yml"><img src="https://github.com/OPRobots/TelemetryStudio/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
     <img src="https://img.shields.io/badge/plataformas-Windows%20%7C%20macOS%20%7C%20Linux-3b82f6" alt="Plataformas" />
-    <img src="https://img.shields.io/badge/stack-Electron%20%C2%B7%20React%20%C2%B7%20TypeScript%20%C2%B7%20uPlot%20%C2%B7%20FFmpeg-6b7688" alt="Stack" />
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License" /></a>
   </p>
 </div>
 
@@ -143,19 +142,48 @@ sidecar de FFmpeg se descarga con `scripts/fetch-ffmpeg.mjs`.
 
 ## Stack técnico
 
-**Electron 34** · **React 19** · **TypeScript 5.6** · **uPlot 1.6** · **Zustand 5** ·
-**Tailwind CSS 4** · **serialport 13** · **FFmpeg** (sidecar) · **Vitest**.
+| Capa | Tecnología | Por qué |
+|---|---|---|
+| **Runtime** | Electron 34 | Chromium consistente en Windows/macOS/Linux y acceso a módulos nativos. |
+| **UI** | React 19 + TypeScript 5.6 (strict) | Componentes como datos y tipado estricto en todo el código. |
+| **Estilos** | Tailwind CSS 4 (tokens en CSS vars) | Tema oscuro propio, sin librería de componentes. |
+| **Gráficas** | uPlot 1.6 (Canvas 2D) | Miles de puntos a 60 fps; API imperativa encaja con RVFC. |
+| **Estado** | Zustand 5 + EventBus / FrameBus | Estado de UI ligero y reparto de frames sin re-render por frame. |
+| **Nativos** | serialport 13 (N-API) | UART multiplataforma sin `node-gyp` (prebuilds). |
+| **Vídeo** | FFmpeg (sidecar) | Export MP4 y transcodificación a H.264, todo offline. |
+| **Build** | electron-vite 2 + electron-builder 25 | HMR en desarrollo y empaquetado para las 3 plataformas. |
+| **Tests** | Vitest 3 + harness Electron propio | Unit/integración y 12 pruebas e2e (sin Playwright). |
+
+Arquitectura por capas: `main` (Node), `preload` (contextBridge), `renderer` (React),
+`core` (datos y sincronización), `parsers`, `widgets`, `services` y `shared` (puro). El
+renderer nunca importa de `main`; la comunicación es solo por IPC. Detalle en
+[Arquitectura](docs/01-ARCHITECTURE.md) y [Stack](docs/02-TECH-STACK.md).
 
 ## Documentación
 
-Documentación técnica completa en [`docs/`](docs/). Empieza por el
-[**índice y glosario**](docs/README.md):
+La documentación técnica completa vive en [`docs/`](docs/). Empieza por el
+[**índice con glosario y recorrido por capas**](docs/README.md).
 
-- [Visión general](docs/00-PROJECT-OVERVIEW.md) · [Arquitectura](docs/01-ARCHITECTURE.md) · [Stack](docs/02-TECH-STACK.md)
-- [Modelo de datos](docs/04-DATA-MODEL.md) · [Motor de datos](docs/07-DATA-ENGINE.md)
-- [Sincronización vídeo](docs/06-VIDEO-SYNC.md) · [Sistema de widgets](docs/08-WIDGET-SYSTEM.md)
-- [Exportación](docs/09-VIDEO-EXPORT.md) · [Layouts](docs/10-LAYOUT-MANAGER.md) · [Formato de sesión](docs/14-SESSION-FORMAT.md)
-- [Empaquetado](docs/11-PACKAGING.md) · [Limitaciones](docs/12-LIMITATIONS.md) · [Roadmap](ROADMAP.md)
+| Área | Documento |
+|---|---|
+| Índice, glosario y recorrido | [docs/README.md](docs/README.md) |
+| Visión general y flujos de trabajo | [00 · Project overview](docs/00-PROJECT-OVERVIEW.md) |
+| Arquitectura, IPC y diagramas | [01 · Architecture](docs/01-ARCHITECTURE.md) |
+| Decisiones de stack y versiones | [02 · Tech stack](docs/02-TECH-STACK.md) |
+| Estructura de carpetas y dependencias | [03 · Folder structure](docs/03-FOLDER-STRUCTURE.md) |
+| Tipos TypeScript, `EventMap` y modelos | [04 · Data model](docs/04-DATA-MODEL.md) |
+| Sistema de plugins (parsers y widgets) | [05 · Plugin system](docs/05-PLUGIN-SYSTEM.md) |
+| Sincronización vídeo–telemetría | [06 · Video sync](docs/06-VIDEO-SYNC.md) |
+| Motor de datos (EventBus, stores…) | [07 · Data engine](docs/07-DATA-ENGINE.md) |
+| Widgets y auto-layout | [08 · Widget system](docs/08-WIDGET-SYSTEM.md) |
+| Exportación de vídeo | [09 · Video export](docs/09-VIDEO-EXPORT.md) |
+| Persistencia de layouts | [10 · Layout manager](docs/10-LAYOUT-MANAGER.md) |
+| Empaquetado y CI/CD | [11 · Packaging](docs/11-PACKAGING.md) |
+| Limitaciones y workarounds | [12 · Limitations](docs/12-LIMITATIONS.md) |
+| Pruebas de concepto | [13 · PoC tests](docs/13-POC-TESTS.md) |
+| Formato de sesión (`session.json`) | [14 · Session format](docs/14-SESSION-FORMAT.md) |
+| Fases y timeline del proyecto | [ROADMAP.md](ROADMAP.md) |
+| Guía para contribuir/agentes | [AGENTS.md](AGENTS.md) |
 
 ## Créditos
 
