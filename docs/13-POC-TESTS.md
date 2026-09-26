@@ -3,6 +3,9 @@
 Los PoCs validan que el stack funciona antes de construir la app completa. Viven en
 `pocs/` como referencia de funcionamiento. Hay **5 PoCs**.
 
+**Comandos** (desde la raíz): `npm run poc:1`, `poc:2`, `poc:3` y `poc:4` (dev). El
+**PoC 5** es un firmware PlatformIO en `pocs/05-telemetry-sender/` (no tiene script npm).
+
 ---
 
 ## PoC 1: Serial UART → Widget en Tiempo Real — ✅ Validado (hardware real)
@@ -30,7 +33,7 @@ Los PoCs validan que el stack funciona antes de construir la app completa. Viven
 - [x] Búsqueda binaria O(log N) del frame más cercano
 - [x] Drift < 1 frame durante reproducción continua
 - [x] Seek manual (adelante/atrás 1 frame) correcto
-- [x] Cambio de velocidad (0.5x, 1x, 2x) mantiene la sincronización
+- [x] Cambio de velocidad (0.25x, 0.5x, 1x, 2x) mantiene la sincronización
 - [x] El polyfill solo se usa si RVFC no está disponible
 
 **Medición**: `drift = |mediaTime_s·1000 + offset − frame.timestamp_ms|` (el e2e
@@ -38,14 +41,14 @@ Los PoCs validan que el stack funciona antes de construir la app completa. Viven
 
 ---
 
-## PoC 3: Widget Canvas Export — ✅ Completado
+## PoC 3: Widget Canvas Export — ✅ Funcional
 
 **Objetivo**: capturar la composición (vídeo + widgets) y codificarla en MP4.
 
 **Implementación final (real)**: el renderer compone cada frame en un **canvas** y
 lo envía como **raw RGBA** por IPC al Main Process, que ejecuta **FFmpeg**
 (`libx264 -crf 18 -preset fast`) leyendo de `stdin`. Es robusto aunque no haya GPU
-disponible.
+disponible. (El PoC usa `preset fast`; la app usa `medium` por defecto.)
 
 **Criterios**
 - [x] Se generan los frames del rango sin drops relevantes
@@ -56,17 +59,21 @@ disponible.
 
 ---
 
-## PoC 4: Native Module Packaging — 🟡 Linux OK; Windows/macOS manual
+## PoC 4: Native Module Packaging — ✅ Linux local; Windows/macOS en CI
 
 **Objetivo**: empaquetar con electron-builder y `serialport` funcionando.
 
 **Criterios**
 - [x] Build Linux (AppImage + deb) sin errores y app abre
 - [x] `SerialPort.list()` funciona en la app empaquetada (Linux)
-- [x] Tamaño de paquete < 200 MB (AppImage ~109 MB, deb ~75 MB)
-- [ ] Windows: `.exe` (NSIS) + portable — build manual pendiente
-- [ ] macOS: `.dmg` (x64 y arm64) — build manual pendiente
-- [ ] Serial en las 3 plataformas empaquetadas (Windows pendiente)
+- [x] Tamaño contenido (macOS medido: `.dmg` arm64 ~199 MB y x64 ~206 MB; Linux pendiente de confirmar)
+- [x] Windows: `.exe` (NSIS) + portable — generados en CI (release draft `v1.0.0`)
+- [x] macOS: `.dmg` (x64 y arm64) — generados en CI (firma ad-hoc, sin notarizar)
+- [ ] Serial en las 3 plataformas empaquetadas (validación de hardware pendiente)
+
+**Comandos**
+- App: `npm run dist:linux` / `dist:mac` / `dist:win` (o `npm run dist`).
+- PoC aislado: `cd pocs/04-packaging && npm install && npm run build:linux|build:mac|build:win`.
 
 ---
 

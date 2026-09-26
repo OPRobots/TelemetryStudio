@@ -1,7 +1,8 @@
 # Sistema de Plugins
 
-El sistema de plugins permite extender la app sin tocar el core. Hay dos tipos:
-**Parsers** (entrada de datos) y **Widgets** (visualización).
+La app se extiende con **Parsers** (entrada de datos) y **Widgets** (visualización).
+Los widgets se registran en un registro dinámico; los parsers seriales se crean con
+una fábrica y las sesiones se cargan por `session-codec`.
 
 > **Serial UART** ofrece tres **parsers** seleccionables al conectar, más la casilla
 > "La telemetría incluye timestamp" (1ª columna/campo):
@@ -52,13 +53,11 @@ interface ITelemetryParser {
 }
 ```
 
-Ambos parsers producen el mismo `TelemetryDataset`; los widgets no distinguen su origen.
+Todos los parsers producen el mismo `TelemetryDataset`; los widgets no distinguen su
+origen.
 
-## Parser: JSON Session
-
-`src/parsers/json-session-parser.ts` — lee `session.json` (formato compacto
-`schema` + `frames` posicionales) y produce un `TelemetryDataset`. Ver
-`docs/14-SESSION-FORMAT.md`.
+> Para los seriales, `parse()` (el método de fichero de `ITelemetryParser`) **lanza**;
+> el modo streaming usa `parseLine()` + `completeStream()`/`buildDataset()`.
 
 ## Parser: Serial UART (streaming)
 
@@ -70,18 +69,17 @@ Ambos parsers producen el mismo `TelemetryDataset`; los widgets no distinguen su
 - `getDiscoveredSchema()`: campos descubiertos con su tipo.
 - `resetFrames()`: vacía los frames acumulados **conservando** el schema (reinicio de
   captura).
-- `completeStream()` / `buildDataset(name)`: cierran el stream y construyen el dataset.
-- En modo **sin timestamp**, la base agrupa campos y cierra el frame cuando se repite
-  el primer campo (`t` = índice de muestra).
+- `completeStream()` / `buildDataset(name, source?)`: cierran el stream y construyen el
+  dataset (la `source` serial se rellena con el puerto/baud reales).
+- En modo **sin timestamp**, el tiempo es el **índice de muestra**; el agrupamiento por
+  repetición del primer campo solo lo aplica **Macroarray** (`groupLines = true`).
+  `Default` y `CSV` emiten un frame por línea.
 
-## ParserRegistry
+## Carga de sesiones
 
-`src/parsers/parser-registry.ts` (`parserRegistry` singleton)
-
-```typescript
-register(parser); unregister(name); get(name);
-getAll(); detectParser(data, filename); getStreamingParsers(); destroyAll();
-```
+Las sesiones **no** se cargan con un parser de fichero: usan
+`services/session-manager.ts` + `core/session-codec.ts` (`decodeSession` →
+`sessionToDataset`). Ver `docs/14-SESSION-FORMAT.md`.
 
 ---
 
@@ -114,6 +112,14 @@ interface WidgetProps {
   onCursorHover?: (timestamp_ms: number | null) => void;
   zoomRange?: ZoomRange | null;
   onZoomRangeChange?: (range: ZoomRange | null) => void;
+  /** Modo directo (replay): las gráficas avanzan con el vídeo. */
+  live?: boolean;
+  /** Ventana visible (ms) del modo directo. */
+  liveWindowMs?: number;
+  /** Multiplicador de grosor de líneas (solo exportación). */
+  lineScale?: number;
+  /** Si el widget debe pintar su fondo transparente (exportación). */
+  transparentBackground?: boolean;
 }
 
 interface WidgetDefinition {
@@ -141,7 +147,9 @@ DigitalBitmask, Minimap2D, StateTimeline).
 ## Añadir un parser nuevo
 
 1. Implementar `ITelemetryParser` en `src/parsers/mi-parser.ts`.
-2. Registrarlo en `src/parsers/parser-registry.ts` (o donde se inicialicen los parsers).
+2. Conectarlo donde se consuma tu formato. No hay un registro de parsers: los seriales se
+   crean con `createSerialParser()` (`src/parsers/serial/index.ts`) y las sesiones se
+   cargan por `SessionManager`/`session-codec`.
 
 ## Añadir un widget nuevo
 

@@ -25,10 +25,10 @@ timestamp efectivo que consumen los widgets.
 
 ```typescript
 attach(video); detach();
-setDriftOffset(offset_ms);          // ajuste manual de desfase
+setDriftOffset(offset_ms);          // ajuste de desfase (API; la UI no lo expone)
 setAnchorPoint(video_ms, telemetry_ms); clearAnchor();
 setDeclaredFps(fps);                // fps real (de ffprobe)
-setPlaybackRate(rate);              // 0.1x–2x
+setPlaybackRate(rate);              // API: 0.1x–2x (la UI ofrece 0.25/0.5/1/2)
 play(); pause(); seekTo(time_s);
 stepForward(); stepBackward();      // avanza/retrocede 1 frame (1 / declaredFps)
 refresh();                          // reevalúa el frame actual (pausa/seek)
@@ -39,6 +39,10 @@ unmapTime(telemetry_ms);            // inverso: telemetría → media time de v�
 //          anchor, averageDrift, maxDrift
 // resetStats()
 ```
+
+> `setDataset()` existe pero es un **no-op** (compatibilidad de API). `unmapTime`
+> existe y se testea, pero la exportación usa su propia inversa en
+> `renderer/lib/telemetry-range.ts` (`telemetryToVideoRangeMs`).
 
 ### Instancias
 
@@ -56,21 +60,27 @@ estuviera disponible, `VideoPlayer` lo estima con RVFC midiendo el delta de
 ## Anchor point y calibración
 
 - **«Alinear aquí»** (`src/renderer/src/lib/sync-actions.ts`): fija el frame actual
-  del vídeo como `t=0` de la telemetría → `anchorPoint = { video_ms, telemetry_ms: 0 }`.
-- **Reset**: `clearAnchor()`.
-- También hay un ajuste manual de desfase (`setDriftOffset`).
+  del vídeo como `t=0` de la telemetría → `anchorPoint = { video_ms, telemetry_ms: 0 }`,
+  y además **pone el drift a 0** y refresca el frame actual.
+- **Reset**: `resetSync()` llama a `clearAnchor()` **y** `setDriftOffset(0)` (y limpia el
+  anchor del store). `clearAnchor()` por sí solo no toca el drift.
+- `setDriftOffset` existe en la API, pero **no hay control de UI** para un drift
+  distinto de 0.
 
 ## `averageDrift` / `maxDrift`
 
 Miden `|target − timestamp del frame más cercano|` (media y máximo). Reflejan la
 **densidad de muestreo** de la telemetría más que un error de sincronización (un
 offset constante no lo altera). Se usan como métrica interna; no se muestran en la UI.
+Si no hay ningún frame (dataset vacío), `processFrame` emite un frame sintético
+`{ timestamp_ms: targetTime_ms, data: {} }` y el drift es 0.
 
 ## Polyfill
 
 Si el navegador no expone `requestVideoFrameCallback`, se instala un polyfill
 (`installRvfcPolyfill`) que lo emula sobre `requestAnimationFrame`; solo se usa cuando
-RVFC no está disponible nativamente.
+RVFC no está disponible nativamente. El polyfill calcula `presentedFrames` con un fps
+**fijo de 30** y solo emula `requestVideoFrameCallback`/`cancelVideoFrameCallback`.
 
 ## Modo sin vídeo
 

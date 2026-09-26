@@ -2,7 +2,7 @@
 
 ## Visión General
 
-El desarrollo se divide en 10 fases, con PoCs obligatorios antes de la Fase 1. Cada fase tiene entregables concretos y criterios de aceptación.
+El desarrollo se divide en 10 fases de release (0–9), con PoCs obligatorios antes de la Fase 1, más una **Fase 10** de pendientes post-v1.0.0. Cada fase tiene entregables concretos y criterios de aceptación.
 
 ```
 Fase 0: Setup + Config                ← 1 semana
@@ -16,7 +16,7 @@ Fase 7: Exportación para Redes        ← 2 semanas
 Fase 8: Packaging + CI/CD             ← 1 semana
 Fase 9: Polish + Testing              ← 1 semana
                                     ─────────────
-                                    Total: ~13 semanas (sin contar PoCs)
+                                    Total: ~16 semanas (sin contar PoCs)
 ```
 
 ---
@@ -31,12 +31,12 @@ Scaffold completo del proyecto con todas las configs, dependencias y herramienta
 - [x] `electron.vite.config.ts` configurado (main, preload, renderer)
 - [x] `tsconfig.json` + `tsconfig.node.json` optimizados
 - [x] `electron-builder.yml` con configs para las 3 plataformas
-- [x] `tailwind.config.ts` con paleta OPRobots (Tailwind 4: paleta vía CSS variables en globals.css)
+- [x] Paleta OPRobots vía CSS variables en `globals.css` (Tailwind 4 no necesita `tailwind.config.ts`)
 - [x] Ventana Electron mínima mostrando "Telemetry Studio"
 - [x] HMR funcionando en renderer (dev server verificado con `npm run dev`)
 - [x] Hot reload en main process (electron-vite reconstruye main/preload al vuelo)
 - [x] `serialport` en `dependencies` (NO en devDependencies)
-- [x] `postinstall` ejecutando `electron-builder install-app-deps`
+- [x] Rebuild de módulos nativos vía `electron-builder install-app-deps`/prebuilds N-API (sin `postinstall`; ver `docs/11`)
 - [x] Estructura de carpetas creada según `docs/03-FOLDER-STRUCTURE.md`
 - [x] `.gitignore` configurado
 - [x] ESLint + Prettier configurados (integrados en `npm run verify`)
@@ -101,24 +101,22 @@ Implementar los dos modos de entrada: Serial UART (streaming) y carga de sesione
 
 ### Entregables
 - [x] `src/parsers/interfaces.ts` — ITelemetryParser + ParserMetadata
-- [x] `src/parsers/parser-registry.ts` — ParserRegistry singleton
-- [x] `src/parsers/serial-uart-parser.ts` — SerialUARTParser
+- [x] `src/parsers/serial/` — parsers UART (base + keyvalue/csv/macroarray)
   - Streaming mode (parseLine())
   - Soporte para baud rates: 115200, 230400, 460800, 921600
-  - Formatos: CSV posicional (firmware STM32), legacy `T:/S:/M:/G:` y genérico `campo:valor` con tipos inferidos
+  - Formatos: CSV posicional (firmware STM32) y genérico `campo:valor` con tipos inferidos
   - `setCsvFields()` para nombres de columna configurables
 - [x] `src/main/serial-service.ts` — Servicio en Main Process
   - `serial:open`, `serial:close`, `serial:list`
   - IPC bridge en preload (`serialOnData`, `serialOnStatus`)
-- [x] `src/parsers/json-session-parser.ts` — JSONSessionParser
-  - Parsing de `session.json` (formato compacto: `schema` + `frames` posicionales)
-  - Conversión de `sessionToDataset()`
-- [x] `src/core/session-codec.ts` — Codec de sesiones
+- [x] `src/core/session-codec.ts` — Codec de sesiones (carga real de `session.json`)
   - `encodeSession()`, `decodeSession()`
   - `sessionToDataset()`, `datasetToSession()`
-- [x] Tests para SerialUARTParser con fixtures
-- [x] Tests para JSONSessionParser con fixture `session.json`
-- [x] Tests para session-codec (round-trip encode/decode)
+- [x] Tests para los parsers Serial con fixtures
+- [x] Tests para session-codec (round-trip encode/decode + fixture `session.json`)
+
+> Eliminados en la limpieza P10 por ser código muerto: `parsers/parser-registry.ts`
+> y `parsers/json-session-parser.ts` (las sesiones se cargan por `session-codec`).
 
 ### Validación
 ```bash
@@ -145,15 +143,15 @@ Implementar la sincronización frame-a-frame entre vídeo MP4 y telemetría, con
   - `setPlaybackRate()` (0.1x a 2x)
   - Polyfill para browsers sin RVFC
   - [x] Soporte para 2 instancias simultáneas (comparación)
-- [x] `src/renderer/components/video/VideoPlayer.tsx`
+- [x] `src/renderer/src/components/video/VideoPlayer.tsx`
   - Contenedor del elemento `<video>`
   - [x] Carga de archivos locales via drag-and-drop (o diálogo nativo)
   - [x] Soporte para VideoPlayer #2 (comparación)
-- [x] `src/renderer/components/video/PlaybackControls.tsx`
+- [x] `src/renderer/src/components/video/PlaybackControls.tsx`
   - Play/Pause, Skip Forward/Back
   - Speed selector (0.25x, 0.5x, 1x, 2x)
   - [x] Controles duplicables para comparación (sustituido por la barra de reproducción compartida)
-- [x] `src/renderer/components/video/TimelineSlider.tsx`
+- [x] `src/renderer/src/components/video/TimelineSlider.tsx`
   - [x] Slider de seek con tooltip de tiempo (preview con miniatura descartado)
   - Display de timestamp actual / total
   - [x] Reproducción siempre simétrica, scroll de widgets y zoom/cursor compartidos en comparación
@@ -217,7 +215,7 @@ Implementar los 4 widgets estándar con registro dinámico, más el sistema de c
   - [x] Zoom/pan con uPlot cursor (desactivar "autoFollow" en la config del widget)
 - [x] `src/widgets/digital-bitmask/` — Widget de LEDs IR
   - Canvas 2D renderer
-  - Soporte para 8, 16, 32 bits
+  - Soporte para bitmasks de anchura configurable (p. ej. 8/16/32 bits)
   - Glow effect en LEDs activos
   - Hex display del bitmask
 
@@ -265,27 +263,26 @@ npm run test
 ## FASE 6: Layout Manager (1 semana) ✅ COMPLETADA
 
 ### Objetivo
-Persistencia de layouts en JSON con layouts predefinidos.
+Persistencia de layouts en JSON (guardados por el usuario, con nombre y descripción).
 
 ### Entregables
 - [x] `src/services/layout-manager.ts` — LayoutManager
   - `getAllLayouts()`, `loadLayout()`, `saveLayout()`
   - `createNew()`, `addWidget()`, `removeWidget()`, `updateWidget()`
-  - 2 layouts built-in: Siguelíneas, Micromouse
 - [x] `src/main/ipc-handlers.ts` — Handlers de persistencia
   - `layout:save`, `layout:loadAll`, `layout:delete`
   - Almacenamiento en `app.getPath('userData')/layouts/`
-- [x] `src/renderer/components/dialogs/LayoutDialog.tsx`
-  - Lista de layouts disponibles
-  - Botones: cargar, guardar, eliminar
+- [x] `src/renderer/src/components/dialogs/LayoutDialog.tsx`
+  - Lista de layouts guardados (nombre + descripción)
+  - Botones: cargar, guardar (nombre + descripción), eliminar
   - [x] "Nuevo layout" (menú Ver → Nuevo layout…, con confirmación)
-- [x] `src/renderer/stores/layout-store.ts` — Zustand store
+- [x] `src/renderer/src/stores/layout-store.ts` — Zustand store
 - [x] Test: guardar → cargar → verificar igualdad
 
 ### Validación
 ```bash
 # Crear layout → guardar → recargar app → layout persiste
-# Cargar layout built-in → widgets aparecen
+# Cargar un layout guardado → widgets aparecen
 npm run test
 ```
 
@@ -304,7 +301,8 @@ Pipeline de exportación de vídeo con gráficos superpuestos para crear conteni
 - [x] `src/main/export-service.ts` — Servicio en Main Process
   - `export:choose-destination`, `export:start`, `export:writeFrame`, `export:finalize`, `export:abort`
   - Escritura **directa** al destino elegido (sin temporales); borra el parcial al fallar/cancelar
-- [x] `src/shared/export-composition.ts` — Board, empaquetado **staggered (skyline)** y argumentos FFmpeg
+- [x] `src/shared/export-composition.ts` — Board, empaquetado **staggered (skyline)** y rects en px
+- [x] `src/shared/export-args.ts` — argumentos de FFmpeg (puro)
 - [x] Preload bridge para exportación
 
 ### Semana 2: UI + FFmpeg
@@ -341,8 +339,8 @@ Empaquetado multiplataforma funcional con pipeline de CI/CD.
 - [x] Iconos reales (`build/icon.svg` → `icon.png`/`icon.ico`/`icon.icns`) y `scripts/fetch-ffmpeg.mjs` (sidecar FFmpeg multiplataforma)
 - [x] GitHub Actions: `ci.yml` (lint+typecheck+tests+build+e2e en Linux) y `release.yml` (draft release por tag `v*`)
 - [ ] PoC 4 validado: serial en las 3 plataformas empaquetadas (Linux OK; Windows/macOS pendientes de hardware)
-- [x] Artefactos con sidecar FFmpeg incluido (AppImage ~169 MB, deb ~117 MB;
-  Windows exe ~221 MB; dmg ~154–159 MB). Windows supera 200 MB por los binarios
+- [x] Artefactos con sidecar FFmpeg incluido (macOS: `.dmg` arm64 ~199 MB y x64
+  ~206 MB; AppImage/deb/Windows: pendiente de confirmar). Windows supera 200 MB por los binarios
   estáticos de FFmpeg (~160 MB en total).
 
 ### Validación
@@ -360,8 +358,8 @@ Empaquetado multiplataforma funcional con pipeline de CI/CD.
 Pulido final, testing integral, documentación de usuario.
 
 ### Entregables
-- [x] Tests e2e (harness Electron propio en `scripts/`, 11 pruebas):
-  - App abre correctamente (`smoke`)
+- [x] Smoke test del renderer (`smoke`)
+- [x] Tests e2e (harness Electron propio en `scripts/`, 12 pruebas):
   - Serial → widgets (`e2e:serial`)
   - Vídeo + sync (`e2e:video`)
   - Comparación en paralelo (`e2e:comparison`)
@@ -372,7 +370,8 @@ Pulido final, testing integral, documentación de usuario.
   - Render de los 4 widgets (`e2e:widget-kinds`)
   - Zoom compartido (`e2e:zoom`)
   - Reinicio de captura serial (`e2e:serial-reset`) y reset aislado en comparación (`e2e:comparison-reset`)
-  - Nota: se descartó Playwright por el harness Electron propio (más estable y sin dependencias)
+  - Gestión de layouts (`e2e:layouts`)
+  - Nota: `e2e:perf` es standalone (fuera de `e2e`/`verify`); se descartó Playwright por el harness Electron propio (más estable y sin dependencias)
 - [x] Documentación de usuario (`README.md`; capturas en `docs/assets`)
 - [x] Manejo de errores robusto (banner global de errores; sin crashes)
 - [x] Keyboard shortcuts (Espacio, ←/→, +/−, Home/End)
@@ -424,7 +423,7 @@ Los PoCs se encuentran en `pocs/` como referencia de funcionamiento.
 | PoC 1: Serial → Widget | `pocs/01-serial-widget/` | ✅ Validado |
 | PoC 2: Video Sync | `pocs/02-video-sync/` | ✅ Funcional |
 | PoC 3: Video Export | `pocs/03-video-export/` | ✅ Funcional |
-| PoC 4: Packaging | `pocs/04-packaging/` | ✅ Build Linux OK |
+| PoC 4: Packaging | `pocs/04-packaging/` | ✅ Linux local; Windows/macOS en CI |
 | PoC 5: Emisor de telemetría (STM32) | `pocs/05-telemetry-sender/` | ✅ Firmware de prueba |
 
 Ver `docs/13-POC-TESTS.md` para los PoCs detallados con criterios de éxito.
@@ -470,8 +469,9 @@ Ver `docs/13-POC-TESTS.md` para los PoCs detallados con criterios de éxito.
   y de los defaults.
 - `src/widgets/time-series-chart/index.tsx`: eliminar `windowSeconds` de `TimeSeriesConfig`
   y de los defaults.
-- Eliminar código muerto: `src/renderer/src/components/video/PaneControls.tsx` y
-  `ComparisonConfig` (`src/core/types/comparison.ts`).
+- Eliminar código muerto: `src/renderer/src/components/video/PaneControls.tsx` y el tipo
+  `ComparisonConfig` (el fichero `src/core/types/comparison.ts` se mantiene por
+  `WidgetCompatibilityResult`).
 - `docs/00-PROJECT-OVERVIEW.md`: corregir el baud (es **lista fija** `BAUD_RATES`, no libre).
 - **Aceptación**: `npm run verify` verde; sin imports rotos.
 

@@ -22,7 +22,8 @@ La aplicación está diseñada para funcionar **100% offline**, sin dependencias
 
 El vídeo **siempre** es pregrabado. La telemetría llega por serial en vivo y se sincroniza con el vídeo.
 
-1. Cargar vídeo `.mp4` pregrabado (diálogo de archivos)
+1. Cargar un vídeo pregrabado (`.mp4`, `.webm`, `.mov`, `.mkv`; se recomienda
+   `.mp4` H.264)
 2. Conectar serial al robot (USB-UART, 115200 baud por defecto; el baud se elige de una lista de velocidades estándar)
 3. Streaming de telemetría en vivo desde el microcontrolador (los widgets se
    auto-configuran según los campos descubiertos)
@@ -36,8 +37,9 @@ El vídeo **siempre** es pregrabado. La telemetría llega por serial en vivo y s
 
 ### Flujo B — Revisión de Sesión Guardada
 
-1. Cargar sesión (carpeta con `session.json` + `.mp4`)
-2. Se restaura todo automáticamente: telemetría, widgets, sincronización
+1. Cargar el `session.json` (el vídeo se resuelve en la misma carpeta)
+2. Se restaura todo automáticamente: telemetría, widgets, sincronización, layout y
+   (si existe) el board de exportación
 3. Revisar datos, ajustar drift si es necesario
 4. Analizar frame-a-frame como en el Flujo A
 
@@ -63,17 +65,20 @@ El vídeo **siempre** es pregrabado. La telemetría llega por serial en vivo y s
 
 ### Exportación de Contenido para Redes Sociales
 
-La funcionalidad de exportación de vídeo genera un archivo **MP4** con los gráficos de telemetría superpuestos sobre el vídeo base. El renderer compone los frames en un canvas y los envía como **raw RGBA a FFmpeg** (sidecar empaquetado o del PATH). Está diseñada para crear contenido para redes sociales del equipo, no es parte del flujo de análisis principal.
+La funcionalidad de exportación de vídeo genera un archivo **MP4 (H.264)** con los gráficos de telemetría superpuestos sobre el vídeo base. El renderer compone los frames en un canvas offscreen (`ExportStage`) y los envía como **raw RGBA a FFmpeg** (sidecar empaquetado o del PATH). Es un asistente de 2 pasos (layout del board + salida). **Requiere telemetría cargada** (el vídeo es opcional). Está diseñada para crear contenido para redes sociales del equipo, no es parte del flujo de análisis principal.
 
 ## Restricciones Técnicas Clave
 
 - **OFFLINE absoluto**: Cero conexiones de red. Todo empaquetado.
 - **Portable**: Ejecutables sin necesidad de permisos de instalación admin.
-- **Alta frecuencia**: Soporte para datos de 100 Hz a 1 kHz.
+- **Alta frecuencia**: Pensado para datos de 100 Hz a 1 kHz (objetivo; sin garantía de caudal).
 - **Sesiones portables**: Formato `.json` compacto + `.mp4` para intercambio y reanálisis
-- **Sincronización frame-a-frame**: `requestVideoFrameCallback` con drift < 1 frame.
-- **Comparación**: Máximo 2 sesiones simultáneas, interfaz en paralelo (A izquierda / B derecha) con divisor vertical.
-- **Exportación para redes**: MP4 con gráficos superpuestos (composición en canvas + FFmpeg sidecar).
+- **Sincronización frame-a-frame**: `requestVideoFrameCallback`; se miden
+  `averageDrift`/`maxDrift` (objetivo ≈ 1 frame, no garantizado).
+- **Comparación**: dos sesiones en paralelo (A izquierda / B derecha). El
+  `ComparisonManager` impone **una sola comparación activa** a la vez.
+- **Exportación para redes**: MP4 H.264 con gráficos superpuestos (composición en canvas
+  + FFmpeg sidecar). Requiere telemetría cargada (el vídeo es opcional).
 
 ## Arquitectura Modular (4 Pilares)
 
@@ -86,7 +91,8 @@ La funcionalidad de exportación de vídeo genera un archivo **MP4** con los gr�
 ┌──────────────▼──────────────────┐
 │   DATA ENGINE & EVENT BUS       │
 │  TelemetryFrame │ LTTB │ Bus   │
-│  (máx. 2 datasets: primario +  │
+│  FrameBus (por panel)           │
+│  (máx. 2 datasets: primario +   │
 │   comparación)                  │
 └───┬───────────────────────┬─────┘
     │                       │
@@ -97,13 +103,17 @@ La funcionalidad de exportación de vídeo genera un archivo **MP4** con los gr�
 │ (duplicados   │  │ (2 synchronizers  │
 │ en comparación)│  │  en comparación)  │
 └───────────────┘  └───────────────────┘
+
+        El mismo `ExportStage` reutiliza widgets + sync para componer
+        la exportación (canvas offscreen → FFmpeg).
 ```
 
 ## Menú nativo
 
 Estructura agrupada por tareas (en macOS se añade además el menú de app estándar):
 
-- **Archivo**: Abrir/Cerrar vídeo, Abrir/Guardar/Explorar sesión, Exportar vídeo, Salir.
+- **Archivo**: Abrir/Cerrar vídeo, Abrir/Guardar/Explorar sesión, Exportar vídeo y
+  (en Windows/Linux) Salir; en macOS, Salir va en el menú de la app.
 - **Datos**: Conectar/Desconectar Serial, Comparar / Salir de comparación.
 - **Ver**: Inspector (`Ctrl+B`, con estado), Nuevo layout…, Layouts…, Pantalla completa.
 - **Desarrollo** (solo en desarrollo): Recargar, Forzar recarga, Herramientas de desarrollo.

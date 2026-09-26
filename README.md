@@ -7,23 +7,25 @@ de competición con vídeo sincronizado**. 100 % offline y portable.
 
 ## Características
 
-- **Vídeo + telemetría sincronizados**: abre un `.mp4`, reproduce el robot y
-  visualiza la telemetría en el instante exacto del vídeo.
+- **Vídeo + telemetría sincronizados**: abre un vídeo (`.mp4`, `.webm`, `.mov` o
+  `.mkv`; se recomienda **.mp4 H.264**), reproduce el robot y visualiza la telemetría
+  en el instante exacto del vídeo.
 - **Serial en vivo**: conéctate a un robot por UART y captura todos los frames
   durante la reproducción. Volver a empezar la transmisión (tras unos segundos
   en reposo o con `t=0`) reinicia la captura desde cero automáticamente.
 - **Graficado por tipo de dato**: los campos numéricos van a gráficas, los
-  bitmasks a matrices de LEDs (todos los bits en una fila), las posiciones a un
-  minimapa y los estados a una línea temporal. Los estados pueden ser números o
-  **texto**.
+  bitmasks a matrices de LEDs (con el auto-layout, todos los bits en una fila), las
+  posiciones a un minimapa y los estados a una línea temporal. Los estados pueden
+  ser números o **texto**.
 - **Widgets sincronizados**: al pasar el ratón por encima de una gráfica o de
   una línea temporal, el resto de indicadores se desplazan a ese instante; el
   **zoom** (rango seleccionado) se comparte entre todos ellos.
 - **Layout configurable**: elige qué campos mostrar, varios valores en una misma
   gráfica, colores, tamaño y posición. Los widgets se redimensionan y reordenan
   arrastrando; guarda y reutiliza layouts.
-- **Sesiones**: guarda una sesión (`session.json` + copia del vídeo) y reábrela
-  después con todo restaurado (datos, sincronización y layout).
+- **Sesiones**: guarda una sesión (`session.json` + copia del vídeo en una carpeta) y
+  reábrela cargando el `session.json` (el vídeo se resuelve en la misma carpeta), con
+  datos, sincronización y layout restaurados.
 - **Comparación**: analiza dos sesiones en paralelo (panel actual a la izquierda,
   sesión comparada a la derecha, con divisor vertical), con widgets idénticos y
   reproducción, scroll, cursor y zoom sincronizados.
@@ -32,11 +34,11 @@ de competición con vídeo sincronizado**. 100 % offline y portable.
 
 ## Requisitos
 
-- Node.js 20+ y npm.
+- Node.js 20+ y npm (probado con Node 20).
 - Linux, macOS o Windows.
 - FFmpeg _(se empaqueta como sidecar para la exportación de vídeo y la conversión
-  de códecs)_.
-gen
+  de códecs; si falta el sidecar, se usa el del PATH)_.
+
 ## Puesta en marcha
 
 ```bash
@@ -118,8 +120,10 @@ sudo usermod -a -G dialout $USER   # cerrar sesión y volver a entrar
 
 ## Documentación
 
-La documentación técnica completa está en [`docs/`](docs/):
+La documentación técnica completa está en [`docs/`](docs/). Empieza por el
+[índice y glosario](docs/README.md):
 
+- [Índice + glosario](docs/README.md)
 - [Visión general](docs/00-PROJECT-OVERVIEW.md)
 - [Arquitectura](docs/01-ARCHITECTURE.md)
 - [Modelo de datos](docs/04-DATA-MODEL.md)

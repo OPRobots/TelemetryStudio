@@ -2,8 +2,8 @@
 
 ## Árbol de Directorios
 
-> Estado actual del repositorio. Los archivos marcados _(planificado)_ todavía
-> no existen y se añadirán en las fases correspondientes del roadmap.
+> Estado actual del repositorio (v1.0.0). Refleja los ficheros existentes; los docs
+> viven en `docs/` y los workflows de empaquetado en `.github/`.
 
 ```
 telemetry-studio/
@@ -13,7 +13,14 @@ telemetry-studio/
 ├── tsconfig.node.json               # TS config para main process + workers
 ├── electron-builder.yml             # Configuración de empaquetado
 ├── vitest.config.ts                 # Configuración de Vitest (tests)
+├── eslint.config.mjs                # Configuración de ESLint
+├── .prettierrc                      # Formato de Prettier
 ├── .gitignore                       # Archivos ignorados por git
+├── AGENTS.md                        # Guía para agentes de IA
+├── README.md                        # Presentación y puesta en marcha
+├── ROADMAP.md                       # Fases y timeline
+├── LICENSE
+├── .github/                         # Workflows de CI y release
 │
 ├── pocs/                            # Pruebas de concepto (referencia)
 │   ├── 01-serial-widget/            # PoC 1: Serial → parse → uPlot
@@ -42,7 +49,8 @@ telemetry-studio/
 │   ├── e2e-layouts.mjs              # E2E: gestión de layouts
 │   ├── e2e-perf.mjs                 # E2E: rendimiento (fuera de verify)
 │   ├── run-electron.mjs             # Lanzador de Electron (filtra ruido ambiental)
-│   ├── screenshot.mjs               # Captura de pantalla para revisión visual
+│   ├── screenshots.mjs              # Capturas del README → docs/assets/ (npm run screenshots)
+│   ├── screenshot.mjs               # Utilidad manual puntual de captura
 │   ├── fonts.conf                   # Config mínima de fontconfig para dev
 │   ├── generate-icons.mjs           # Genera icon.png/ico/icns desde icon.svg
 │   ├── after-pack-sign.cjs          # Hook afterPack: firma ad-hoc del .app (macOS)
@@ -67,6 +75,7 @@ telemetry-studio/
 │   │   ├── ipc-handlers.ts          # Registro de todos los ipcMain.handle
 │   │   ├── ffmpeg.ts                # Resolución de los binarios ffmpeg/ffprobe
 │   │   ├── serial-service.ts        # Servicio SerialPort (apertura, streaming, cierre)
+│   │   ├── settings-store.ts        # Ajustes persistidos (p. ej. config serial) en userData
 │   │   ├── video-service.ts         # Prepara vídeos (transcode HEVC→H.264)
 │   │   └── export-service.ts        # Exportación de vídeo con FFmpeg (raw RGBA)
 │   │
@@ -89,24 +98,25 @@ telemetry-studio/
 │   │   ├── lttb.ts                  # Downsampling LTTB (implementación inline)
 │   │   └── binary-search.ts         # Búsqueda binaria O(log N) por timestamp
 │   │
-│   ├── parsers/                     # ═══ PLUGINS DE PARSER ═══
+│   ├── parsers/                     # ═══ PARSERS ═══
 │   │   ├── interfaces.ts            # ITelemetryParser + metadatos del parser
-│   │   ├── parser-registry.ts       # Registro dinámico de parsers
-│   │   ├── json-session-parser.ts   # Parser de sesiones JSON (formato compacto)
 │   │   └── serial/                  # Parsers UART (base + keyvalue/csv/macroarray)
 │   │
 │   ├── widgets/                     # ═══ PLUGINS DE WIDGET ═══
 │   │   ├── interfaces.ts            # WidgetDefinition, WidgetMetadata, WidgetProps
 │   │   ├── widget-registry.ts       # WidgetRegistry singleton (agnóstico)
 │   │   ├── register-widgets.ts      # Registra los 4 widgets estándar
+│   │   ├── frame-bus.ts             # FrameBus (uno por panel) + hooks de suscripción
 │   │   ├── frame-lookup.ts          # Frame más cercano a un timestamp (cursor)
+│   │   ├── format-value.ts          # Formato de valores para leyendas/readouts
 │   │   ├── use-canvas-size.ts       # ResizeObserver para widgets canvas
 │   │   ├── color-palette.ts         # Paletas automáticas (series / estados)
 │   │   ├── zoom-range.ts            # Rango de zoom compartido (helpers puros)
 │   │   ├── use-widget-draw.ts       # Redibujo imperativo (síncrono en export)
 │   │   ├── live-view.ts             # Ventana deslizante del modo directo
 │   │   ├── time-series-chart/       # Gráfica temporal multi-serie (uPlot)
-│   │   │   └── index.tsx
+│   │   │   ├── index.tsx
+│   │   │   └── sample-data.ts       # Muestreo LTTB por ventana (cacheado)
 │   │   ├── digital-bitmask/         # Matriz de LEDs (Canvas 2D)
 │   │   │   └── index.tsx
 │   │   ├── minimap-2d/              # Minimapa de trayectoria (Canvas 2D)
@@ -126,6 +136,8 @@ telemetry-studio/
 │   │       ├── App.tsx              # Componente raíz (registra widgets + polyfill)
 │   │       ├── main.tsx             # ReactDOM.createRoot
 │   │       ├── global.d.ts          # Tipos de window.api (bridge de preload)
+│   │       ├── vite-env.d.ts        # Tipos de Vite
+│   │       ├── assets/              # Logos/favicon (oprobots-favicon.png, robotaleh.svg)
 │   │       ├── components/
 │   │       │   ├── layout/
 │   │       │   │   ├── AppShell.tsx     # Layout principal (menú, inspector, workspace)
@@ -154,6 +166,8 @@ telemetry-studio/
 │   │       │       ├── ExportFramePreview.tsx  # Preview del frame medio (paso 2)
 │   │       │       ├── InfoHint.tsx           # Icono (i) con tooltip de ayuda
 │   │       │       ├── RangeSlider.tsx         # Slider de dos asas (rango de exportación)
+│   │       │       ├── AboutDialog.tsx         # Acerca de (versión, créditos, enlaces)
+│   │       │       ├── TimestampWarningDialog.tsx # Aviso de telemetría sin timestamp fiable
 │   │       │       └── PrepareVideoDialog.tsx   # Progreso de conversión + cancelar
 │   │       ├── hooks/
 │   │       │   ├── useEventListener.ts  # Suscripción al EventBus
@@ -164,9 +178,12 @@ telemetry-studio/
 │   │       │   ├── session-actions.ts   # Abrir/guardar sesión
 │   │       │   ├── session-save-status.ts # ¿Se puede guardar? (por último dato)
 │   │       │   ├── sync-actions.ts      # Alinear/restablecer la sync (anchor)
-│   │       │   ├── widget-layout.ts     # Snap de rejilla (ancho/alto) de widgets
+│   │       │   ├── field-drag.ts        # DnD de campos → widgets (overlay "+")
+│   │       │   ├── widget-layout.ts     # Conversión píxeles → celdas de la rejilla
 │   │       │   ├── widget-scroll-sync.ts # Scroll sincronizado entre paneles
 │   │       │   ├── video-prepare.ts     # Transcode de vídeo (diálogo + progreso)
+│   │       │   ├── video-seek.ts        # seek del <video> con espera de frame
+│   │       │   ├── time-format.ts       # Formato de tiempos (mm:ss / ETA)
 │   │       │   ├── export-stage.tsx     # Compositor offscreen de la exportación
 │   │       │   ├── telemetry-range.ts   # Rango temporal de telemetría ↔ vídeo (inversa)
 │   │       │   └── comparison-sync.ts   # Sincronizador del panel de comparación
@@ -182,6 +199,7 @@ telemetry-studio/
 │       ├── export-composition.ts    # Board de exportación (ítems, rects en px)
 │       ├── grid.ts                  # Rejilla compartida (12 col, filas) + packing
 │       ├── export-args.ts           # Construcción de argumentos de FFmpeg (puro)
+│       ├── legend.ts                # Anchos/formatos de leyenda (puro)
 │       ├── video-codecs.ts          # Códecs reproducibles (puro)
 │       └── video-transcode.ts       # Argumentos de conversión a H.264 (puro)
 │
@@ -189,21 +207,24 @@ telemetry-studio/
 │   ├── unit/
 │   │   ├── core/                    # event-bus, telemetry-store, video-synchronizer,
 │   │   │                            # layout-manager, session-codec, comparison-manager,
-│   │   │                            # lttb, binary-search, session-manager, setup
-│   │   ├── parsers/                 # serial-uart-parser, json-session-parser, parser-registry
+│   │   │                            # lttb, binary-search, session-manager
+│   │   ├── parsers/                 # serial-parsers
 │   │   ├── renderer/                # auto-layout, layout-store, comparison-store,
-│   │   │                            # cursor-store, widget-layout, splitter, session-save-status
-│   │   ├── shared/                  # export-args, video-codecs, video-transcode
-│   │   └── widgets/                 # widget-registry, frame-lookup, state-entry, color-palette
+│   │   │                            # cursor-store, widget-layout, splitter,
+│   │   │                            # session-save-status, telemetry-range, time-format
+│   │   ├── shared/                  # export-args, export-composition, grid, legend,
+│   │   │                            # video-codecs, video-transcode
+│   │   └── widgets/                 # widget-registry, frame-lookup, state-entry, color-palette,
+│   │                                # format-value, live-view, sample-data, zoom-range
 │   ├── integration/
 │   │   ├── serial-to-sync.test.ts   # Serial → Store → auto-layout → sync
 │   │   ├── export-ffmpeg.test.ts    # Composición + FFmpeg real (ffprobe)
 │   │   └── video-transcode.test.ts  # Transcode HEVC→H.264
-│   ├── e2e/                         # (vacío) los e2e viven en scripts/*.mjs
 │   └── fixtures/
-│       └── session.json
+│       └── session.json             # Ejemplo canónico de sesión (ver docs/14)
 │
 └── docs/                            # ═══ ESTA DOCUMENTACIÓN ═══
+    ├── README.md                    # Índice + glosario + recorrido por capas
     ├── 00-PROJECT-OVERVIEW.md
     ├── 01-ARCHITECTURE.md
     ├── 02-TECH-STACK.md
@@ -219,6 +240,7 @@ telemetry-studio/
     ├── 12-LIMITATIONS.md
     ├── 13-POC-TESTS.md
     ├── 14-SESSION-FORMAT.md
+    ├── assets/                       # Capturas usadas por el README (generadas)
     └── ROADMAP.md
 ```
 
@@ -242,7 +264,7 @@ shared/          ← No tiene dependencias internas
 core/            ← Depende de shared/
 parsers/         ← Depende de core/ (interfaces, types)
 widgets/         ← Depende de core/ (types, lttb, telemetry-store)
-services/        ← Depende de core/ y parsers/
+services/        ← Depende de core/, shared/ y parsers/
 main/            ← Depende de shared/ (NO de renderer/ ni widgets/)
 preload/         ← No tiene dependencias (solo electron API)
 renderer/        ← Depende de core/, widgets/, services/, shared/

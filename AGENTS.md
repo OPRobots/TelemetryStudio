@@ -208,6 +208,7 @@ Toda la documentación vive en `docs/`:
 
 | Archivo | Contenido |
 |---|---|
+| `README.md` | Índice, glosario y recorrido por capas |
 | `00-PROJECT-OVERVIEW.md` | Visión general, flujos de trabajo |
 | `01-ARCHITECTURE.md` | Diagramas, flujos de datos |
 | `02-TECH-STACK.md` | Decisiones tecnológicas |
@@ -236,7 +237,7 @@ npm run typecheck    # Verificar tipos TypeScript
 npm run test         # Ejecutar tests (Vitest)
 npm run test:watch   # Tests en watch mode
 npm run smoke        # Smoke test del renderer en Electron (requiere build)
-npm run e2e          # 11 pruebas e2e (serial, vídeo, comparación, export, widgets...) (requiere build)
+npm run e2e          # 12 pruebas e2e (serial, vídeo, comparación, export, widgets, layouts...) (requiere build)
 npm run verify       # Gate completo: lint + typecheck + tests + build + smoke + e2e
 npm run lint         # ESLint
 npm run poc:1        # PoC 1: Serial → Widget
@@ -267,11 +268,11 @@ npm run build:win    # Build Windows (NSIS + portable)
 | Fase 5: Widgets + Comparación | ✅ Completada | `b5aa501` |
 | Fase 6: Layout Manager | ✅ Completada | `c465cee` |
 | Fase 7: Export para Redes | ✅ Completada | `6c7818f` |
-| Fase 8: Packaging | 🟡 Build Linux OK; Windows/macOS manual | `0b2178d` |
+| Fase 8: Packaging | ✅ Linux local; Windows/macOS generados en CI | `0b2178d` |
 | Fase 9: Polish + E2E | ✅ Completada | `3c0f837` |
 | PoC 1: Serial → Widget | ✅ Validado (hardware real) | `0c083cb` |
 | PoC 2: Video Sync | ✅ Funcional | `0243314`, `98f8f6a` |
 | PoC 3: Video Export | ✅ Funcional | `a86dc5d` |
-| PoC 4: Packaging | ✅ Build Linux OK | `652c936` |
+| PoC 4: Packaging | ✅ Linux local; Windows/macOS en CI | `652c936` |
 | PoC 5: Emisor de telemetría (STM32) | ✅ Firmware de prueba | `869d568`, `a9c5d6b` |
 | Fase 10: Pendientes (post v1.0.0) | 🟡 En curso (P10.1–P10.4 hechos) | `0ce8d7a` |

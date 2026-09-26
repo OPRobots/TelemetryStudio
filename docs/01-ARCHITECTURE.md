@@ -6,11 +6,15 @@
 graph TB
     subgraph "Main Process (Node.js)"
         ML[App Lifecycle]
-        IH[IPC Hub]
+        IH[IPC Hub / file dialogs]
         SP[SerialPort Service]
-        SS[Session Service]
+        SS[Session file I/O]
         VS[Video Service — ffprobe/transcode]
         EX[Export Service — FFmpeg sidecar]
+    end
+
+    subgraph "Preload (contextBridge)"
+        API[window.api]
     end
 
     subgraph "Renderer Process (Chromium)"
@@ -23,6 +27,7 @@ graph TB
         end
 
         subgraph "Widgets (React + Canvas 2D / uPlot)"
+            FB[FrameBus — uno por panel]
             W1[TimeSeriesChart]
             W2[DigitalBitmask]
             W3[Minimap2D]
@@ -33,6 +38,7 @@ graph TB
             VP[HTMLVideoElement #1]
             VP2[HTMLVideoElement #2]
             CB[requestVideoFrameCallback]
+            SV[SplitView]
         end
     end
 
@@ -41,13 +47,16 @@ graph TB
     IH --> SS
     IH --> VS
     IH --> EX
-    SP -->|IPC serial:data| EB
+    IH <-.->|ipcMain.handle / webContents.send| API
+    API <-.->|window.api.*| EB
+    SP -->|IPC serial:data| API
 
     TS -->|subscribe| EB
-    EB -->|sync:frame| W1
-    EB -->|sync:frame| W2
-    EB -->|sync:frame| W3
-    EB -->|sync:frame| W4
+    EB -->|sync:frame| FB
+    FB --> W1
+    FB --> W2
+    FB --> W3
+    FB --> W4
 
     VP -->|RVFC| CB
     CB -->|mediaTime| SY
@@ -57,8 +66,8 @@ graph TB
     CB -->|mediaTime| SY2
     SY2 -->|comparison:frame| EB
 
-    CM --> TS
-    CM --> SY2
+    CM -->|loadComparisonDataset| TS
+    SV --> SY2
 ```
 
 ## Separación de Procesos
@@ -66,21 +75,32 @@ graph TB
 ### Main Process (Node.js)
 - Ciclo de vida de la aplicación (Electron `app`).
 - **Servicio de Puerto Serie** (`serialport`) — único lugar donde vive esa dependencia nativa.
-- **Servicio de Sesiones** — exportar/importar carpetas con `session.json` + `.mp4`.
+- **I/O de sesiones** — leer/escribir `session.json`, resolver la ruta del vídeo hermano
+  y listar sesiones. La decodificación/validación del formato vive en el Renderer
+  (`services/session-manager.ts` + `core/session-codec.ts`).
 - **Servicio de Vídeo** — `ffprobe` (fps) y transcodificación a H.264 cuando el códec no
   es reproducible por Chromium.
 - **Servicio de Exportación** — ejecuta **FFmpeg** (sidecar empaquetado o del PATH)
   y recibe los frames como **raw RGBA** por `stdin`.
-- IPC Hub: puente seguro entre Main y Renderer.
+- IPC Hub: registra los `ipcMain.handle` y el menú nativo; es el puente seguro entre
+  Main y Renderer.
+
+### Preload (contextBridge)
+- Expone `window.api` (en `src/preload/index.ts`), tipado en
+  `src/renderer/src/global.d.ts`: serial, vídeo, sesiones, layouts, exportación, etc.
+- Toda llamada del Renderer pasa por aquí; internamente usa `ipcRenderer.invoke` /
+  `ipcRenderer.on`. Nunca se expone `ipcRenderer` completo.
 
 ### Renderer Process (Chromium)
 - Toda la UI (React + Tailwind CSS 4).
 - `VideoSynchronizer` con `requestVideoFrameCallback` — hasta 2 instancias en comparación.
-- EventBus para distribuir los frames a los widgets (`sync:frame` / `comparison:frame`).
+- EventBus para eventos de alto nivel; **`FrameBus`** (uno por panel) reparte el frame
+  sincronizado a los widgets (`sync:frame` / `comparison:frame`).
 - Widgets como **componentes React** (Canvas 2D + uPlot), un set por panel en comparación.
-- `ComparisonManager` — valida widgets idénticos y gestiona el dataset de comparación.
-- `SplitView` — vista en paralelo (A izquierda / B derecha) con divisor vertical.
-- Composición de frames para exportación en canvas (se envían a Main por IPC).
+- `ComparisonManager` — valida widgets idénticos y carga el dataset de comparación.
+- `SplitView` — vista en paralelo (A izquierda / B derecha) con divisor vertical; crea el
+  segundo `VideoSynchronizer` vía `lib/comparison-sync.ts`.
+- Composición de frames para exportación en canvas (`lib/export-stage.tsx`, host offscreen).
 
 ## Flujo A — Serial + Vídeo (Live)
 
@@ -112,36 +132,42 @@ graph TB
 1. Sesión A cargada (Flujo A o B) → TelemetryStore primario
 2. Usuario inicia comparación → carga sesión B de referencia
 3. ComparisonManager:
-   a. Valida que los widgets sean idénticos (tipo, campos, tamaño, config)
-   b. Carga el dataset B en TelemetryStore (clearComparison al salir)
-   c. Crea el segundo VideoSynchronizer ('comparison:frame')
-4. UI → SplitView en paralelo (divisor vertical):
+   a. Valida que los widgets sean idénticos (tipo, campos, posición, tamaño, config)
+   b. Carga el dataset B en TelemetryStore (`loadComparisonDataset`; `clearComparison` al salir)
+4. SplitView monta el segundo panel y crea el 2.º VideoSynchronizer
+   (`lib/comparison-sync.ts`, eventos `comparison:frame`)
+5. UI → SplitView en paralelo (divisor vertical):
    ┌──────────────────┬──────────────────┐
    │ Sesión A (actual)│ Sesión B (comp.) │
    │ Vídeo + Widgets  │ Vídeo + Widgets  │
    └──────────────────┴──────────────────┘
-5. Reproducción siempre simétrica (barra compartida guiada por el panel con vídeo)
-6. Scroll de widgets sincronizado; cursor (hover) y zoom (rango) compartidos
-7. Sin vídeo: placeholder alineado con el panel que sí lo tiene
-8. Salir → ComparisonManager.stopComparison()
+6. Reproducción siempre simétrica (barra compartida guiada por el panel con vídeo)
+7. Scroll de widgets sincronizado; cursor (hover) y zoom (rango) compartidos
+8. Sin vídeo: placeholder alineado con el panel que sí lo tiene
+9. Salir → ComparisonManager.stopComparison()
 ```
 
 ## Flujo de Exportación — Contenido para Redes
 
 ```
-1. Usuario abre "Exportar vídeo…" y elige resolución, fps y rango
-2. IPC export:start → Main lanza FFmpeg (raw RGBA por stdin)
-3. Para cada frame del rango:
-   a. El renderer compone en un canvas (vídeo base + widgets + overlay)
+0. Requiere telemetría cargada (el vídeo es opcional)
+1. Usuario abre "Exportar vídeo…": asistente en 2 pasos (layout del board + salida).
+   Ajusta resolución, fps, calidad, rango start–end (con banda de telemetría)…
+2. IPC export:choose-destination → diálogo nativo de guardado (devuelve outputPath)
+3. IPC export:start → Main lanza FFmpeg (raw RGBA por stdin) hacia ese destino
+4. Para cada frame del rango (orquestado en services/video-exporter.ts):
+   a. ExportStage (host offscreen) compone vídeo + celdas de widgets + overlay
    b. Envía los píxeles RGBA por IPC (export:writeFrame, ArrayBuffer)
    c. Main los escribe en el stdin de FFmpeg con backpressure
-4. IPC export:finalize + export:save → MP4 con los gráficos superpuestos
-5. El progreso se calcula y muestra en el renderer (ExportDialog)
+5. IPC export:finalize → MP4 H.264 con los gráficos superpuestos
+6. El progreso (frames, % y ETA) se calcula y muestra en el renderer (ExportDialog)
 ```
 
 ## Patrón IPC Seguro
 
-La comunicación Main ↔ Renderer **nunca** expone `ipcRenderer` directamente; siempre
-a través de `contextBridge` (`window.api`). Esto garantiza `contextIsolation: true`
-y `nodeIntegration: false`. El Main empuja datos con `webContents.send(channel, data)`
-y el Renderer responde con `ipcRenderer.invoke(channel, ...args)`.
+La comunicación Main ↔ Renderer **nunca** expone `ipcRenderer` directamente; el Renderer
+solo llama a métodos de `window.api`, que el **preload** expone con `contextBridge`. Esto
+garantiza `contextIsolation: true`, `nodeIntegration: false` y `sandbox: false`
+(necesario por el preload). El Main empuja datos con `webContents.send(channel, data)` y
+atiende peticiones con `ipcMain.handle`; el preload las resuelve internamente con
+`ipcRenderer.invoke`/`ipcRenderer.on`.

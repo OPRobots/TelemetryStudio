@@ -140,10 +140,11 @@ sidecar o del PATH), que escribe **directo** en la ruta elegida. El `ExportDialo
 es un **asistente de 2 pasos** (layout/salida) con **previsualización** y
 **copyright** en el vídeo; requiere **telemetría cargada** (el vídeo es opcional),
 el **rango de exportación** se ajusta con un **slider start–end** sobre la duración
-del vídeo (con la banda de telemetría fija; por defecto 2 s antes/después de los
-datos) y el **FPS** se elige entre 30 y 60. Tests: modelo de composición y
-argumentos (unit), MP4 real con ffprobe (integración) y composición/cancelación
-del renderer (e2e).
+del vídeo (con la **banda amarilla** de telemetría fija; por defecto 2 s
+antes/después de los datos) y el **FPS** se elige entre 30 y 60. La salida está
+fijada a **MP4/H.264** en la UI (`webm`/VP9 existen en el tipo pero no se ofrecen).
+Tests: modelo de composición y argumentos (unit), MP4 real con ffprobe (integración)
+y composición/cancelación del renderer (e2e).
 
 ### F-04 — Editor de layout con arrastre y redimensionado
 
@@ -162,10 +163,10 @@ redibujan imperativamente vía `FrameBus` + `useWidgetDraw` (coalescido por rAF)
 ### F-06 — Empaquetado multiplataforma
 
 `electron-builder.yml` configurado (extraResources de FFmpeg universal y udev),
-con workflow de CI que genera los instaladores de las 3 plataformas. Build Linux
-verificado (`--dir` arranca; AppImage ~109 MB, deb ~75 MB). macOS genera dos DMGs
-(x64 y arm64) con firma **ad-hoc**, por lo que el arm64 arranca en Apple Silicon;
-Windows genera NSIS + portable.
+con workflow de CI que genera los instaladores de las 3 plataformas. macOS genera
+dos DMGs (x64 y arm64) con firma **ad-hoc**, por lo que el arm64 arranca en Apple
+Silicon (tamaños medidos: arm64 ~199 MB, x64 ~206 MB); Windows genera NSIS +
+portable. Los tamaños de Linux/Windows quedan pendientes de confirmar.
 
 ### F-07 — Vídeos HEVC/H.265 se convierten automáticamente
 

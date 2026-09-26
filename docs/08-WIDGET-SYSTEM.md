@@ -5,8 +5,9 @@
 > (columnas: 12/9/8/6/4/3) y `height` (filas de 40px, 2–16). El **orden** es el
 > de la lista (no hay x/y).
 >
-> - **Ancho por defecto**: ancho completo (12). Se redimensiona arrastrando el
->   **asa derecha** (snap a presets: 12/9/8/6/4/3).
+> - **Ancho inicial**: el que declare cada widget en `metadata.defaultSize.width`
+>   (clampado a 12); el auto-layout usa además anchos por tipo (los numéricos a 6, etc.).
+>   Se redimensiona arrastrando el **asa derecha** (snap a presets: 12/9/8/6/4/3).
 > - **Alto**: arrastrando el **asa inferior**, a saltos de fila (40px), con mínimo
 >   2 y máximo 16 filas.
 > - **Reordenar**: arrastrando la **cabecera** del widget (salvo ⚙/✕); los widgets
@@ -38,7 +39,7 @@
 
 ## Visión General
 
-Los widgets son componentes visuales que se renderizan en canvas y se redibujan automáticamente con cada frame de telemetría sincronizado. Cada widget declara qué campos de datos necesita y se suscribe al EventBus.
+Los widgets son componentes visuales que se renderizan en canvas y se redibujan automáticamente con cada frame de telemetría sincronizado. Cada widget declara qué campos de datos necesita y se suscribe al **`FrameBus`** de su panel (no al EventBus global).
 
 ## Cursor Temporal Compartido
 
@@ -130,9 +131,10 @@ dataset completo + `zoomRange` compartido.
 - **Minimap2D**: ajusta la escala automáticamente para encuadrar **todo el
   recorrido**, centrado y con márgenes; el triángulo del robot (con orientación)
   se desplaza por la trayectoria según el timestamp visualizado.
-- **DigitalBitmask**: por defecto muestra **todos los bits en una sola fila**
-  (arrays de sensores de línea); el auto-layout y el alta desde el menú fijan
-  `ledsPerRow` al ancho del campo y `rows = 1`.
+- **DigitalBitmask**: por defecto se crea con **8 LEDs por fila y 1 fila** y **sin
+  campos** (`metadata.defaultConfig`); el usuario debe elegir el campo. El **auto-layout**
+  (no el alta manual desde el menú) es quien fija `ledsPerRow` al ancho del campo
+  (`bitmaskWidth`) y `rows = 1`.
 - **DigitalBitmask** y **StateTimeline**: se repintan al cambiar de tamaño
   (`ResizeObserver` vía `src/widgets/use-canvas-size.ts`) y escalan su contenido
   proporcionalmente (rejilla de LEDs cuadrada y centrada; barra + etiqueta
@@ -157,7 +159,9 @@ dataset completo + `zoomRange` compartido.
 ```
 
 Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, `getFrames`,
-`hoverTimestamp_ms`, `onCursorHover`, `zoomRange`, `onZoomRangeChange`.
+`hoverTimestamp_ms`, `onCursorHover`, `zoomRange`, `onZoomRangeChange`, `live`,
+`liveWindowMs`, `lineScale`, `transparentBackground` (estas cuatro últimas las usa el
+pipeline de modo directo/exportación).
 
 ## Widget 1: TimeSeriesChart (uPlot)
 
@@ -196,7 +200,8 @@ Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, 
 `src/widgets/digital-bitmask/index.tsx`
 
 - Matriz de LEDs on/off con glow en los activos y valor hex.
-- Por defecto **todos los bits en una sola fila** (`ledsPerRow` = ancho del campo, `rows = 1`).
+- Al crearse (menú/alta) usa `ledsPerRow = 8`, `rows = 1` y sin campos; el **auto-layout**
+  es quien ajusta `ledsPerRow` al ancho del campo (`bitmaskWidth`) y deja `rows = 1`.
 - `toBitmask` acepta `number`, `boolean`, `array` y typed arrays.
 - Muestra el valor en `viewTimestamp` (no se acota por el zoom).
 - Responsive: se repinta al cambiar de tamaño (`useCanvasSize`) con rejilla cuadrada centrada.
@@ -235,7 +240,21 @@ Props reales (`src/widgets/interfaces.ts`): `widgetId`, `config`, `dataFields`, 
 - Hover publica el cursor; **arrastrar** selecciona un rango de zoom; doble clic lo restablece.
 - El texto del estado actual se aclara (`lighten`) para seguir legible sobre fondo oscuro.
 - **Auto-layout**: crea **un `StateTimeline` por cada campo** que casa con
-  `/^(state|state[_-].*|mode|status|fsm)$/i`, con etiqueta `Estado` / `Estado: <campo>`.
+  `/^(state|state[_-].*|mode|status|fsm)$/i`, con etiqueta `Estado` o `Estado: <sufijo>`
+  (p. ej. `state_debug` → `Estado: debug`).
+
+## Auto-layout (`src/renderer/src/lib/auto-layout.ts`)
+
+Al terminar una captura serial (o cargar sin layout), se generan widgets por tipo de campo:
+
+- **Numérico** → un `TimeSeriesChart` por campo (ancho 6), salvo los booleanos, que se
+  agrupan en un solo chart.
+- **Par de posición** (`x`/`y` o campos de posición detectados) → un `Minimap2D` (ancho 12).
+- **`bitmask`/`array`** → un `DigitalBitmask` con `ledsPerRow = bitmaskWidth`.
+- **`state`/`mode`/`status`/`fsm`** → un `StateTimeline` por campo (etiqueta `Estado[: sufijo]`).
+
+Los anchos/altos concretos están en `auto-layout.ts`; el usuario puede reordenar y
+redimensionar después.
 
 ## Añadir un widget nuevo
 

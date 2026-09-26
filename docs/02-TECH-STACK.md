@@ -7,7 +7,7 @@
 | `serialport` (C++ native module) | Funciona con `electron-rebuild` | Sin binding Rust maduro; USB/serial parcial y variable por plataforma | **Electron** |
 | Parsing binario C/C++ | Node.js `Buffer` + `DataView` | Requiere sidecar C++ o FFI Rust | **Electron** |
 | Exportación de vídeo | FFmpeg sidecar; codecs consistentes | Depende del WebView del SO (WebKitGTK en Linux = codecs limitados) | **Electron** |
-| Bundle size | ~109 MB AppImage (Chromium embebido) | ~10 MB | Tauri |
+| Bundle size | ~200 MB instalador (Chromium + sidecar FFmpeg) | ~10 MB | Tauri |
 | RAM idle | ~250 MB | ~80 MB | Tauri |
 | Consistencia cross-platform | Pixel-perfect (mismo Chromium) | Varía: WebView2 / WKWebView / WebKitGTK | **Electron** |
 | Ecosistema / Stack Overflow | Masivo | Creciente pero gaps en "long tail" | **Electron** |
@@ -15,7 +15,7 @@
 
 **Decisión final: Electron 34.x**
 
-Justificación: La dependencia de `serialport` para UART, el procesamiento de binarios STM32, y la exportación de vídeo con codecs consistentes en 3 plataformas hacen que Electron sea la única opción viable. El overhead de ~150 MB es irrelevante para una app de análisis técnico de escritorio.
+Justificación: La dependencia de `serialport` para UART, el procesamiento de binarios STM32, y la exportación de vídeo con codecs consistentes en 3 plataformas hacen que Electron sea la única opción viable. El overhead de ~200 MB (Chromium + sidecar FFmpeg) es irrelevante para una app de análisis técnico de escritorio.
 
 ---
 
@@ -35,7 +35,8 @@ Benchmark real con 166,650 puntos:
 - **10% CPU** para streaming de 3,600 pts a 60fps — crítico cuando el video MP4 ya consume recursos
 - Canvas 2D nativo — sin overhead de SVG ni virtual DOM
 - API imperative — ideal para `requestVideoFrameCallback` sync sin re-renders React innecesarios
-- Downsample automático con LTTB (Largest Triangle Three Buckets)
+- Downsample con LTTB (Largest Triangle Three Buckets) cuando la ventana supera el
+  presupuesto (`maxPoints`, por defecto **2000**; configurable por widget).
 
 **Rechazo de ECharts**: Sistema declarativo de options cloning genera GC spikes que matan el FPS en streaming real-time.
 
@@ -45,14 +46,14 @@ Benchmark real con 166,650 puntos:
 
 | Framework | FPS redraw widgets | Ecosistema componentes | Curva aprendizaje | Veredicto |
 |---|---|---|---|---|
-| **React 19** | Excelente con `useSyncExternalStore` | El más grande del mundo | Ya lo conoce el equipo | **Ganador** |
+| **React 19** | Excelente con `FrameBus` + redibujado imperativo | El más grande del mundo | Ya lo conoce el equipo | **Ganador** |
 | Vue 3 | Muy bueno (reactivity) | Grande | Rápida | Alternativa para v2 |
 | Svelte 5 | Excelente (compilación directa) | Moderado | Nuevo paradigma | Para v2 |
 | HTML5 nativo | Manual, sin virtual DOM | N/A | Lento dev | No |
 
 **Decisión final: React 19 + TypeScript 5.6**
 
-Para widgets dinámicos que se registran/desregistran en runtime, React tiene el patrón más maduro de "componentes como datos". `useSyncExternalStore` para suscripciones al EventBus (NO Redux/Context para datos de alta frecuencia).
+Para widgets dinámicos que se registran/desregistran en runtime, React tiene el patrón más maduro de "componentes como datos". Los frames de alta frecuencia **no** van por estado de React: cada `WidgetHost` empuja el frame a un `FrameBus` propio y los widgets se redibujan de forma imperativa (`useFrameSubscription`/`useWidgetDraw`), sin re-renders por frame.
 
 ---
 
@@ -111,3 +112,13 @@ Zustand para estado de UI (layout, settings, widget active). EventBus custom par
 | Native | serialport (C++ binding) | 13.x |
 | Video Export | FFmpeg (sidecar) + Canvas 2D | raw RGBA por stdin |
 | Testing | Vitest + harness Electron propio | 3.x |
+
+**Notas de dependencias** (`package.json`):
+
+- `serialport` va en `dependencies` (módulo nativo); `@electron-toolkit/preload` y
+  `@electron-toolkit/utils` son utilidades de Electron.
+- Los settings se leen/escriben con `fs` (`src/main/settings-store.ts`) y los puertos con
+  `SerialPort.list` (`src/main/serial-service.ts`); **no** se usan `electron-store` ni
+  `@serialport/list` (se eliminaron de `dependencies`).
+- No hay `engines` en `package.json`; el desarrollo se ha probado con Node 20.
+- **Cobertura objetivo** (ver `AGENTS.md`): core 80 %, parsers 70 %, widgets render básico.

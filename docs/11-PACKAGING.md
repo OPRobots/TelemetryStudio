@@ -51,19 +51,26 @@ publish:
   releaseType: draft
 ```
 
-> Los artefactos se nombran `${name}-${version}[-${arch}].${ext}`. El `mac` usa
-> `${arch}` porque genera **dos DMGs** (x64 y arm64); sin él colisionarían.
+> Nombres reales por destino (`electron-builder.yml`): Linux AppImage/deb
+> `${name}-${version}.${ext}`; macOS `${name}-${version}-${arch}.${ext}` (dos DMGs:
+> x64 y arm64, sin universal); Windows NSIS `${name}-${version}-setup.${ext}` y
+> portable por defecto (`${name}-${version}-portable.${ext}`).
 >
-> Estado: **Linux verificado** (AppImage y deb arrancan con el sidecar FFmpeg
-> incluido; ~168 MB y ~117 MB respectivamente por los binarios de FFmpeg).
-> Windows/macOS se generan en CI (ver más abajo); macOS se firma **ad-hoc** (ver
-> *Firma ad-hoc macOS*).
+> Estado: **macOS** con DMGs medidos (`arm64` ~199 MB, `x64` ~206 MB, sidecar FFmpeg
+> incluido). **Linux/Windows**: pendiente de confirmar tamaños, pero se generan en CI
+> (ver más abajo); macOS se firma **ad-hoc** (ver *Firma ad-hoc macOS*).
 >
 > **macOS**: se generan **dos DMGs** (x64 y arm64), no un binario universal. No es
 > necesario un universal: `@serialport/bindings-cpp` incluye un prebuild *fat*
 > (`darwin-x64+arm64`) y cada DMG usa su rebanada (ver `docs/12-LIMITATIONS.md` #5).
 
 ## Comandos (package.json)
+
+> `package.json` define 33 scripts. Aquí va el subconjunto principal; además hay
+> `e2e:*` individuales (12), `e2e:perf` (standalone), `e2e`, `screenshots`, `icons`,
+> `poc:1`…`poc:4`, `dist`/`dist:linux`/`dist:mac`/`dist:win`, `preview` y
+> `test:watch`. `dev` arranca con `ELECTRON_DISABLE_SECURITY_WARNINGS=1` y
+> `FONTCONFIG_FILE=scripts/fonts.conf`.
 
 ```json
 {
@@ -83,7 +90,8 @@ publish:
 }
 ```
 
-El empaquetado se lanza con `electron-builder` (p. ej. `npx electron-builder --linux`).
+El empaquetado se lanza con `electron-builder` (p. ej. `npm run dist:linux` o
+`npx electron-builder --linux`).
 
 ## Módulos nativos
 
@@ -131,9 +139,9 @@ sudo usermod -a -G dialout $USER   # cerrar sesión y volver a entrar
 
 Dos workflows:
 
-- **`.github/workflows/ci.yml`** — en push a `main` y PR: instalación, lint,
-  typecheck, tests, descarga del sidecar FFmpeg y build. En Linux (Ubuntu) además
-  ejecuta `smoke` + `e2e` bajo `xvfb`.
+- **`.github/workflows/ci.yml`** — en push a `main`, PR y ejecución manual
+  (`workflow_dispatch`): instalación, lint, typecheck, tests, descarga del sidecar
+  FFmpeg y build. En Linux (Ubuntu) además ejecuta `smoke` + `e2e` bajo `xvfb`.
 - **`.github/workflows/release.yml`** — al empujar un tag `vX.Y.Z`: matriz
   Ubuntu/macOS/Windows → `electron-builder --publish always` con `GH_TOKEN`,
   subiendo los instaladores a un **GitHub Release en borrador** (revisar y

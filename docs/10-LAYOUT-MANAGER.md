@@ -3,9 +3,9 @@
 ## Visión General
 
 Un **layout** describe la disposición del dashboard: la lista de widgets (tipo,
-campos, tamaño y configuración) y las proporciones de los paneles. Los layouts
-predefinidos y los guardados por el usuario se persisten en
-`app.getPath('userData')/layouts/`.
+campos, tamaño y configuración) y las proporciones de los paneles. **No hay layouts
+predefinidos**: el usuario guarda los suyos (con **nombre y descripción**) y se
+persisten en `app.getPath('userData')/layouts/`.
 
 ## Estructura JSON de un Layout
 
@@ -28,6 +28,14 @@ predefinidos y los guardados por el usuario se persisten en
       "visible": true
     }
   ],
+  "videoPanel": {
+    "x": 0,
+    "y": 0,
+    "width": 12,
+    "height": 6,
+    "showOverlays": true,
+    "overlays": []
+  },
   "panels": {
     "inspectorWidth": 288,
     "inspectorVisible": true,
@@ -40,12 +48,24 @@ predefinidos y los guardados por el usuario se persisten en
     "showGrid": true,
     "snapToGrid": false,
     "gridSize": 40
+  },
+  "exportBoard": {
+    "aspect": "16:9",
+    "resolution": "1080p",
+    "videoMode": "flow",
+    "panel": "translucent",
+    "supersample": 1,
+    "lineScale": 1.5,
+    "showLabel": true,
+    "background": "#0a0e17",
+    "items": []
   }
 }
 ```
 
 - `width` (columnas de 12) y `height` (filas de 40 px) definen el tamaño en la rejilla
   fluida. El **orden** de `widgets` es el de colocación (no hay x/y).
+- `videoPanel` es **requerido** por el tipo (`VideoPanelConfig`).
 - `panels.comparisonRatio` es el **ancho** del panel A en comparación.
 - `exportBoard` (opcional): board del **editor de exportación** (ítems
   widget/vídeo/sección). Se guarda y carga con el layout; ver `docs/09-VIDEO-EXPORT.md`.
@@ -56,13 +76,13 @@ predefinidos y los guardados por el usuario se persisten en
 Usa un `LayoutPersistence` (adaptador) para no depender de `electron`.
 
 ```typescript
-BUILT_IN_LAYOUTS: DashboardLayout[]      // Siguelíneas, Micromouse
 createEmptyLayout(name, description?): DashboardLayout
 
 layoutManager.getCurrentLayout(): DashboardLayout | null
+layoutManager.getAllLayouts(): DashboardLayout[]   // alias de getSavedLayouts()
 layoutManager.getSavedLayouts(): DashboardLayout[]
-layoutManager.getBuiltInLayouts(): DashboardLayout[]
-layoutManager.loadLayout(name): void
+layoutManager.loadLayout(layout: DashboardLayout): void
+layoutManager.createNew(name, description?): DashboardLayout
 layoutManager.saveLayout(name?): Promise<void>
 layoutManager.deleteLayout(name): Promise<void>
 layoutManager.refreshSavedLayouts(): Promise<void>
@@ -70,20 +90,23 @@ layoutManager.addWidget(widget) / removeWidget(id) / updateWidget(id, patch)
 layoutManager.replaceWidgets(widgets)
 ```
 
-Los layouts built-in vienen **sin campos asignados** (`dataFields: []`): al cargarlos,
-los widgets se muestran vacíos hasta que el usuario elige campos (o hasta que el
-auto-layout los rellene).
+Al **guardar** desde `LayoutDialog` se pide **nombre** y **descripción** (opcional); el
+layout se guarda como `<nombre>.json` y, si ya existe, se sobrescribe conservando su
+`createdAt`. La lista muestra nombre y descripción (o `N widgets` si no hay descripción).
+Los parámetros de salida **no** se persisten aquí (van con la sesión, ver `docs/14`).
 
 ## Store del renderer
 
 `src/renderer/src/stores/layout-store.ts` (`useLayoutStore`) mantiene el estado en vivo
-(`widgets`, `panels`, `layoutName`) y las acciones: `setLayout`, `addWidget`,
-`removeWidget`, `updateWidget`, `replaceWidgets`, `clearWidgets`, `moveWidget`,
-`setWidgetWidth`, `setWidgetHeight`, `setPanels`.
+(`widgets`, `panels`, `layoutName`, `layoutDescription`, `exportBoard`) y las acciones:
+`setLayout`, `addWidget`, `removeWidget`, `updateWidget`, `replaceWidgets`,
+`clearWidgets`, `moveWidget`, `setWidgetWidth`, `setWidgetHeight`, `setPanels`,
+`addFieldToWidget`, `mergeWidgets`, `setExportBoard`.
 
-La lógica de rejilla (snap de ancho/alto, empaquetado en filas) vive en
-`src/renderer/src/lib/widget-layout.ts` (`packWidgetRows`, `snapWidthToPreset`,
-`columnsFromPixels`, `rowsFromPixels`, `clampHeight`).
+La lógica de rejilla (snap y clamp de ancho/alto, empaquetado en filas) vive en
+`src/shared/grid.ts` (`snapGridWidth`, `clampGridWidth`, `clampGridHeight`,
+`packGridRows`). En `src/renderer/src/lib/widget-layout.ts` solo hay conversión
+**píxeles → celdas** (`columnsFromPixels`, `rowsFromPixels`).
 
 ## Edición por arrastre
 

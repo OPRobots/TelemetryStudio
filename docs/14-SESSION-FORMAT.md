@@ -130,12 +130,16 @@ decodeFieldSchema(schema): FieldSchema[]      // compacto → FieldSchema[]
 encodeFieldSchema(schema): SessionFieldSchema[] // FieldSchema[] → compacto
 
 sessionToDataset(session): TelemetryDataset
-datasetToSession(dataset, video, sync, widgets): SessionFile
+datasetToSession(dataset, video, sync, widgets, timestamped = true, exportBoard?): SessionFile
 datasetToSessionTelemetry(dataset): SessionTelemetry
 ```
 
 `toFrameValue(value)` preserva `null`, `boolean`, `string` y arrays/typed arrays
 (estos últimos se serializan como `number[]`).
+
+> El formato canónico es el de `src/core/types/session.ts` y lo aplica
+> `session-codec.ts`. El fixture `tests/fixtures/session.json` es un **ejemplo
+> canónico** que se valida en los tests de `session-codec`.
 
 ## Servicio de Sesiones
 
@@ -150,7 +154,9 @@ listSessions(directory): Promise<SessionInfo[]>
 ```
 
 La orquestación de UI vive en `src/renderer/src/lib/session-actions.ts`
-(`openSessionDialog`, `loadSession`, `saveSession`, `closeVideo`).
+(`openSessionDialog`, `loadSession`, `saveSession`, `openVideoDialog`, `loadVideoFile`,
+`closeVideo`). Al cargar, el flag `telemetry.timestamped` se vuelca en
+`app-store.telemetryTimeReliable`.
 
 ## Reglas de negocio
 

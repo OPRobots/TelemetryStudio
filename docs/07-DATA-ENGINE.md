@@ -38,6 +38,10 @@ clear();
 
 > `clearPrimary()` es clave: al **reiniciar una captura serial** se vacía solo el
 > dataset actual, sin borrar la sesión de comparación.
+>
+> `loadDataset` y `loadComparisonDataset` emiten el **mismo** `data:loaded` (sin
+> discriminador); `clear()` no emite evento, pero `clearComparison()` sí
+> (`comparison:stop`). `clearPrimary()` además resetea el flag de ordenación.
 
 ## Cursor y zoom compartidos
 
@@ -47,9 +51,10 @@ clear();
 - `zoomRange: { startMs, endMs } | null` — rango de zoom global entre timelines.
 
 `WidgetHost` entrega a cada widget el `hoverTimestamp_ms` y el frame actual vía
-`FrameBus` (por panel); cada widget resuelve el timestamp efectivo (`hover → vídeo →
-frame → último frame`) con `resolveViewTimestamp`. También reparte
-`zoomRange`/`onCursorHover`. Ver `docs/08-WIDGET-SYSTEM.md`.
+`FrameBus` (por panel); **casi todos** los widgets resuelven el timestamp efectivo
+(`hover → vídeo → frame → último frame`) con `resolveViewTimestamp` (la leyenda de
+`TimeSeriesChart` usa su propia expresión, sin el fallback a último frame). También
+reparte `zoomRange`/`onCursorHover`. Ver `docs/08-WIDGET-SYSTEM.md`.
 
 ## ComparisonManager
 
@@ -57,14 +62,21 @@ frame → último frame`) con `resolveViewTimestamp`. También reparte
 
 ```typescript
 startComparison(reference: SessionFile, currentWidgets: SessionWidget[]): WidgetCompatibilityResult
-stopComparison();          // clearComparison() + evento comparison:stop
-validateWidgetCompatibility(a, b);
+stopComparison();          // clearComparison() + comparison:stop
 isActive; currentReference;
 ```
 
 `WidgetCompatibilityResult = { compatible, differences, sessionAWidgets, sessionBWidgets }`.
-La validación compara **tipo, campos, tamaño y configuración** (el orden de la lista es libre).
-Si los widgets difieren, emite `comparison:widget-mismatch` con las diferencias.
+La validación compara **posición a posición** el mismo índice: tipo, campos, tamaño y
+configuración. Reordenar la lista las hace incompatibles aunque el conjunto sea idéntico.
+Si difieren, emite `comparison:widget-mismatch` con las diferencias.
+
+> `validateWidgetCompatibility(a, b)` es **público** (útil para tests y para validar sin
+> arrancar la comparación).
+>
+> Se impone el límite de **una comparación activa**: `startComparison()` devuelve
+> `compatible:false` con un mensaje si ya hay una en curso. `stopComparison()` delega en
+> `telemetryStore.clearComparison()`, que es quien emite `comparison:stop` (una sola vez).
 
 ## Búsqueda binaria
 
@@ -73,17 +85,26 @@ Si los widgets difieren, emite `comparison:widget-mismatch` con las diferencias.
 - `binarySearch(frames, target_ms)` → frame más cercano.
 - `binarySearchIndex(frames, target_ms)` → índice del frame más cercano.
 - `findFramesInRange(frames, start_ms, end_ms)` → subarray en el rango.
+- `frameRangeBounds(frames, start_ms, end_ms, pad = 1)` → índices `[lo, hi]` del rango
+  (con margen); lo usa el `TimeSeriesChart`.
+
+Edge cases: `binarySearch` devuelve el primer frame si el target es menor que el mínimo y
+el último si es mayor que el máximo; los empates se rompen hacia el índice inferior.
+`binarySearchIndex([])` devuelve `0` (no `-1`) y `findFramesInRange` devuelve `[]` si el
+rango es invertido o vacío.
 
 ## Downsampling LTTB
 
 `src/core/lttb.ts`:
 
 - `downsampleLTTB(points, targetPoints)` — Largest-Triangle-Three-Buckets; preserva
-  el primer y último punto.
-- `framesToLTTBPoints(frames, field)` — convierte frames a puntos `{x, y}`.
+  el primer y último punto. Devuelve una copia si `data.length <= 2` o si
+  `targetPoints >= data.length`; con `targetPoints <= 2` devuelve solo extremos.
+- `framesToLTTBPoints(frames, field)` — convierte frames a puntos `{x, y}` (usado en tests).
 
-El `TimeSeriesChart` usa `downsampleLTTB` con `{ x: i, y: valor }` para elegir un
-**único conjunto de índices** y alinear X y todas las Y por índice.
+El `TimeSeriesChart` construye los puntos con `{ x: i - lo, y: valor }` (índice **relativo
+a la ventana**) y solo aplica LTTB cuando el nº de frames de la ventana supera
+`maxPoints` (por defecto **2000**, configurable por widget).
 
 ## Session Manager
 
@@ -103,13 +124,19 @@ La orquestación de UI (cargar/guardar, aplicar sync y layout) vive en
 
 ## Main Process — Handlers IPC
 
-`src/main/ipc-handlers.ts` expone (vía `preload/index.ts`):
+`src/main/index.ts` registra tres grupos de handlers (todos accesibles vía
+`preload/index.ts`):
 
-- Diálogos: `dialog:openVideo`, `dialog:openSession`, `dialog:openDirectory`.
-- Serial: `serial:open`, `serial:close`, `serial:list` (+ `serial:data`/`serial:status` push).
-- Sesiones: `session:export`, `session:read`, `session:getVideoPath`, `session:list`, `file:read`.
-- Layouts: `layout:save`, `layout:loadAll`, `layout:delete`.
-- Vídeo: `video:prepare`, `video:cancel-prepare` (+ `video:prepare-status` push).
-- Exportación: `export:start`, `export:writeFrame`, `export:finalize`, `export:abort`, `export:save`.
+- `src/main/ipc-handlers.ts`:
+  - Diálogos: `dialog:openVideo`, `dialog:openSession`, `dialog:openDirectory`.
+  - Serial: `serial:open`, `serial:close`, `serial:list` (+ `serial:data`/`serial:status` push).
+  - Sesiones: `session:export`, `session:read`, `session:getVideoPath`, `session:list`, `file:read`.
+  - Layouts: `layout:save`, `layout:loadAll`, `layout:delete`.
+  - App: `app:version`, `open-external`, `settings:getSerial`, `settings:setSerial`.
+- `src/main/video-service.ts`: `video:prepare`, `video:cancel-prepare`
+  (+ `video:prepare-status` push).
+- `src/main/export-service.ts`: `export:start`, `export:choose-destination`,
+  `export:writeFrame`, `export:finalize`, `export:abort`.
 
-El menú nativo empuja `menu:action` al renderer.
+El menú nativo empuja `menu:action` al renderer y el estado del menú se sincroniza con
+`menu:set-state`.

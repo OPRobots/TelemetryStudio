@@ -153,7 +153,7 @@ interface VideoFrameContext {
   /** Frame rate declarado del vídeo (e.g., 30, 60) */
   declaredFps: number;
 
-  /** Timestamp de la vista actual del video (en ms desde inicio de la app) */
+  /** Timestamp de telemetría mapeado desde el frame de vídeo (ms), tras drift/anchor */
   viewTimestamp_ms: number;
 }
 
@@ -213,6 +213,9 @@ interface DashboardLayout {
 
   /** Configuración global del dashboard */
   global: GlobalConfig;
+
+  /** Board del editor de exportación (opcional; lo usan ExportDialog y la sesión) */
+  exportBoard?: ExportBoard; // @shared/export-composition
 }
 
 /**
@@ -367,7 +370,12 @@ interface EventMap {
 
   // === Eventos de Exportación ===
   'export:start': { config: ExportConfig };
-  'export:progress': { percent: number; currentFrame: number; totalFrames: number };
+  'export:progress': {
+    percent: number;
+    currentFrame: number;
+    totalFrames: number;
+    etaMs: number | null; // tiempo restante estimado (null sin muestra fiable)
+  };
   'export:complete': { outputPath: string };
   'export:error': { message: string };
 
@@ -377,61 +385,117 @@ interface EventMap {
 }
 ```
 
+> **Nota:** varios eventos del mapa están **reservados y hoy no se emiten** en `src/`
+> (`data:frame`, `data:streaming-start/stop`, `video:loaded/frame/play/pause`,
+> `video:rate-change`, `export:start/progress/complete/error`, `system:error/log`).
+> El progreso de exportación se entrega por **callback** (`exportVideo(config, onProgress)`)
+> y no por el EventBus. Los eventos vivos principales son `data:loaded`,
+> `data:streaming-frame`, `sync:*`, `sync:frame`/`comparison:frame`,
+> `video:seek`, `ui:*` y `comparison:*`.
+
 ## ExportConfig — Configuración de Exportación
 
 ```typescript
-// src/core/types/video.ts (continuación)
+// src/core/types/video.ts
 
 /**
  * Configuración para la exportación de vídeo.
+ *
+ * La composición (board de ítems, resolución y placement del vídeo) vive en
+ * `layout` (@shared/export-composition); los widgets se renderizan a tamaño de
+ * celda en un host oculto y se captura su canvas. El tamaño final de salida es
+ * `layout.width` × `layout.height`.
  */
 interface ExportConfig {
-  /** Ruta de salida del archivo */
+  /** Ruta de destino elegida por el usuario (se escribe directamente ahí) */
   outputPath: string;
-
-  /** Formato de salida */
   format: 'mp4' | 'webm';
-
-  /** Codec de vídeo */
   codec: 'h264' | 'vp9';
-
-  /** Frames por segundo del vídeo exportado */
   fps: number;
-
-  /** Resolución de salida */
-  width: number;
-  height: number;
-
-  /** Bitrate en bits por segundo */
-  bitrate: number;
-
-  /** Intervalo de keyframes en segundos */
-  keyframeInterval_s: number;
-
-  /** Frame de inicio (índice en el dataset) */
+  /** Calidad CRF (menor = mejor) */
+  crf?: number;
+  /** Preset de libx264 */
+  preset?: string;
   startFrame: number;
-
-  /** Frame de fin (índice en el dataset) */
   endFrame: number;
-
-  /** Widgets a incluir en la composición */
-  includedWidgets: string[];
-
-  /** Si incluir el vídeo base */
-  includeBaseVideo: boolean;
-
-  /** Si incluir overlays sobre el vídeo */
+  /** Layout de composición calculado (incluye ancho/alto finales) */
+  layout: ExportLayout;
+  /** Widgets disponibles para renderizar (los referenciados por el layout) */
+  widgets: CompositionWidget[];
   includeOverlays: boolean;
-
-  /** Etiqueta de sesión para el overlay (e.g., "Entreno 3") */
   sessionLabel?: string;
+  /** Modo directo (replay): las gráficas avanzan con el vídeo */
+  live?: boolean;
+  /** Ventana visible (ms) del modo directo */
+  liveWindowMs?: number;
+}
+```
+
+> La UI del asistente fija `format: 'mp4'` y `codec: 'h264'`; `webm`/`vp9` existen
+> en el tipo y en `buildFfmpegArgs`, pero no se ofrecen en la interfaz.
+
+## Modelo del board de exportación (`@shared/export-composition`)
+
+Módulo **puro** (sin DOM) que traduce el board a rectángulos en píxeles:
+
+```typescript
+interface ExportBoard {
+  aspect: '16:9' | '9:16' | '1:1' | '4:5';
+  resolution: '720p' | '1080p' | '1440p' | '2160p';
+  videoMode: 'hidden' | 'flow' | 'background';
+  panel: 'translucent' | 'none'; // solo con videoMode 'background'
+  supersample: number;           // 1 o 2
+  lineScale: number;             // grosor de líneas solo en exportación
+  showLabel?: boolean;           // franja superior con la etiqueta de sesión
+  background: string;
+  items: ExportItem[];           // widget | video | section (rejilla 12 col)
+}
+
+interface ExportLayout {
+  width: number; height: number;
+  background: string;
+  supersample: number;
+  lineScale: number;
+  backgroundVideoRect: Rect | null; // vídeo a sangre (videoMode 'background')
+  labelRect: Rect | null;           // franja de etiqueta
+  copyrightRect: Rect;              // franja de copyright (siempre)
+  items: PlacedItem[];              // ítems con rect en px
+}
+```
+
+- `computeBoardLayout(board, source?)` empaqueta los ítems con **skyline/staggered** y
+  resuelve el tamaño de salida a partir del aspecto y la resolución.
+- `createDefaultBoard(aspect, widgets, hasVideo)` / `normalizeBoard(raw, hasVideo)`
+  (esta última migra formatos antiguos: `source`→`1080p`, `custom`→`16:9`).
+- `resolveOutputSize(resolution, ratio)` da el tamaño (dimensiones pares) según el
+  **lado corto** del preset.
+
+## Modelo de sesión (`@core/types/session`)
+
+El formato compacto en disco se define en `src/core/types/session.ts` y se
+codifica/decodifica en `src/core/session-codec.ts` (ver `docs/14-SESSION-FORMAT.md`):
+
+```typescript
+const SESSION_VERSION = 1;
+
+interface SessionFile {
+  v: 1;
+  name: string;
+  created: string;          // ISO
+  video: SessionVideo;      // { file, fps, duration_s, resolution: [w,h] }
+  sync: SessionSync;        // { offset_ms, anchor: [video_s, telemetry_ms] | null, rate }
+  telemetry: SessionTelemetry; // { schema: tuple[], frames: [ts, ...vals][], timestamped? }
+  layout: SessionLayout;    // { widgets: SessionWidget[] }
+  export?: ExportBoard;     // board de exportación (opcional, sesiones nuevas)
 }
 ```
 
 ## WidgetCompatibilityResult — Validación de Compatibilidad de Widgets
 
 La comparación (A izquierda / B derecha, con divisor vertical, reproducción, scroll,
-cursor y zoom sincronizados) exige **widgets idénticos** entre ambas sesiones.
+cursor y zoom sincronizados) exige **widgets idénticos** entre ambas sesiones,
+comparados **posición a posición** (tipo, campos, tamaño y configuración del mismo
+índice); reordenar los widgets las hace incompatibles aunque el conjunto sea igual.
 
 ```typescript
 // src/core/types/comparison.ts

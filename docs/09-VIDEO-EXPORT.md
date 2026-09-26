@@ -73,8 +73,9 @@ ExportDialog / ExportBoardEditor            Main Process
   - La leyenda de la gráfica **envuelve en varias filas**; el compositor **oculta el
     chrome HTML** del widget y reserva su propia franja (la gráfica cede ese alto).
 - **Rango por defecto**: desde **2 s antes** del inicio de los datos de telemetría
-  hasta **2 s después** del fin, mapeados a tiempo de vídeo con la inversa de
-  `mapTime` (`unmapTime`). Se puede recortar o prolongar con el slider start–end.
+  hasta **2 s después** del fin, mapeados a tiempo de vídeo con
+  `telemetryToVideoRangeMs()` (`src/renderer/src/lib/telemetry-range.ts`, inversa de
+  `mapTime` con anchor/drift). Se puede recortar o prolongar con el slider start–end.
   Exportar requiere telemetría cargada (aunque no haya vídeo).
 
 ## Modelo (puro)
@@ -117,8 +118,8 @@ normalizeBoard(raw, hasVideo)                    // compat. y valores por defect
   se repintan **de forma síncrona** (`setWidgetDrawImmediate`), sin depender de `rAF`.
 - Captura el **canvas de cada widget** a su rect dentro de la celda y, sobre él, el
   **chrome HTML** (leyenda de la gráfica temporal, readout del minimapa) leyendo
-  los textos que el widget actualiza por frame. El vídeo se dibuja con
-  `contain`/`cover` real; `section` no dibuja nada.
+  los textos que el widget actualiza por frame. El vídeo se dibuja siempre con
+  `contain` (letterbox); `section` no dibuja nada.
 - **Modo directo** (`live`): las gráficas avanzan con el vídeo —página que crece
   desde la izquierda y luego se desplaza— (ver `docs/08`).
 
@@ -145,6 +146,20 @@ Los ajustes de **Calidad (CRF)**, **Preset**, **Supersampling**, **Modo de
 gráficas**, **Ventana** y **Rango de exportación** incluyen un icono **`i`** con una
 explicación emergente. La **Resolución** de salida ofrece `720p`, `1080p`, `1440p`
 y `2160p`.
+
+**Persistencia**: lo que vive en el `ExportBoard` (`aspect`, `resolution`,
+`videoMode`, `panel`, `supersample`, `lineScale`, `showLabel`, `background`, `items`)
+se guarda con el layout y la sesión. Son **locales del diálogo** (no se persisten):
+`fps`, `crf`, `preset`, `modo de gráficas` (live/full), `liveWindowMs` y el rango
+start–end.
+
+**Salida**: la UI fija **MP4 + H.264** (`format: 'mp4'`, `codec: 'h264'`); `webm`/VP9
+existen en `ExportConfig`/`buildFfmpegArgs` pero no se ofrecen. La exportación se
+bloquea si el board no tiene ítems (`noItems`).
+
+Ficheros implicados: `ExportDialog.tsx` (asistente), `ExportBoardEditor.tsx` (paso 1),
+`ExportFramePreview.tsx` (paso 2), `RangeSlider.tsx` (rango start–end), `InfoHint.tsx`
+(iconos `i`) y `lib/telemetry-range.ts` (rango de telemetría ↔ vídeo).
 
 **Exportación directa**: *Exportar…* abre un `dialog.showSaveDialog` nativo
 (`export:choose-destination`) con un nombre por defecto
@@ -180,7 +195,8 @@ ms/frame, descartando el primer frame por warm-up). `config.outputPath` se pasa 
 
 ## Tests
 
-- Unit: `tests/unit/shared/export-composition.test.ts` (board, presets, vídeo
-  background, secciones), `tests/unit/shared/export-args.test.ts`.
+- Unit: `tests/unit/shared/export-composition.test.ts` (board, `createDefaultBoard`,
+  vídeo background, secciones, migraciones de `normalizeBoard`),
+  `tests/unit/shared/export-args.test.ts`.
 - Integración: `tests/integration/export-ffmpeg.test.ts` (MP4 real con ffprobe).
 - E2E: `e2e:export` (compone, envía frames y cancela a mitad).
