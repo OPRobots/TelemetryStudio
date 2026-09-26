@@ -11,38 +11,76 @@ export interface SerialSettings {
   csvLabels: string[];
 }
 
-const DEFAULTS: SerialSettings = {
+export interface UpdateSettings {
+  /** Si el usuario ya eligió en el primer arranque (activar o no). */
+  consentGiven?: boolean;
+  /** Si se comprueban actualizaciones al arrancar. */
+  checkOnStartup: boolean;
+  /** Versión que el usuario descartó (para no volver a avisar). */
+  dismissedVersion?: string;
+}
+
+interface AppSettings {
+  serial: SerialSettings;
+  update: UpdateSettings;
+}
+
+const DEFAULT_SERIAL: SerialSettings = {
   kind: 'keyvalue',
   hasTimestamp: true,
   csvSeparator: ',',
   csvLabels: [],
 };
 
+const DEFAULT_UPDATE: UpdateSettings = {
+  checkOnStartup: true,
+};
+
 const settingsFile = (): string => join(app.getPath('userData'), 'settings.json');
 
-let cache: SerialSettings | null = null;
+let cache: AppSettings | null = null;
 
-/** Configuración de conexión Serial recordada entre sesiones. */
-export function getSerialSettings(): SerialSettings {
+/** Lee settings.json aplicando defaults por sección (conserva el resto). */
+function load(): AppSettings {
   if (cache) return cache;
   try {
-    const raw = JSON.parse(readFileSync(settingsFile(), 'utf-8')) as {
-      serial?: Partial<SerialSettings>;
+    const raw = JSON.parse(readFileSync(settingsFile(), 'utf-8')) as Partial<AppSettings>;
+    cache = {
+      serial: { ...DEFAULT_SERIAL, ...(raw.serial ?? {}) },
+      update: { ...DEFAULT_UPDATE, ...(raw.update ?? {}) },
     };
-    cache = { ...DEFAULTS, ...(raw.serial ?? {}) };
   } catch {
-    cache = { ...DEFAULTS };
+    cache = { serial: { ...DEFAULT_SERIAL }, update: { ...DEFAULT_UPDATE } };
   }
   return cache;
 }
 
-export function setSerialSettings(patch: Partial<SerialSettings>): void {
-  const next: SerialSettings = { ...getSerialSettings(), ...patch };
-  cache = next;
+function persist(settings: AppSettings): void {
+  cache = settings;
   try {
     mkdirSync(dirname(settingsFile()), { recursive: true });
-    writeFileSync(settingsFile(), JSON.stringify({ serial: next }, null, 2));
+    writeFileSync(settingsFile(), JSON.stringify(settings, null, 2));
   } catch (err) {
     console.error('No se pudo guardar settings.json:', (err as Error).message);
   }
+}
+
+/** Configuración de conexión Serial recordada entre sesiones. */
+export function getSerialSettings(): SerialSettings {
+  return load().serial;
+}
+
+export function setSerialSettings(patch: Partial<SerialSettings>): void {
+  const settings = load();
+  persist({ ...settings, serial: { ...settings.serial, ...patch } });
+}
+
+/** Configuración de la comprobación de actualizaciones. */
+export function getUpdateSettings(): UpdateSettings {
+  return load().update;
+}
+
+export function setUpdateSettings(patch: Partial<UpdateSettings>): void {
+  const settings = load();
+  persist({ ...settings, update: { ...settings.update, ...patch } });
 }

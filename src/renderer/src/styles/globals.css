@@ -432,6 +432,29 @@ body.field-drag-copy * {
 }
 
 /* ============================================================
+   Banners (avisos superiores)
+   ============================================================ */
+
+.banner-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-height: 0;
+  transition: grid-template-rows 200ms ease;
+}
+.banner-collapse--open {
+  grid-template-rows: 1fr;
+}
+.banner-collapse__inner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.banner-collapse--open .banner-collapse__inner {
+  opacity: 1;
+}
+
+/* ============================================================
    Diálogos
    ============================================================ */
 

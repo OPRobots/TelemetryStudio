@@ -132,9 +132,12 @@ La orquestación de UI (cargar/guardar, aplicar sync y layout) vive en
   - Serial: `serial:open`, `serial:close`, `serial:list` (+ `serial:data`/`serial:status` push).
   - Sesiones: `session:export`, `session:read`, `session:getVideoPath`, `session:list`, `file:read`.
   - Layouts: `layout:save`, `layout:loadAll`, `layout:delete`.
-  - App: `app:version`, `open-external`, `settings:getSerial`, `settings:setSerial`.
+  - App: `app:version`, `open-external`, `settings:getSerial`, `settings:setSerial`,
+    `settings:getUpdate`, `settings:setUpdate`.
 - `src/main/video-service.ts`: `video:prepare`, `video:cancel-prepare`
   (+ `video:prepare-status` push).
+- `src/main/update-service.ts`: `update:check` (consulta la última release de GitHub,
+  sin bloquear; falla en silencio).
 - `src/main/export-service.ts`: `export:start`, `export:choose-destination`,
   `export:writeFrame`, `export:finalize`, `export:abort`.
 

@@ -82,6 +82,8 @@ graph TB
   es reproducible por Chromium.
 - **Servicio de Exportación** — ejecuta **FFmpeg** (sidecar empaquetado o del PATH)
   y recibe los frames como **raw RGBA** por `stdin`.
+- **Actualizaciones** — al arrancar consulta la última release de GitHub (opt-in,
+  desactivable desde *Ayuda*) y avisa si hay una versión nueva; la descarga es manual.
 - IPC Hub: registra los `ipcMain.handle` y el menú nativo; es el puente seguro entre
   Main y Renderer.
 

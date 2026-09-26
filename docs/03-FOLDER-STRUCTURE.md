@@ -75,7 +75,8 @@ telemetry-studio/
 │   │   ├── ipc-handlers.ts          # Registro de todos los ipcMain.handle
 │   │   ├── ffmpeg.ts                # Resolución de los binarios ffmpeg/ffprobe
 │   │   ├── serial-service.ts        # Servicio SerialPort (apertura, streaming, cierre)
-│   │   ├── settings-store.ts        # Ajustes persistidos (p. ej. config serial) en userData
+│   │   ├── settings-store.ts        # Ajustes persistidos (serial, update) en userData
+│   │   ├── update-service.ts        # Comprueba actualizaciones (GitHub Releases API)
 │   │   ├── video-service.ts         # Prepara vídeos (transcode HEVC→H.264)
 │   │   └── export-service.ts        # Exportación de vídeo con FFmpeg (raw RGBA)
 │   │
@@ -145,6 +146,7 @@ telemetry-studio/
 │   │       │   │   ├── Splitter.tsx     # Divisores arrastrables entre paneles
 │   │       │   │   ├── Toolbar.tsx      # Slider temporal + controles de reproducción
 │   │       │   │   ├── StatusBar.tsx    # Barra de estado inferior (chips)
+│   │       │   │   ├── Banner.tsx       # Banner superior animado (avisos)
 │   │       │   │   └── SplitView.tsx    # Vista split de comparación
 │   │       │   ├── video/
 │   │       │   │   ├── VideoPlayer.tsx      # Contenedor del elemento video
@@ -168,6 +170,7 @@ telemetry-studio/
 │   │       │       ├── RangeSlider.tsx         # Slider de dos asas (rango de exportación)
 │   │       │       ├── AboutDialog.tsx         # Acerca de (versión, créditos, enlaces)
 │   │       │       ├── TimestampWarningDialog.tsx # Aviso de telemetría sin timestamp fiable
+│   │       │       ├── UpdateConsentDialog.tsx  # Consentimiento de updates (primer arranque)
 │   │       │       └── PrepareVideoDialog.tsx   # Progreso de conversión + cancelar
 │   │       ├── hooks/
 │   │       │   ├── useEventListener.ts  # Suscripción al EventBus
@@ -200,6 +203,7 @@ telemetry-studio/
 │       ├── grid.ts                  # Rejilla compartida (12 col, filas) + packing
 │       ├── export-args.ts           # Construcción de argumentos de FFmpeg (puro)
 │       ├── legend.ts                # Anchos/formatos de leyenda (puro)
+│       ├── version.ts               # Comparación de versiones semver (puro)
 │       ├── video-codecs.ts          # Códecs reproducibles (puro)
 │       └── video-transcode.ts       # Argumentos de conversión a H.264 (puro)
 │
@@ -213,7 +217,7 @@ telemetry-studio/
 │   │   │                            # cursor-store, widget-layout, splitter,
 │   │   │                            # session-save-status, telemetry-range, time-format
 │   │   ├── shared/                  # export-args, export-composition, grid, legend,
-│   │   │                            # video-codecs, video-transcode
+│   │   │                            # version, video-codecs, video-transcode
 │   │   └── widgets/                 # widget-registry, frame-lookup, state-entry, color-palette,
 │   │                                # format-value, live-view, sample-data, zoom-range
 │   ├── integration/

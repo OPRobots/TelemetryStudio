@@ -163,6 +163,25 @@ Artefactos por plataforma:
 | Windows | NSIS (setup), portable | x64 |
 | macOS | DMG | x64 + arm64 |
 
+## Actualizaciones (aviso de nueva versión)
+
+La app **no se autoactualiza**: avisa de que hay una versión nueva y el usuario la
+descarga manualmente. No usa `electron-updater` ni los ficheros `latest*.yml`/`*.blockmap`.
+
+- **Comprobación al arrancar** (opt-in): en el **primer arranque** se pregunta con
+  `UpdateConsentDialog` si activarla; la elección se recuerda y se puede cambiar en
+  **Ayuda → Comprobar actualizaciones al inicio**.
+- **Ayuda → Buscar actualizaciones…** lanza una comprobación manual y muestra el
+  resultado (versión nueva / al día / no se pudo comprobar) en un banner superior.
+- `src/main/update-service.ts` consulta
+  `https://api.github.com/repos/OPRobots/TelemetryStudio/releases/latest`
+  (ignora draft y prereleases) y compara con `app.getVersion()` mediante
+  `isNewerVersion` (`src/shared/version.ts`). Falla en silencio (sin red o repo
+  privado → 404).
+- Ajustes en `settings.json`: `update.consentGiven`, `update.checkOnStartup` y
+  `update.dismissedVersion`. Es la **única** petición de red de la app y está bajo
+  control del usuario. Requiere el repo **público** para funcionar.
+
 ## Pendiente
 
 - Firma definitiva: Developer ID + notarización en macOS (evitar el aviso de

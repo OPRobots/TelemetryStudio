@@ -66,6 +66,7 @@ export interface TelemetryAPI {
     comparisonActive: boolean;
     hasVideo: boolean;
     hasData: boolean;
+    checkUpdates: boolean;
   }) => void;
   getVersion: () => Promise<string>;
   openExternal: (url: string) => Promise<void>;
@@ -81,6 +82,23 @@ export interface TelemetryAPI {
     csvSeparator?: ',' | ';' | ' ';
     csvLabels?: string[];
   }) => Promise<void>;
+  settingsGetUpdate: () => Promise<{
+    consentGiven?: boolean;
+    checkOnStartup: boolean;
+    dismissedVersion?: string;
+  }>;
+  settingsSetUpdate: (patch: {
+    consentGiven?: boolean;
+    checkOnStartup?: boolean;
+    dismissedVersion?: string;
+  }) => Promise<void>;
+  checkForUpdates: () => Promise<{
+    hasUpdate: boolean;
+    currentVersion: string;
+    latestVersion?: string;
+    url?: string;
+    notes?: string;
+  }>;
   exportStart: (config: unknown) => Promise<{ success: boolean; error?: string }>;
   exportChooseDestination: (
     options?: unknown

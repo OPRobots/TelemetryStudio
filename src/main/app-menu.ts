@@ -14,6 +14,8 @@ export type MenuAction =
   | 'toggle-inspector'
   | 'layouts'
   | 'new-layout'
+  | 'check-updates'
+  | 'toggle-update-check'
   | 'about';
 
 /** Enlaces externos usados por el menú Ayuda y el diálogo About. */
@@ -32,6 +34,7 @@ export interface MenuState {
   comparisonActive: boolean;
   hasVideo: boolean;
   hasData: boolean;
+  checkUpdates: boolean;
 }
 
 let stateWired = false;
@@ -189,6 +192,15 @@ export function buildAppMenu(): void {
     {
       label: 'Ayuda',
       submenu: [
+        { label: 'Buscar actualizaciones…', click: send('check-updates') },
+        {
+          id: 'check-updates-auto',
+          label: 'Comprobar actualizaciones al inicio',
+          type: 'checkbox',
+          checked: true,
+          click: send('toggle-update-check'),
+        },
+        { type: 'separator' },
         { label: 'OPRobots', click: openLink(LINKS.oprobotsWeb) },
         { label: '@robotaleh', click: openLink(LINKS.robotalehWeb) },
         { type: 'separator' },
@@ -230,5 +242,8 @@ function applyMenuState(state: Partial<MenuState>): void {
   if (state.hasData !== undefined) {
     set('save-session', { enabled: state.hasData });
     set('compare', { enabled: state.hasData });
+  }
+  if (state.checkUpdates !== undefined) {
+    set('check-updates-auto', { checked: state.checkUpdates });
   }
 }

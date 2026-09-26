@@ -11,7 +11,14 @@ import {
 import { readFile, writeFile, mkdir, readdir, copyFile, stat, unlink } from 'fs/promises';
 import { join, basename, dirname } from 'path';
 import { serialService } from './serial-service';
-import { getSerialSettings, setSerialSettings, type SerialSettings } from './settings-store';
+import {
+  getSerialSettings,
+  getUpdateSettings,
+  setSerialSettings,
+  setUpdateSettings,
+  type SerialSettings,
+  type UpdateSettings,
+} from './settings-store';
 
 const LAYOUTS_DIR = (): string => join(app.getPath('userData'), 'layouts');
 
@@ -66,6 +73,10 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('settings:getSerial', () => getSerialSettings());
   ipcMain.handle('settings:setSerial', (_event, patch: Partial<SerialSettings>) => {
     if (patch && typeof patch === 'object') setSerialSettings(patch);
+  });
+  ipcMain.handle('settings:getUpdate', () => getUpdateSettings());
+  ipcMain.handle('settings:setUpdate', (_event, patch: Partial<UpdateSettings>) => {
+    if (patch && typeof patch === 'object') setUpdateSettings(patch);
   });
 
   // === Dialogs ===

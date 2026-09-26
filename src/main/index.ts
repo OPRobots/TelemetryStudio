@@ -11,6 +11,7 @@ if (process.platform === 'linux') {
 import { registerIpcHandlers } from './ipc-handlers';
 import { registerExportHandlers } from './export-service';
 import { registerVideoHandlers } from './video-service';
+import { registerUpdateHandlers } from './update-service';
 import { buildAppMenu } from './app-menu';
 
 // Título de la ventana. En Linux (KDE) el gestor muestra el nombre de la app y,
@@ -112,6 +113,7 @@ app.whenReady().then(() => {
   registerIpcHandlers();
   registerExportHandlers();
   registerVideoHandlers();
+  registerUpdateHandlers();
   buildAppMenu();
 
   createWindow();

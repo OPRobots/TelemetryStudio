@@ -42,6 +42,18 @@ const api = {
   settingsGetSerial: (): Promise<unknown> => ipcRenderer.invoke('settings:getSerial'),
   settingsSetSerial: (patch: unknown): Promise<void> =>
     ipcRenderer.invoke('settings:setSerial', patch),
+  settingsGetUpdate: (): Promise<unknown> => ipcRenderer.invoke('settings:getUpdate'),
+  settingsSetUpdate: (patch: unknown): Promise<void> =>
+    ipcRenderer.invoke('settings:setUpdate', patch),
+
+  // === Actualizaciones ===
+  checkForUpdates: (): Promise<{
+    hasUpdate: boolean;
+    currentVersion: string;
+    latestVersion?: string;
+    url?: string;
+    notes?: string;
+  }> => ipcRenderer.invoke('update:check'),
 
   // === Vídeo ===
   videoPrepare: (
