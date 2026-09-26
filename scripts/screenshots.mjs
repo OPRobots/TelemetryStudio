@@ -3,7 +3,7 @@
  * Requiere un build previo (`npm run build`).
  *
  * Uso: npm run screenshots
- * Salida: docs/assets/{analysis,export,no-video,comparison}.png
+ * Salida: docs/assets/{analysis,export,export-output,no-video,layouts,comparison}.png
  */
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { join, dirname } from 'path';
@@ -83,7 +83,33 @@ function registerMocks(win) {
 
   let sessionDialogCount = 0;
 
-  ipcMain.handle('layout:loadAll', () => []);
+  const sampleLayout = (name, description) => ({
+    version: 1,
+    name,
+    description,
+    createdAt: '2026-01-01T00:00:00Z',
+    modifiedAt: '2026-01-01T00:00:00Z',
+    videoPanel: { x: 0, y: 0, width: 12, height: 8, showOverlays: false, overlays: [] },
+    widgets: [],
+    panels: {
+      inspectorWidth: 288,
+      inspectorVisible: true,
+      videoRatio: 0.42,
+      comparisonRatio: 0.5,
+    },
+    global: {
+      theme: 'dark',
+      units: { speed: 'rpm', distance: 'm', angle: 'deg' },
+      showGrid: true,
+      snapToGrid: false,
+      gridSize: 40,
+    },
+  });
+
+  ipcMain.handle('layout:loadAll', () => [
+    sampleLayout('Siguelíneas · OPR', 'IR + PWM + estados de carrera'),
+    sampleLayout('Micromouse', 'Minimapa 2D + velocidad + sensores'),
+  ]);
   ipcMain.handle('video:prepare', (_e, p) => ({ success: true, path: p, transcoded: false, fps: 30 }));
   ipcMain.handle('dialog:openVideo', () => ({ canceled: false, filePath: mockVideo }));
   ipcMain.handle('serial:list', () => [{ path: '/dev/ttyMOCK', manufacturer: 'Simulador' }]);
@@ -105,7 +131,7 @@ function registerMocks(win) {
   ipcMain.handle('export:start', () => ({ success: true }));
   ipcMain.handle('export:writeFrame', () => ({ success: true }));
   ipcMain.handle('export:finalize', () => ({ success: true, outputPath: '/tmp/opencode/screenshot.mp4' }));
-  ipcMain.handle('export:save', () => ({ canceled: true }));
+  ipcMain.handle('export:choose-destination', () => ({ canceled: true }));
   ipcMain.handle('session:getVideoPath', () => mockVideo);
   ipcMain.handle('file:read', () => ({ success: true, content: JSON.stringify(sessionB) }));
   ipcMain.handle('dialog:openSession', () => {
@@ -156,6 +182,19 @@ app.whenReady().then(async () => {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
   })()`;
+  const setLayoutFields = (name, description) => `(() => {
+    const set = (ph, value) => {
+      const el = Array.from(document.querySelectorAll('input')).find((i) => i.placeholder === ph);
+      if (!el) return false;
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      setter.call(el, value);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    };
+    const a = set(${JSON.stringify('Nombre del layout')}, ${JSON.stringify(name)});
+    const b = set(${JSON.stringify('Descripción (opcional)')}, ${JSON.stringify(description)});
+    return a && b;
+  })()`;
   const capture = async (name) => {
     const image = await win.webContents.capturePage();
     writeFileSync(join(assetsDir, name), image.toPNG());
@@ -177,17 +216,30 @@ app.whenReady().then(async () => {
     await wait(2000);
     await capture('analysis.png');
 
-    // Diálogo de exportación
+    // Diálogo de exportación (paso 1: layout del board)
     win.webContents.send('menu:action', 'export-video');
     await wait(600);
     await capture('export.png');
+    // Paso 2: salida (slider start–end, banda de telemetría, ayudas)
+    await run(clickByText('Siguiente'));
+    await wait(700);
+    await capture('export-output.png');
     await run(clickByText('Cerrar'));
     await wait(300);
 
-    // Modo sin vídeo
+    // Modo sin vídeo (los widgets ocupan toda la ventana)
     win.webContents.send('menu:action', 'close-video');
     await wait(600);
     await capture('no-video.png');
+
+    // Diálogo de layouts (título + descripción)
+    win.webContents.send('menu:action', 'layouts');
+    await wait(400);
+    await run(setLayoutFields('Siguelíneas · OPR', 'IR + PWM + estados de carrera'));
+    await wait(200);
+    await capture('layouts.png');
+    await run(clickByText('Cerrar'));
+    await wait(300);
 
     // Comparación A/B
     win.webContents.send('menu:action', 'disconnect-serial');

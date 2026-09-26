@@ -1,71 +1,106 @@
-# Telemetry Studio
-
-Aplicación de escritorio multiplataforma para **análisis de telemetría de robots
-de competición con vídeo sincronizado**. 100 % offline y portable.
+<div align="center">
+  <img src="docs/assets/logo.png" alt="Telemetry Studio" width="120" />
+  <h1>Telemetry Studio</h1>
+  <p><b>Análisis de telemetría de robots de competición con vídeo sincronizado.</b></p>
+  <p>Aplicación de escritorio <b>multiplataforma</b>, <b>100&nbsp;% offline</b> y <b>portable</b>: captura por UART en vivo o abre sesiones guardadas, visualiza los datos en gráficas y widgets, compáralos en paralelo y exporta vídeo con la telemetría superpuesta.</p>
+  <p>
+    <a href="https://github.com/OPRobots/TelemetryStudio/releases"><img src="https://img.shields.io/github/v/release/OPRobots/TelemetryStudio?include_prereleases&label=release&sort=semver" alt="Release" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License" /></a>
+    <a href="https://github.com/OPRobots/TelemetryStudio/actions/workflows/ci.yml"><img src="https://github.com/OPRobots/TelemetryStudio/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+    <img src="https://img.shields.io/badge/plataformas-Windows%20%7C%20macOS%20%7C%20Linux-3b82f6" alt="Plataformas" />
+    <img src="https://img.shields.io/badge/stack-Electron%20%C2%B7%20React%20%C2%B7%20TypeScript%20%C2%B7%20uPlot%20%C2%B7%20FFmpeg-6b7688" alt="Stack" />
+  </p>
+</div>
 
 ![Análisis de telemetría con vídeo sincronizado](docs/assets/analysis.png)
 
+## ¿Qué es Telemetry Studio?
+
+Telemetry Studio está pensado para **diagnosticar y depurar robots de competición** (Siguelíneas,
+Robotracer, Micromouse, MiniSumo…) a pie de pista. Reproduce el vídeo de la run y muestra la
+telemetría **en el instante exacto del vídeo**, todo desde una única app de escritorio sin
+dependencias de red.
+
 ## Características
 
-- **Vídeo + telemetría sincronizados**: abre un vídeo (`.mp4`, `.webm`, `.mov` o
-  `.mkv`; se recomienda **.mp4 H.264**), reproduce el robot y visualiza la telemetría
-  en el instante exacto del vídeo.
-- **Serial en vivo**: conéctate a un robot por UART y captura todos los frames
-  durante la reproducción. Volver a empezar la transmisión (tras unos segundos
-  en reposo o con `t=0`) reinicia la captura desde cero automáticamente.
-- **Graficado por tipo de dato**: los campos numéricos van a gráficas, los
-  bitmasks a matrices de LEDs (con el auto-layout, todos los bits en una fila), las
-  posiciones a un minimapa y los estados a una línea temporal. Los estados pueden
-  ser números o **texto**.
-- **Widgets sincronizados**: al pasar el ratón por encima de una gráfica o de
-  una línea temporal, el resto de indicadores se desplazan a ese instante; el
-  **zoom** (rango seleccionado) se comparte entre todos ellos.
-- **Layout configurable**: elige qué campos mostrar, varios valores en una misma
-  gráfica, colores, tamaño y posición. Los widgets se redimensionan y reordenan
-  arrastrando; guarda y reutiliza layouts.
-- **Sesiones**: guarda una sesión (`session.json` + copia del vídeo en una carpeta) y
-  reábrela cargando el `session.json` (el vídeo se resuelve en la misma carpeta), con
-  datos, sincronización y layout restaurados.
-- **Comparación**: analiza dos sesiones en paralelo (panel actual a la izquierda,
-  sesión comparada a la derecha, con divisor vertical), con widgets idénticos y
-  reproducción, scroll, cursor y zoom sincronizados.
-- **Exportación**: genera un `.mp4` con el vídeo y los widgets superpuestos para
-  compartir en redes (FFmpeg empaquetado como sidecar).
+- **Vídeo + telemetría sincronizados** — abre un vídeo (`.mp4`, `.webm`, `.mov`, `.mkv`; se
+  recomienda `.mp4` H.264) y visualiza cada dato en el frame correspondiente. Los códecs no
+  soportados por Chromium (p. ej. **HEVC/H.265**) se **transcodifican a H.264** automáticamente.
+- **Serial en vivo** — conéctate por UART y captura los frames durante la reproducción.
+  Formatos **Default** (`T:ms,campo:valor`), **CSV** (separador y etiquetas configurables) y
+  **Macroarray**. Si la transmisión se reinicia (silencio o `t=0`), la captura se reinicia sola.
+- **Widgets por tipo de dato** — numéricos a **gráficas** (uPlot, LTTB), bitmasks a
+  **matrices de LEDs**, posiciones a un **minimapa 2D** y estados a una **línea temporal**
+  (admiten números o **texto**). El auto-layout los crea según los campos descubiertos.
+- **Cursor y zoom compartidos** — al pasar el ratón por una gráfica, el resto de widgets
+  saltan a ese instante; el **zoom** (rango) se sincroniza entre todos.
+- **Layout configurable** — elige campos, combina series, colores, tamaño y posición.
+  Redimensiona y reordena arrastrando, y **guarda layouts con título y descripción**.
+- **Sesiones** — guarda `session.json` + copia del vídeo y reábrela con datos, sincronización,
+  layout y board de exportación restaurados. El vídeo se coloca en el punto de sincronización.
+- **Comparación A/B** — dos sesiones en paralelo (divisor vertical) con reproducción, scroll,
+  cursor y zoom sincronizados; exige widgets idénticos.
+- **Exportación para redes** — compón un board (vídeo + widgets) y genera un **MP4 H.264** con
+  FFmpeg (sidecar), con rango start–end, resolución, FPS, calidad y supersampling ajustables.
 
-## Requisitos
+## Capturas
 
-- Node.js 20+ y npm (probado con Node 20).
-- Linux, macOS o Windows.
-- FFmpeg _(se empaqueta como sidecar para la exportación de vídeo y la conversión
-  de códecs; si falta el sidecar, se usa el del PATH)_.
+**Modo sin vídeo** — la telemetría ocupa toda la ventana.
 
-## Puesta en marcha
+![Modo sin vídeo](docs/assets/no-video.png)
 
-```bash
-npm install
-npm run dev        # desarrollo con HMR
-```
+**Comparación de dos sesiones** en paralelo (reproducción, scroll, cursor y zoom sincronizados).
 
-## Uso
+![Comparación A/B](docs/assets/comparison.png)
 
-1. **Abrir vídeo**: carga el `.mp4` de la ejecución. Se recomienda **H.264**;
-   si el vídeo usa un códec no soportado por Chromium (p. ej. **HEVC/H.265**,
-   habitual en móviles) se **convierte automáticamente a H.264** con FFmpeg.
-2. **Conectar Serial**: elige el puerto, el baud rate y el **formato de los datos**:
-   **Default** (`T:ms,campo:valor`), **CSV** (separador y etiquetas configurables) o
-   **Macroarray** (`>campo:valor`, un campo por línea). Marca *"la telemetría incluye
-   timestamp"* si la primera columna/campo es el tiempo; si no, el tiempo es el índice
-   de muestra (la app avisa de que la sincronización con el vídeo es aproximada).
-   Los campos **numéricos** generan **una gráfica por campo**, a media anchura.
-3. **Analizar**: los widgets se auto-configuran según los campos descubiertos.
-   Reproduce el vídeo y las gráficas siguen la reproducción.
-4. **Sincronizar**: con el vídeo cargado, pausa en el frame que marca el inicio y
-   pulsa **«Alinear aquí»** (ese frame pasa a ser `t=0` de la telemetría). El
-   timeline pasa a mostrar tiempo relativo. Usa **Reset** para deshacer.
-5. **Comparar**: abre la sesión de referencia para verla junto a la actual.
-6. **Cerrar vídeo**: el botón `✕` del header de vídeo (o **Archivo → Cerrar
-   vídeo**) lo oculta y vuelve al **modo sin vídeo** (la telemetría ocupa todo).
-7. **Guardar sesión**: crea una carpeta con el JSON y el vídeo.
+**Editor de exportación** (paso 1) y **salida** (paso 2, con rango start–end y banda de telemetría).
+
+![Editor de exportación](docs/assets/export.png)
+
+![Salida de exportación](docs/assets/export-output.png)
+
+**Layouts** guardables con título y descripción.
+
+![Layouts](docs/assets/layouts.png)
+
+## Descarga
+
+Descarga el instalador para tu sistema desde la página de
+[**Releases**](https://github.com/OPRobots/TelemetryStudio/releases/latest):
+
+| Plataforma | Artefacto | Notas |
+|---|---|---|
+| **Windows** | `...-windows-setup.exe` (recomendado) o `...-windows-portable.exe` | Instalador NSIS o ejecutable portable (sin instalación). |
+| **macOS** | `...-macos-arm64.dmg` (Apple Silicon) o `...-macos-x64.dmg` (Intel) | Firma **ad-hoc**, sin notarizar. |
+| **Linux** | `...-linux.AppImage` (portable) o `...-linux.deb` | AppImage no requiere instalación. |
+
+> **Aviso:** la app **no está firmada** todavía: Windows (SmartScreen) y macOS (Gatekeeper)
+> mostrarán un aviso al abrirla. En macOS puedes abrirla con **clic derecho → Abrir**.
+
+> Funciona **100 % offline** y es **portable**: no requiere permisos de administrador ni conexión.
+
+## Uso rápido
+
+1. **Abrir vídeo** — carga la run (`.mp4` H.264 recomendado; los códecs no soportados se convierten).
+2. **Conectar Serial** — puerto, baud y formato de datos; los widgets se auto-crean según los campos.
+3. **Analizar** — reproduce el vídeo y las gráficas siguen la reproducción.
+4. **Sincronizar** — pausa en el frame que marca el inicio y pulsa **«Alinear aquí»** (ese frame pasa
+   a ser `t=0`). El timeline pasa a tiempo relativo; **Reset** lo deshace.
+5. **Comparar** — abre una sesión de referencia para verla en paralelo.
+6. **Guardar sesión** — crea una carpeta con el `session.json` y el vídeo.
+7. **Exportar** (opcional) — monta el board y genera el MP4 para redes.
+
+## Configuración relevante
+
+- **Serial**: baud desde lista estándar; CSV con separador (`/` `,` `;` `\t`) y nombres de columna;
+  casilla *"la telemetría incluye timestamp"* (si no, el tiempo es el índice de muestra y la app
+  avisa de sync aproximada).
+- **Vídeo**: cualquier contenedor soportado por Chromium; la conversión a H.264 se hace sola.
+- **Widgets**: campos, colores por serie, `maxPoints` de la gráfica, suavizado, rejilla y tamaño del
+  robot, mapa de estados (etiqueta y color), etc.
+- **Exportación**: resolución (`720p`/`1080p`/`1440p`/`2160p`), FPS (`30`/`60`), CRF, preset,
+  grosor de líneas, supersampling (`1×`/`2×`), modo de gráficas (directo/completo) y rango start–end.
+- **Layouts**: guardado con **título + descripción** en `userData/layouts/`.
 
 ### Atajos de teclado
 
@@ -78,68 +113,70 @@ npm run dev        # desarrollo con HMR
 
 ## Probar sin hardware
 
-Consulta [`examples/README.md`](examples/README.md). Con `socat` + el simulador
-incluido puedes generar telemetría en un puerto virtual. El PoC 5
-(`pocs/05-telemetry-sender/`) es un firmware STM32 que envía telemetría de prueba.
+Con `socat` + el simulador incluido puedes generar telemetría en un puerto virtual. Consulta
+[`examples/README.md`](examples/README.md). El **PoC 5** (`pocs/05-telemetry-sender/`) es un
+firmware STM32 que envía telemetría de prueba a 100 Hz.
 
-## Comandos
-
-```bash
-npm run dev          # Desarrollo (Electron + HMR)
-npm run build        # Build de producción
-npm run typecheck    # Verificación de tipos
-npm run test         # Tests unitarios e integración (Vitest)
-npm run lint         # ESLint
-npm run smoke        # Smoke test del renderer
-npm run e2e          # 12 pruebas e2e (serial, vídeo, comparación, export, widgets, layouts...)
-npm run e2e:perf     # Medición de rendimiento (standalone; stream y vídeo)
-npm run screenshots  # Regenera las capturas de docs/assets
-npm run verify       # Gate completo (lint + typecheck + tests + build + smoke + e2e)
-```
-
-## Capturas
-
-**Modo sin vídeo** — la telemetría ocupa toda la ventana.
-
-![Modo sin vídeo](docs/assets/no-video.png)
-
-**Comparación de dos sesiones** en paralelo, con reproducción, scroll, cursor y zoom
-sincronizados.
-
-![Comparación A/B](docs/assets/comparison.png)
-
-**Exportación** a `.mp4` con los widgets superpuestos.
-
-![Exportar vídeo con overlays](docs/assets/export.png)
-
-## Permisos de Serial (Linux)
+## Desarrollo
 
 ```bash
-sudo usermod -a -G dialout $USER   # cerrar sesión y volver a entrar
+# Requisitos: Node 20+ y npm
+npm install
+npm run dev      # Electron + HMR
 ```
+
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Desarrollo con HMR (renderer) y hot reload (main). |
+| `npm run build` | Build de producción. |
+| `npm run typecheck` | Verificación de tipos. |
+| `npm run test` | Tests unitarios e integración (Vitest). |
+| `npm run lint` | ESLint. |
+| `npm run smoke` | Smoke test del renderer. |
+| `npm run e2e` | 12 pruebas e2e (serial, vídeo, comparación, export, widgets, layouts…). |
+| `npm run e2e:perf` | Medición de rendimiento (standalone). |
+| `npm run screenshots` | Regenera las capturas de `docs/assets`. |
+| `npm run verify` | Gate completo: lint + typecheck + tests + build + smoke + e2e. |
+
+El empaquetado usa **electron-builder** (`npm run dist:linux`, `dist:mac`, `dist:win`). El
+sidecar de FFmpeg se descarga con `scripts/fetch-ffmpeg.mjs`.
+
+## Stack técnico
+
+**Electron 34** · **React 19** · **TypeScript 5.6** · **uPlot 1.6** · **Zustand 5** ·
+**Tailwind CSS 4** · **serialport 13** · **FFmpeg** (sidecar) · **Vitest**.
 
 ## Documentación
 
-La documentación técnica completa está en [`docs/`](docs/). Empieza por el
-[índice y glosario](docs/README.md):
+Documentación técnica completa en [`docs/`](docs/). Empieza por el
+[**índice y glosario**](docs/README.md):
 
-- [Índice + glosario](docs/README.md)
-- [Visión general](docs/00-PROJECT-OVERVIEW.md)
-- [Arquitectura](docs/01-ARCHITECTURE.md)
-- [Modelo de datos](docs/04-DATA-MODEL.md)
-- [Sincronización vídeo](docs/06-VIDEO-SYNC.md)
-- [Sistema de widgets](docs/08-WIDGET-SYSTEM.md)
-- [Formato de sesión](docs/14-SESSION-FORMAT.md)
-- [Roadmap](ROADMAP.md)
+- [Visión general](docs/00-PROJECT-OVERVIEW.md) · [Arquitectura](docs/01-ARCHITECTURE.md) · [Stack](docs/02-TECH-STACK.md)
+- [Modelo de datos](docs/04-DATA-MODEL.md) · [Motor de datos](docs/07-DATA-ENGINE.md)
+- [Sincronización vídeo](docs/06-VIDEO-SYNC.md) · [Sistema de widgets](docs/08-WIDGET-SYSTEM.md)
+- [Exportación](docs/09-VIDEO-EXPORT.md) · [Layouts](docs/10-LAYOUT-MANAGER.md) · [Formato de sesión](docs/14-SESSION-FORMAT.md)
+- [Empaquetado](docs/11-PACKAGING.md) · [Limitaciones](docs/12-LIMITATIONS.md) · [Roadmap](ROADMAP.md)
 
 ## Créditos
 
-Desarrollado por **[@robotaleh](https://robotaleh.dev)** ([GitHub](https://github.com/robotaleh))
-con la ayuda de [DeepSeek](https://deepseek.com), para uso personal en
-[OPRobots](https://oprobots.org) ([GitHub](https://github.com/OPRobots)).
+Desarrollado por **[@robotaleh](https://robotaleh.dev)** con la ayuda de **DeepSeek**, para uso
+personal del equipo **OPRobots**.
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <a href="https://oprobots.org"><img src="docs/assets/logos/oprobots.png" width="84" height="84" alt="OPRobots" /><br/>OPRobots</a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://robotaleh.dev"><img src="docs/assets/logos/robotaleh.svg" width="84" height="84" alt="robotaleh" /><br/>robotaleh</a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://deepseek.com"><img src="docs/assets/logos/deepseek.png" width="84" height="84" alt="DeepSeek" /><br/>DeepSeek</a>
+    </td>
+  </tr>
+</table>
 
 ## Licencia
 
 [PolyForm Noncommercial License 1.0.0](LICENSE) — autoría de robotaleh. Se permite el uso
-**personal y no comercial**; queda **prohibido el uso comercial**. Texto completo en
-[`LICENSE`](LICENSE).
+**personal y no comercial**; queda **prohibido el uso comercial**. Texto completo en [`LICENSE`](LICENSE).
