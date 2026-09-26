@@ -48,7 +48,7 @@ jobs:
         run: npm run build
 
       - name: Empaquetar instaladores
-        run: npx electron-builder
+        run: npx electron-builder --publish never
         env:
           # Primera fase sin firma: macOS (Gatekeeper) y Windows (SmartScreen)
           # mostrarán aviso.

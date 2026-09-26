@@ -147,7 +147,7 @@ Dos workflows:
   (`workflow_dispatch`): instalación, lint, typecheck, tests, descarga del sidecar
   FFmpeg y build. En Linux (Ubuntu) además ejecuta `smoke` + `e2e` bajo `xvfb`.
 - **`.github/workflows/release.yml`** — al empujar un tag `vX.Y.Z`: matriz
-  Ubuntu/macOS/Windows que compila y empaqueta con `electron-builder` (sin `--publish`),
+  Ubuntu/macOS/Windows que compila y empaqueta con `electron-builder --publish never`,
   sube **solo los instaladores** como artefactos del workflow y, en un job final,
   crea/actualiza un **GitHub Release en borrador** con `gh release upload`.
   `CSC_IDENTITY_AUTO_DISCOVERY=false` (no hay certificado Apple); el hook `afterPack`
