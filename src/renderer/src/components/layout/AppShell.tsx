@@ -106,8 +106,8 @@ export function AppShell(): React.ReactElement {
           break;
         case 'export-video': {
           const state = useAppStore.getState();
-          if (!state.videoSrc && state.frameCount === 0) {
-            state.setStatusMessage('Carga un vídeo o telemetría para exportar');
+          if (state.frameCount === 0) {
+            state.setStatusMessage('Carga telemetría para exportar');
             break;
           }
           setExportOpen(true);

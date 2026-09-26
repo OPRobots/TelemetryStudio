@@ -634,6 +634,107 @@ select.dialog-input {
 .dialog-row > div {
   flex: 1;
 }
+.dialog-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 14px;
+  margin-top: 12px;
+}
+.dialog-grid > * {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.dialog-label--flush,
+.dialog-grid--flush {
+  margin-top: 0;
+}
+.export-label-field .dialog-label {
+  margin-top: 0;
+}
+
+/* --- Slider de rango (dos asas) --- */
+.range-slider {
+  position: relative;
+  width: 100%;
+  height: 28px;
+}
+.range-slider__track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--bg-border);
+}
+.range-slider__fill {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--accent);
+}
+.range-slider__band {
+  position: absolute;
+  top: 50%;
+  height: 12px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.16);
+  border: 1px solid var(--accent-border);
+  pointer-events: none;
+}
+.range-slider input[type='range'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: none;
+}
+.range-slider input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border: none;
+  background: transparent;
+}
+.range-slider input[type='range']::-moz-range-track {
+  height: 4px;
+  border: none;
+  background: transparent;
+}
+.range-slider input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-elevated);
+  background: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+}
+.range-slider input[type='range']::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-elevated);
+  background: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+}
+.range-slider input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.range-slider input[type='range']:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
 
 /* ============================================================
    Timeline / playback

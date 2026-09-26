@@ -53,6 +53,25 @@ describe('VideoSynchronizer', () => {
     expect(sync.mapTime(2000)).toBe(-1000);
   });
 
+  it('unmaps telemetry time back to video time', () => {
+    expect(sync.unmapTime(1000)).toBe(1000);
+    sync.setDriftOffset(250);
+    expect(sync.unmapTime(1250)).toBe(1000);
+    sync.setDriftOffset(0);
+    sync.setAnchorPoint(2000, 5000);
+    expect(sync.unmapTime(5000)).toBe(2000);
+    expect(sync.unmapTime(5500)).toBe(2500);
+    expect(sync.unmapTime(4000)).toBe(1000);
+  });
+
+  it('unmapTime is the inverse of mapTime', () => {
+    sync.setDriftOffset(100);
+    sync.setAnchorPoint(2000, 5000);
+    for (const mediaTime of [0, 500, 2000, 3000, 9999]) {
+      expect(sync.unmapTime(sync.mapTime(mediaTime))).toBe(mediaTime);
+    }
+  });
+
   it('tracks drift statistics', () => {
     expect(sync.averageDrift).toBe(0);
     expect(sync.maxDrift).toBe(0);

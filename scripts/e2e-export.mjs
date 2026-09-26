@@ -162,13 +162,15 @@ app.whenReady().then(async () => {
       `document.body.innerText.includes('Exportar vídeo')`
     );
 
-    // Paso 2 (salida) y configuración: 10 frames a 720p
+    // Paso 2 (salida) y configuración: 10 frames a 720p y 30 fps
+    // (el rango se expresa en segundos: 9/30 = frame 9).
+    const exportFps = 30;
     await win.webContents.executeJavaScript(clickByText('Siguiente'));
     await new Promise((r) => setTimeout(r, 250));
     await win.webContents.executeJavaScript(setSelect('export-resolution', '720p'));
-    await win.webContents.executeJavaScript(setInput('export-fps', 10));
+    await win.webContents.executeJavaScript(setSelect('export-fps', exportFps));
     await win.webContents.executeJavaScript(setInput('export-start', 0));
-    await win.webContents.executeJavaScript(setInput('export-end', 9));
+    await win.webContents.executeJavaScript(setInput('export-end', 9 / exportFps));
     await new Promise((r) => setTimeout(r, 200));
 
     // Exportar (elige destino con el diálogo nativo y escribe directo)
@@ -188,9 +190,9 @@ app.whenReady().then(async () => {
 
     // Segundo escenario: cancelar a mitad de una exportación larga
     slowWrite = true;
-    await win.webContents.executeJavaScript(setInput('export-fps', 30));
+    await win.webContents.executeJavaScript(setSelect('export-fps', exportFps));
     await win.webContents.executeJavaScript(setInput('export-start', 0));
-    await win.webContents.executeJavaScript(setInput('export-end', 299));
+    await win.webContents.executeJavaScript(setInput('export-end', 299 / exportFps));
     await new Promise((r) => setTimeout(r, 200));
     await win.webContents.executeJavaScript(clickByText('Exportar…'));
     await new Promise((r) => setTimeout(r, 600));

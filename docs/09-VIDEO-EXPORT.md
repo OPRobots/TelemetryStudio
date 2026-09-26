@@ -70,9 +70,10 @@ ExportDialog / ExportBoardEditor            Main Process
     ancho) y se reservan, así las etiquetas **no se mueven** durante el vídeo.
   - La leyenda de la gráfica **envuelve en varias filas**; el compositor **oculta el
     chrome HTML** del widget y reserva su propia franja (la gráfica cede ese alto).
-- **Rango alineado**: por defecto el export empieza en el punto de alineación
-  (`anchor.video_ms`) menos **2 s** de pre-roll, para que el vídeo arranque junto a
-  las gráficas sin alargarse (si no hay anclaje, empieza en 0).
+- **Rango por defecto**: desde **2 s antes** del inicio de los datos de telemetría
+  hasta **2 s después** del fin, mapeados a tiempo de vídeo con la inversa de
+  `mapTime` (`unmapTime`). Se puede recortar o prolongar con el slider start–end.
+  Exportar requiere telemetría cargada (aunque no haya vídeo).
 
 ## Modelo (puro)
 
@@ -123,13 +124,19 @@ normalizeBoard(raw, hasVideo)                    // compat. y valores por defect
 
 `ExportDialog` es un asistente:
 
-1. **Layout**: editor del board (**aspect ratio**, **vídeo** Oculto/Primer
-   plano/Segundo plano, panel, añadir/quitar/redimensionar), **título** (etiqueta
-   de sesión) y el slider de previsualización. Botones: *Cerrar* · *Siguiente*.
-2. **Salida**: **previsualización del frame medio** del rango (mismo compositor),
-   resolución, modo de gráficas/ventana, grosor de líneas, supersampling, FPS,
-   calidad (CRF)/preset y rango de frames. Los ajustes de salida **no** cambian el
-   reparto del layout. Botones: *Cerrar* · *← Atrás* · *Exportar…*.
+1. **Layout**: **título** (etiqueta de sesión, arriba; si el campo está vacío
+   no se dibuja la franja), editor del board (**aspect ratio**, **vídeo**
+   Oculto/Primer plano/Segundo plano, panel, **añadir** ítem en la misma fila,
+   quitar/redimensionar) y el slider de previsualización (por defecto, el punto
+   medio del rango de exportación). Botones: *Cerrar* · *Siguiente*.
+2. **Salida**: **previsualización del frame medio** del rango (mismo compositor) y
+   dos filas de ajustes: **Resolución · FPS (30/60) · Calidad (CRF) · Preset** y
+   **Grosor de línea · Supersampling · Modo de gráficas · Ventana**. Debajo, el
+   **slider start–end** de exportación sobre toda la duración del vídeo, con la
+   **banda fija de telemetría** (recortable/prolongable). Los ajustes de salida
+   **no** cambian el reparto del layout. Los campos se disponen en filas lógicas
+   que reparten el ancho y se reajustan al redimensionar la ventana (`.dialog-grid`).
+   Botones: *Cerrar* · *← Atrás* · *Exportar…*.
 
 **Exportación directa**: *Exportar…* abre un `dialog.showSaveDialog` nativo
 (`export:choose-destination`) con un nombre por defecto

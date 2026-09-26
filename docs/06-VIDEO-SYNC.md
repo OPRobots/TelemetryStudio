@@ -33,6 +33,7 @@ play(); pause(); seekTo(time_s);
 stepForward(); stepBackward();      // avanza/retrocede 1 frame (1 / declaredFps)
 refresh();                          // reevalúa el frame actual (pausa/seek)
 mapTime(mediaTime_ms);
+unmapTime(telemetry_ms);            // inverso: telemetría → media time de vídeo
 
 // getters: driftOffset, currentTime, duration, isPlaying, fps, playbackRate,
 //          anchor, averageDrift, maxDrift

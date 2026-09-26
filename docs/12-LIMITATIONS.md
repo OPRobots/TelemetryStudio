@@ -138,8 +138,12 @@ celda en un host oculto y **captura su canvas** (dibujo síncrono, sin depender 
 `rAF`); los frames van como **raw RGBA** a `src/main/export-service.ts` (FFmpeg
 sidecar o del PATH), que escribe **directo** en la ruta elegida. El `ExportDialog`
 es un **asistente de 2 pasos** (layout/salida) con **previsualización** y
-**copyright** en el vídeo. Tests: modelo de composición y argumentos (unit), MP4
-real con ffprobe (integración) y composición/cancelación del renderer (e2e).
+**copyright** en el vídeo; requiere **telemetría cargada** (el vídeo es opcional),
+el **rango de exportación** se ajusta con un **slider start–end** sobre la duración
+del vídeo (con la banda de telemetría fija; por defecto 2 s antes/después de los
+datos) y el **FPS** se elige entre 30 y 60. Tests: modelo de composición y
+argumentos (unit), MP4 real con ffprobe (integración) y composición/cancelación
+del renderer (e2e).
 
 ### F-04 — Editor de layout con arrastre y redimensionado
 

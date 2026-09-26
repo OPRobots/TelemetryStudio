@@ -152,6 +152,7 @@ telemetry-studio/
 │   │       │       ├── ExportDialog.tsx        # Exportar: editor de board, preview y calidad
 │   │       │       ├── ExportBoardEditor.tsx   # Editor WYSIWYG del board de exportación
 │   │       │       ├── ExportFramePreview.tsx  # Preview del frame medio (paso 2)
+│   │       │       ├── RangeSlider.tsx         # Slider de dos asas (rango de exportación)
 │   │       │       └── PrepareVideoDialog.tsx   # Progreso de conversión + cancelar
 │   │       ├── hooks/
 │   │       │   ├── useEventListener.ts  # Suscripción al EventBus
@@ -166,6 +167,7 @@ telemetry-studio/
 │   │       │   ├── widget-scroll-sync.ts # Scroll sincronizado entre paneles
 │   │       │   ├── video-prepare.ts     # Transcode de vídeo (diálogo + progreso)
 │   │       │   ├── export-stage.tsx     # Compositor offscreen de la exportación
+│   │       │   ├── telemetry-range.ts   # Rango temporal de telemetría ↔ vídeo (inversa)
 │   │       │   └── comparison-sync.ts   # Sincronizador del panel de comparación
 │   │       ├── stores/
 │   │       │   ├── app-store.ts         # Zustand: estado global

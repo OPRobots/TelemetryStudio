@@ -200,6 +200,22 @@ export class VideoSynchronizer {
   }
 
   /**
+   * Inverso de `mapTime`: dado un timestamp de telemetría, devuelve el
+   * `mediaTime` de vídeo que lo representa (respeta drift y ancla).
+   */
+  unmapTime(telemetry_ms: number): number {
+    if (this.anchorPoint) {
+      return (
+        telemetry_ms -
+        this.driftOffset_ms +
+        this.anchorPoint.video_ms -
+        this.anchorPoint.telemetry_ms
+      );
+    }
+    return telemetry_ms - this.driftOffset_ms;
+  }
+
+  /**
    * Fuerza una evaluación del frame actual (útil en pausa/seek).
    */
   refresh(): void {

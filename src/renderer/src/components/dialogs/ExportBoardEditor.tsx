@@ -353,8 +353,8 @@ export function ExportBoardEditor({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Presets + controles del board */}
-      <div className="dialog-row">
+      {/* Presets + controles del board + añadir ítem */}
+      <div className="dialog-grid dialog-grid--flush">
         <div>
           <label className="dialog-label">Aspect ratio</label>
           <select
@@ -397,66 +397,63 @@ export function ExportBoardEditor({
             </select>
           </div>
         )}
-      </div>
-
-      {board.aspect === 'custom' && (
-        <div className="dialog-row">
-          <div>
-            <label className="dialog-label">Aspecto ancho</label>
-            <input
-              className="dialog-input"
-              type="number"
-              value={board.customAspect?.width ?? 1080}
-              onChange={(e) =>
-                setBoard({
-                  customAspect: {
-                    width: Number(e.target.value),
-                    height: board.customAspect?.height ?? 1350,
-                  },
-                })
-              }
-            />
-          </div>
-          <div>
-            <label className="dialog-label">Aspecto alto</label>
-            <input
-              className="dialog-input"
-              type="number"
-              value={board.customAspect?.height ?? 1350}
-              onChange={(e) =>
-                setBoard({
-                  customAspect: {
-                    width: board.customAspect?.width ?? 1080,
-                    height: Number(e.target.value),
-                  },
-                })
-              }
-            />
-          </div>
+        {board.aspect === 'custom' && (
+          <>
+            <div>
+              <label className="dialog-label">Aspecto ancho</label>
+              <input
+                className="dialog-input"
+                type="number"
+                value={board.customAspect?.width ?? 1080}
+                onChange={(e) =>
+                  setBoard({
+                    customAspect: {
+                      width: Number(e.target.value),
+                      height: board.customAspect?.height ?? 1350,
+                    },
+                  })
+                }
+              />
+            </div>
+            <div>
+              <label className="dialog-label">Aspecto alto</label>
+              <input
+                className="dialog-input"
+                type="number"
+                value={board.customAspect?.height ?? 1350}
+                onChange={(e) =>
+                  setBoard({
+                    customAspect: {
+                      width: board.customAspect?.width ?? 1080,
+                      height: Number(e.target.value),
+                    },
+                  })
+                }
+              />
+            </div>
+          </>
+        )}
+        <div>
+          <label className="dialog-label">Añadir</label>
+          <select
+            className="dialog-input"
+            value=""
+            onChange={(e) => {
+              const value = e.target.value;
+              e.target.value = '';
+              if (value === '__section__') addSection();
+              else if (value) addWidget(value);
+            }}
+          >
+            <option value="">+ Añadir…</option>
+            <option value="__section__">Sección / Espacio</option>
+            {availableWidgets.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.label} · {w.type}
+              </option>
+            ))}
+          </select>
         </div>
-      )}
-
-      {/* Añadir ítems */}
-      <div className="flex flex-wrap items-center gap-2">
-        <select
-          className="dialog-input"
-          style={{ width: 240 }}
-          value=""
-          onChange={(e) => {
-            const value = e.target.value;
-            e.target.value = '';
-            if (value === '__section__') addSection();
-            else if (value) addWidget(value);
-          }}
-        >
-          <option value="">+ Añadir…</option>
-          <option value="__section__">Sección / Espacio</option>
-          {availableWidgets.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.label} · {w.type}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Lienzo WYSIWYG */}

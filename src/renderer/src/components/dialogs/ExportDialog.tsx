@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import type { ExportConfig } from '@core/types/video';
+import { telemetryStore } from '@core/telemetry-store';
+import { videoSynchronizer } from '@core/video-synchronizer';
 import {
   computeBoardLayout,
   createDefaultBoard,
@@ -8,10 +10,16 @@ import {
   type ResolutionPreset,
 } from '@shared/export-composition';
 import { exportVideo, type ExportProgress } from '@services/video-exporter';
+import {
+  datasetRangeMs,
+  framesRangeMs,
+  telemetryToVideoRangeMs,
+} from '../../lib/telemetry-range';
 import { useAppStore } from '../../stores/app-store';
 import { useLayoutStore } from '../../stores/layout-store';
 import { ExportBoardEditor } from './ExportBoardEditor';
 import { ExportFramePreview } from './ExportFramePreview';
+import { RangeSlider } from './RangeSlider';
 
 interface ExportDialogProps {
   onClose: () => void;
@@ -19,7 +27,13 @@ interface ExportDialogProps {
 
 const PRESETS = ['veryfast', 'fast', 'medium', 'slow'];
 const CRFS = [18, 20, 23, 28];
+const FPS_OPTIONS = [30, 60] as const;
+const RANGE_MARGIN_MS = 2000;
 const RESOLUTIONS: ResolutionPreset[] = ['720p', '1080p', '1440p', '2160p', 'source'];
+
+function formatSeconds(value_s: number): string {
+  return `${value_s.toFixed(2)} s`;
+}
 
 function slugify(text: string): string {
   const slug = text
@@ -35,6 +49,7 @@ function slugify(text: string): string {
 export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement {
   const videoInfo = useAppStore((s) => s.videoInfo);
   const dataset = useAppStore((s) => s.dataset);
+  const syncAnchor = useAppStore((s) => s.syncAnchor);
   const widgets = useLayoutStore((s) => s.widgets);
 
   const source = useMemo(
@@ -64,23 +79,46 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
   const [mode, setMode] = useState<'live' | 'full'>('live');
   const [liveWindowMs, setLiveWindowMs] = useState(10000);
   const [sessionLabel, setSessionLabel] = useState(dataset?.name ?? 'Telemetry Studio');
-  const showLabel = board.showLabel ?? true;
-  const [fps, setFps] = useState(30);
+  // Sin check: el título se muestra si el campo tiene texto.
+  const showLabel = sessionLabel.trim().length > 0;
+  const nativeFps = Math.round(videoInfo?.fps ?? 30);
+  const [fps, setFps] = useState<number>(
+    (FPS_OPTIONS as readonly number[]).includes(nativeFps) ? nativeFps : 30
+  );
   const [crf, setCrf] = useState(18);
   const [preset, setPreset] = useState('medium');
-  // Por defecto, el export empieza en el punto alineado menos 2 s de pre-roll,
-  // para que el vídeo arranque junto a las gráficas sin alargarse de más.
-  const PREROLL_MS = 2000;
-  const [startFrame, setStartFrame] = useState(() => {
-    const anchor = useAppStore.getState().syncAnchor;
-    if (!anchor) return 0;
-    return Math.max(0, Math.round(((anchor.video_ms - PREROLL_MS) / 1000) * fps));
-  });
-  const [endFrame, setEndFrame] = useState<number | null>(null);
-  const [previewTime_s, setPreviewTime_s] = useState(() => {
-    const anchor = useAppStore.getState().syncAnchor;
-    return anchor ? Math.max(0, anchor.video_ms / 1000) : 0;
-  });
+
+  const videoDuration_s = videoInfo?.duration_s ?? 0;
+  const hasVideo = videoDuration_s > 0;
+  const margin_s = RANGE_MARGIN_MS / 1000;
+
+  // Rango de telemetría mapeado a tiempo de vídeo (inversa de mapTime).
+  const telemetryVideoRangeMs = useMemo(() => {
+    const anchor = syncAnchor ?? videoSynchronizer.anchor;
+    const teleRange = datasetRangeMs(dataset) ?? framesRangeMs(telemetryStore.getAllFrames());
+    if (!teleRange) return null;
+    return telemetryToVideoRangeMs(teleRange, anchor, videoSynchronizer.driftOffset);
+  }, [dataset, syncAnchor]);
+
+  const domainMax_s = hasVideo
+    ? videoDuration_s
+    : Math.max((telemetryVideoRangeMs?.end_ms ?? 0) / 1000 + margin_s, 1);
+
+  // Por defecto: 2 s antes del inicio de telemetría y 2 s después del fin.
+  const defaultRange_s = useMemo((): [number, number] => {
+    if (telemetryVideoRangeMs) {
+      const start = Math.max(0, telemetryVideoRangeMs.start_ms / 1000 - margin_s);
+      const end = Math.min(domainMax_s, telemetryVideoRangeMs.end_ms / 1000 + margin_s);
+      return [start, Math.max(start, end)];
+    }
+    return [0, domainMax_s];
+  }, [telemetryVideoRangeMs, domainMax_s, margin_s]);
+
+  const [range_s, setRange_s] = useState<[number, number]>(defaultRange_s);
+  // La preview por defecto es el punto medio del rango de exportación.
+  const [previewTime_s, setPreviewTime_s] = useState(
+    () => (defaultRange_s[0] + defaultRange_s[1]) / 2
+  );
 
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ExportProgress | null>(null);
@@ -91,15 +129,24 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
   const backdropDownRef = useRef(false);
 
   const totalFrames = useMemo(
-    () => Math.max(Math.round((videoInfo?.duration_s || 1) * fps), 1),
-    [videoInfo?.duration_s, fps]
+    () => Math.max(Math.round(domainMax_s * fps), 1),
+    [domainMax_s, fps]
   );
-  const effectiveEnd = endFrame ?? totalFrames - 1;
-  const clampedEnd = Math.min(effectiveEnd, totalFrames - 1);
-  const midFrame = Math.round((startFrame + clampedEnd) / 2);
+  const startFrame = Math.max(0, Math.min(Math.round(range_s[0] * fps), totalFrames - 1));
+  const endFrame = Math.max(startFrame, Math.min(Math.round(range_s[1] * fps), totalFrames - 1));
+  const midFrame = Math.round((startFrame + endFrame) / 2);
   const previewMediaTime_s = midFrame / fps;
-  const layout = useMemo(() => computeBoardLayout(board, source), [board, source]);
+  const effectiveBoard = useMemo(() => ({ ...board, showLabel }), [board, showLabel]);
+  const layout = useMemo(() => computeBoardLayout(effectiveBoard, source), [effectiveBoard, source]);
   const noItems = layout.items.length === 0;
+
+  // Banda fija de telemetría sobre la pista del vídeo.
+  const telemetryBand_s = useMemo((): [number, number] | null => {
+    if (!hasVideo || !telemetryVideoRangeMs) return null;
+    const start = Math.max(0, Math.min(telemetryVideoRangeMs.start_ms / 1000, videoDuration_s));
+    const end = Math.max(0, Math.min(telemetryVideoRangeMs.end_ms / 1000, videoDuration_s));
+    return end > start ? [start, end] : null;
+  }, [hasVideo, telemetryVideoRangeMs, videoDuration_s]);
 
   const run = async (outputPath: string): Promise<void> => {
     const api = window.api;
@@ -113,7 +160,7 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
       crf,
       preset,
       startFrame,
-      endFrame: Math.min(effectiveEnd, totalFrames - 1),
+      endFrame,
       layout,
       widgets: visibleWidgets,
       includeOverlays: showLabel,
@@ -181,8 +228,21 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
 
         {step === 1 ? (
           <>
+            <div className="export-label-field" style={{ maxWidth: 360 }}>
+              <label className="dialog-label" htmlFor="export-label">
+                Etiqueta de sesión
+              </label>
+              <input
+                id="export-label"
+                className="dialog-input"
+                placeholder="Sin título"
+                value={sessionLabel}
+                onChange={(e) => setSessionLabel(e.target.value)}
+              />
+            </div>
+
             <ExportBoardEditor
-              board={board}
+              board={effectiveBoard}
               widgets={visibleWidgets}
               source={source}
               previewTime_s={previewTime_s}
@@ -200,29 +260,11 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
                   id="export-preview-time"
                   type="range"
                   min={0}
-                  max={Math.max(videoInfo?.duration_s ?? 0, 0.1)}
+                  max={Math.max(domainMax_s, 0.1)}
                   step={0.1}
                   value={previewTime_s}
                   onChange={(e) => setPreviewTime_s(Number(e.target.value))}
                   style={{ width: '100%' }}
-                />
-              </div>
-
-              <div>
-                <label className="dialog-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={showLabel}
-                    onChange={(e) => updateBoard({ ...board, showLabel: e.target.checked })}
-                  />
-                  <span className="text-xs">Etiqueta de sesión</span>
-                </label>
-                <input
-                  id="export-label"
-                  className="dialog-input"
-                  value={sessionLabel}
-                  disabled={!showLabel}
-                  onChange={(e) => setSessionLabel(e.target.value)}
                 />
               </div>
             </div>
@@ -243,7 +285,7 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
               />
             </div>
 
-            <div className="dialog-row">
+            <div className="dialog-grid">
               <div>
                 <label className="dialog-label">Resolución</label>
                 <select
@@ -259,6 +301,78 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
                       {r}
                     </option>
                   ))}
+                </select>
+              </div>
+              <div>
+                <label className="dialog-label">FPS</label>
+                <select
+                  id="export-fps"
+                  className="dialog-input"
+                  value={fps}
+                  onChange={(e) => setFps(Number(e.target.value))}
+                >
+                  {FPS_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="dialog-label">Calidad (CRF)</label>
+                <select
+                  className="dialog-input"
+                  value={crf}
+                  onChange={(e) => setCrf(Number(e.target.value))}
+                >
+                  {CRFS.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                      {c === 18 ? ' (alta)' : c === 28 ? ' (baja)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="dialog-label">Preset</label>
+                <select
+                  className="dialog-input"
+                  value={preset}
+                  onChange={(e) => setPreset(e.target.value)}
+                >
+                  {PRESETS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="dialog-grid">
+              <div>
+                <label className="dialog-label">Grosor de líneas</label>
+                <select
+                  id="export-line-scale"
+                  className="dialog-input"
+                  value={board.lineScale}
+                  onChange={(e) => updateBoard({ ...board, lineScale: Number(e.target.value) })}
+                >
+                  <option value={1}>1×</option>
+                  <option value={1.5}>1.5×</option>
+                  <option value={2}>2×</option>
+                  <option value={2.5}>2.5×</option>
+                </select>
+              </div>
+              <div>
+                <label className="dialog-label">Supersampling</label>
+                <select
+                  className="dialog-input"
+                  value={board.supersample}
+                  onChange={(e) => updateBoard({ ...board, supersample: Number(e.target.value) })}
+                >
+                  <option value={1}>1×</option>
+                  <option value={2}>2×</option>
                 </select>
               </div>
               <div>
@@ -291,98 +405,39 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
               )}
             </div>
 
-            <div className="dialog-row">
+            {hasVideo && (
               <div>
-                <label className="dialog-label">Grosor de líneas</label>
-                <select
-                  id="export-line-scale"
-                  className="dialog-input"
-                  value={board.lineScale}
-                  onChange={(e) => updateBoard({ ...board, lineScale: Number(e.target.value) })}
-                >
-                  <option value={1}>1×</option>
-                  <option value={1.5}>1.5×</option>
-                  <option value={2}>2×</option>
-                  <option value={2.5}>2.5×</option>
-                </select>
-              </div>
-              <div>
-                <label className="dialog-label">Supersampling</label>
-                <select
-                  className="dialog-input"
-                  value={board.supersample}
-                  onChange={(e) => updateBoard({ ...board, supersample: Number(e.target.value) })}
-                >
-                  <option value={1}>1×</option>
-                  <option value={2}>2×</option>
-                </select>
-              </div>
-              <div>
-                <label className="dialog-label">FPS</label>
-                <input
-                  id="export-fps"
-                  className="dialog-input"
-                  type="number"
-                  value={fps}
-                  onChange={(e) => setFps(Number(e.target.value))}
+                <label className="dialog-label">Rango de exportación</label>
+                <RangeSlider
+                  min={0}
+                  max={videoDuration_s}
+                  step={1 / fps}
+                  value={range_s}
+                  onChange={setRange_s}
+                  band={telemetryBand_s}
+                  bandLabel="Telemetría"
+                  idStart="export-start"
+                  idEnd="export-end"
                 />
-              </div>
-            </div>
-
-            <div className="dialog-row">
-              <div>
-                <label className="dialog-label">Calidad (CRF)</label>
-                <select
-                  className="dialog-input"
-                  value={crf}
-                  onChange={(e) => setCrf(Number(e.target.value))}
+                <div
+                  className="mt-1 flex flex-wrap justify-between gap-x-3 text-[10px]"
+                  style={{ color: 'var(--text-tertiary)' }}
                 >
-                  {CRFS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                      {c === 18 ? ' (alta)' : c === 28 ? ' (baja)' : ''}
-                    </option>
-                  ))}
-                </select>
+                  <span>
+                    Inicio {formatSeconds(range_s[0])} · frame {startFrame}
+                  </span>
+                  <span>
+                    Fin {formatSeconds(range_s[1])} · frame {endFrame}
+                  </span>
+                  {telemetryBand_s && (
+                    <span>
+                      Telemetría {formatSeconds(telemetryBand_s[0])}–
+                      {formatSeconds(telemetryBand_s[1])}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="dialog-label">Preset</label>
-                <select
-                  className="dialog-input"
-                  value={preset}
-                  onChange={(e) => setPreset(e.target.value)}
-                >
-                  {PRESETS.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="dialog-row">
-              <div>
-                <label className="dialog-label">Frame inicio</label>
-                <input
-                  id="export-start"
-                  className="dialog-input"
-                  type="number"
-                  value={startFrame}
-                  onChange={(e) => setStartFrame(Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="dialog-label">Frame fin</label>
-                <input
-                  id="export-end"
-                  className="dialog-input"
-                  type="number"
-                  value={effectiveEnd}
-                  onChange={(e) => setEndFrame(Number(e.target.value))}
-                />
-              </div>
-            </div>
+            )}
           </div>
         )}
 
