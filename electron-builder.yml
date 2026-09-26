@@ -43,10 +43,14 @@ win:
       arch:
         - x64
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: ${name}-${version}-windows-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  # No usamos auto-update: evita generar/actualizar los .blockmap diferenciales.
+  differentialPackage: false
+portable:
+  artifactName: ${name}-${version}-windows-portable.${ext}
 mac:
   category: public.app-category.utilities
   entitlements: build/entitlements.mac.plist
@@ -65,7 +69,7 @@ mac:
         - x64
         - arm64
 dmg:
-  artifactName: ${name}-${version}-${arch}.${ext}
+  artifactName: ${name}-${version}-macos-${arch}.${ext}
 linux:
   target:
     - target: AppImage
@@ -77,13 +81,6 @@ linux:
   maintainer: robotaleh
   category: Development
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${name}-${version}-linux.${ext}
 deb:
-  artifactName: ${name}-${version}.${ext}
-# Publicación: en tags `v*` electron-builder sube los artefactos a un GitHub
-# Release en borrador (ver .github/workflows/release.yml).
-publish:
-  provider: github
-  owner: OPRObots
-  repo: TelemetryStudio
-  releaseType: draft
+  artifactName: ${name}-${version}-linux.${ext}

@@ -1,7 +1,11 @@
 name: Release
 
 # Se dispara al empujar un tag `vX.Y.Z`. Genera los instaladores de las 3
-# plataformas y los sube a un GitHub Release en borrador (revisar y publicar).
+# plataformas (sin los ficheros de auto-update que no usamos: `latest*.yml` ni
+# `*.blockmap`) y los sube a un GitHub Release en borrador.
+#
+# NOTA: el mensaje/cuerpo del release se redactará más adelante (se volverá a
+# mover la tag al último commit).
 on:
   push:
     tags: ['v*']
@@ -10,13 +14,22 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    name: Release (${{ matrix.os }})
+  build:
+    name: Build (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            label: Linux
+            artifact: linux-installers
+          - os: macos-latest
+            label: macOS
+            artifact: macos-installers
+          - os: windows-latest
+            label: Windows
+            artifact: windows-installers
 
     steps:
       - uses: actions/checkout@v4
@@ -35,10 +48,48 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Empaquetar y publicar en el release borrador
-        run: npx electron-builder --publish always
+      - name: Empaquetar instaladores
+        run: npx electron-builder
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Primera fase sin firma: macOS (Gatekeeper) y Windows (SmartScreen)
           # mostrarán aviso.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Subir instaladores como artefacto del workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
+
+  release:
+    name: Publicar release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar los instaladores
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Crear/actualizar el release borrador
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "El release $TAG ya existe; se actualizan los assets."
+          else
+            gh release create "$TAG" --draft \
+              --title "Telemetry Studio ${TAG}" \
+              --notes "Release borrador. Notas pendientes de redactar."
+          fi
+          gh release upload "$TAG" dist/* --clobber

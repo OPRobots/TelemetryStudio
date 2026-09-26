@@ -51,10 +51,14 @@ publish:
   releaseType: draft
 ```
 
-> Nombres reales por destino (`electron-builder.yml`): Linux AppImage/deb
-> `${name}-${version}.${ext}`; macOS `${name}-${version}-${arch}.${ext}` (dos DMGs:
-> x64 y arm64, sin universal); Windows NSIS `${name}-${version}-setup.${ext}` y
-> portable por defecto (`${name}-${version}-portable.${ext}`).
+> Nombres reales por destino (`electron-builder.yml`, con **OS en el nombre** para
+> que la página de Releases se lea bien): Windows NSIS
+> `telemetry-studio-${version}-windows-setup.exe` y portable
+> `...-windows-portable.exe`; macOS `...-macos-${arch}.dmg` (dos DMGs: x64 y arm64,
+> sin universal); Linux `...-linux.AppImage` y `...-linux.deb`.
+>
+> **No se publican** los ficheros de auto-update (`latest*.yml`, `*.blockmap`): la
+> app no incluye `electron-updater`. El release se compone solo con los instaladores.
 >
 > Estado: **macOS** con DMGs medidos (`arm64` ~199 MB, `x64` ~206 MB, sidecar FFmpeg
 > incluido). **Linux/Windows**: pendiente de confirmar tamaños, pero se generan en CI
@@ -143,10 +147,13 @@ Dos workflows:
   (`workflow_dispatch`): instalación, lint, typecheck, tests, descarga del sidecar
   FFmpeg y build. En Linux (Ubuntu) además ejecuta `smoke` + `e2e` bajo `xvfb`.
 - **`.github/workflows/release.yml`** — al empujar un tag `vX.Y.Z`: matriz
-  Ubuntu/macOS/Windows → `electron-builder --publish always` con `GH_TOKEN`,
-  subiendo los instaladores a un **GitHub Release en borrador** (revisar y
-  publicar). `CSC_IDENTITY_AUTO_DISCOVERY=false` (no hay certificado Apple); el
-  hook `afterPack` aplica la firma ad-hoc en macOS.
+  Ubuntu/macOS/Windows que compila y empaqueta con `electron-builder` (sin `--publish`),
+  sube **solo los instaladores** como artefactos del workflow y, en un job final,
+  crea/actualiza un **GitHub Release en borrador** con `gh release upload`.
+  `CSC_IDENTITY_AUTO_DISCOVERY=false` (no hay certificado Apple); el hook `afterPack`
+  aplica la firma ad-hoc en macOS.
+  - **No** se suben `latest*.yml` ni `*.blockmap` (la app no usa auto-update).
+  - El **mensaje del release** se redactará más adelante (se moverá la tag al último commit).
 
 Artefactos por plataforma:
 
