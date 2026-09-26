@@ -39,8 +39,10 @@ ExportDialog / ExportBoardEditor            Main Process
   sesión.
 - Las cajas muestran el **título del widget** (`label · tipo`) del layout principal.
 - **Un único layout, sin presets**: se configuran **Aspect ratio**
-  (`16:9/9:16/1:1/4:5/custom`; por defecto **16:9**), **Vídeo** (`Oculto · Primer
-  plano · Segundo plano`) y **Panel** (`Translúcido · Sin panel`).
+  (`16:9/9:16/1:1/4:5`; por defecto **16:9**), **Vídeo** (`Oculto · Primer
+  plano · Segundo plano`) y **Panel** (`Translúcido · Sin panel`). La **etiqueta de
+  sesión**, el aspecto, el vídeo y el desplegable de añadir van en **una sola
+  fila** (el panel se añade al final solo con `Segundo plano`).
   - **Vídeo**: `Primer plano` = ítem del layout; `Segundo plano` = a sangre detrás
     de los widgets; `Oculto` = no se dibuja. Forzado a `Oculto` si no hay vídeo.
   - **Panel** solo se muestra con el vídeo en `Segundo plano`; en el resto es
@@ -124,11 +126,11 @@ normalizeBoard(raw, hasVideo)                    // compat. y valores por defect
 
 `ExportDialog` es un asistente:
 
-1. **Layout**: **título** (etiqueta de sesión, arriba; si el campo está vacío
-   no se dibuja la franja), editor del board (**aspect ratio**, **vídeo**
-   Oculto/Primer plano/Segundo plano, panel, **añadir** ítem en la misma fila,
-   quitar/redimensionar) y el slider de previsualización (por defecto, el punto
-   medio del rango de exportación). Botones: *Cerrar* · *Siguiente*.
+1. **Layout**: **etiqueta de sesión** (si el campo está vacío no se dibuja la
+   franja) junto con **aspect ratio**, **vídeo** (Oculto/Primer plano/Segundo
+   plano) y **añadir**, todo en **una sola fila**; después el editor del board
+   (panel, quitar/redimensionar) y el slider de previsualización (por defecto, el
+   punto medio del rango de exportación). Botones: *Cerrar* · *Siguiente*.
 2. **Salida**: **previsualización del frame medio** del rango (mismo compositor) y
    dos filas de ajustes: **Resolución · FPS (30/60) · Calidad (CRF) · Preset** y
    **Grosor de línea · Supersampling · Modo de gráficas · Ventana**. Debajo, el

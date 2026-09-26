@@ -21,7 +21,7 @@ import { seekVideo } from '../../lib/video-seek';
 const PREVIEW_MAX_WIDTH = 720;
 const STAGE_DEBOUNCE_MS = 180;
 
-const ASPECTS: AspectPreset[] = ['16:9', '9:16', '1:1', '4:5', 'custom'];
+const ASPECTS: AspectPreset[] = ['16:9', '9:16', '1:1', '4:5'];
 
 const ITEM_ICON: Record<ExportItem['kind'], string> = {
   widget: '▦',
@@ -65,6 +65,7 @@ interface ExportBoardEditorProps {
   liveWindowMs: number;
   includeOverlays: boolean;
   sessionLabel: string;
+  onSessionLabelChange: (label: string) => void;
   onChange: (board: ExportBoard) => void;
 }
 
@@ -83,6 +84,7 @@ export function ExportBoardEditor({
   liveWindowMs,
   includeOverlays,
   sessionLabel,
+  onSessionLabelChange,
   onChange,
 }: ExportBoardEditorProps): React.ReactElement {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -353,8 +355,20 @@ export function ExportBoardEditor({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Presets + controles del board + añadir ítem */}
-      <div className="dialog-grid dialog-grid--flush">
+      {/* Etiqueta + controles del board + añadir ítem (una sola línea) */}
+      <div className="dialog-grid dialog-grid--flush dialog-grid--single">
+        <div>
+          <label className="dialog-label" htmlFor="export-label">
+            Etiqueta de sesión
+          </label>
+          <input
+            id="export-label"
+            className="dialog-input"
+            placeholder="Sin título"
+            value={sessionLabel}
+            onChange={(e) => onSessionLabelChange(e.target.value)}
+          />
+        </div>
         <div>
           <label className="dialog-label">Aspect ratio</label>
           <select
@@ -384,55 +398,6 @@ export function ExportBoardEditor({
             </select>
           </div>
         )}
-        {board.videoMode === 'background' && (
-          <div>
-            <label className="dialog-label">Panel</label>
-            <select
-              className="dialog-input"
-              value={board.panel}
-              onChange={(e) => setBoard({ panel: e.target.value as PanelStyle })}
-            >
-              <option value="translucent">Translúcido</option>
-              <option value="none">Sin panel</option>
-            </select>
-          </div>
-        )}
-        {board.aspect === 'custom' && (
-          <>
-            <div>
-              <label className="dialog-label">Aspecto ancho</label>
-              <input
-                className="dialog-input"
-                type="number"
-                value={board.customAspect?.width ?? 1080}
-                onChange={(e) =>
-                  setBoard({
-                    customAspect: {
-                      width: Number(e.target.value),
-                      height: board.customAspect?.height ?? 1350,
-                    },
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className="dialog-label">Aspecto alto</label>
-              <input
-                className="dialog-input"
-                type="number"
-                value={board.customAspect?.height ?? 1350}
-                onChange={(e) =>
-                  setBoard({
-                    customAspect: {
-                      width: board.customAspect?.width ?? 1080,
-                      height: Number(e.target.value),
-                    },
-                  })
-                }
-              />
-            </div>
-          </>
-        )}
         <div>
           <label className="dialog-label">Añadir</label>
           <select
@@ -454,6 +419,19 @@ export function ExportBoardEditor({
             ))}
           </select>
         </div>
+        {board.videoMode === 'background' && (
+          <div>
+            <label className="dialog-label">Panel</label>
+            <select
+              className="dialog-input"
+              value={board.panel}
+              onChange={(e) => setBoard({ panel: e.target.value as PanelStyle })}
+            >
+              <option value="translucent">Translúcido</option>
+              <option value="none">Sin panel</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Lienzo WYSIWYG */}

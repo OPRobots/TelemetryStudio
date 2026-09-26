@@ -13,7 +13,7 @@ import { GRID_COLUMNS, clampGridHeight, clampGridWidth } from './grid';
 export type VideoFit = 'contain' | 'cover';
 export type PanelStyle = 'translucent' | 'none';
 export type ResolutionPreset = '720p' | '1080p' | '1440p' | '2160p';
-export type AspectPreset = '16:9' | '9:16' | '1:1' | '4:5' | 'custom';
+export type AspectPreset = '16:9' | '9:16' | '1:1' | '4:5';
 /** `hidden` = sin vídeo; `flow` = ítem del layout; `background` = a sangre detrás. */
 export type VideoMode = 'hidden' | 'flow' | 'background';
 /** `section` es un hueco/sección **transparente** (no dibuja nada). */
@@ -55,7 +55,6 @@ export interface ExportItem {
 
 export interface ExportBoard {
   aspect: AspectPreset;
-  customAspect?: Size;
   resolution: ResolutionPreset;
   videoMode: VideoMode;
   panel: PanelStyle;
@@ -131,12 +130,7 @@ export function toEven(value: number): number {
 }
 
 /** Relación de aspecto (ancho / alto) para un preset. */
-function aspectRatio(aspect: AspectPreset, customAspect?: Size): number {
-  if (aspect === 'custom') {
-    return customAspect && customAspect.height > 0
-      ? customAspect.width / customAspect.height
-      : 16 / 9;
-  }
+function aspectRatio(aspect: AspectPreset): number {
   return NAMED_ASPECT[aspect];
 }
 
@@ -240,7 +234,7 @@ export function computeBoardLayout(
   source?: Size | null,
   outputSize?: Size
 ): ExportLayout {
-  const ratio = aspectRatio(board.aspect, board.customAspect);
+  const ratio = aspectRatio(board.aspect);
   const size = outputSize
     ? { width: toEven(outputSize.width), height: toEven(outputSize.height) }
     : resolveOutputSize(board.resolution, ratio);
@@ -412,9 +406,10 @@ function toResolutionPreset(value: string | undefined): ResolutionPreset {
  */
 export function normalizeBoard(
   raw:
-    | (Partial<Omit<ExportBoard, 'resolution'>> & {
+    | (Partial<Omit<ExportBoard, 'resolution' | 'aspect'>> & {
         videoPlacement?: string;
         resolution?: string;
+        aspect?: string;
       })
     | null
     | undefined,
@@ -431,13 +426,11 @@ export function normalizeBoard(
     raw?.aspect === '16:9' ||
     raw?.aspect === '9:16' ||
     raw?.aspect === '1:1' ||
-    raw?.aspect === '4:5' ||
-    raw?.aspect === 'custom'
+    raw?.aspect === '4:5'
       ? raw.aspect
       : '16:9';
   return {
     aspect,
-    customAspect: raw?.customAspect,
     resolution: toResolutionPreset(raw?.resolution),
     videoMode,
     panel: raw?.panel ?? 'translucent',

@@ -296,4 +296,9 @@ describe('normalizeBoard', () => {
   it('resuelve resoluciones desconocidas a 1080p', () => {
     expect(normalizeBoard({ resolution: '8k' }, true).resolution).toBe('1080p');
   });
+
+  it('conserva aspectos válidos y migra custom a 16:9', () => {
+    expect(normalizeBoard({ aspect: '9:16' }, true).aspect).toBe('9:16');
+    expect(normalizeBoard({ aspect: 'custom' }, true).aspect).toBe('16:9');
+  });
 });

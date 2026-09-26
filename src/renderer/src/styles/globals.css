@@ -711,11 +711,13 @@ select.dialog-input {
   flex: 1 1 200px;
   min-width: 0;
 }
-.dialog-label--flush,
-.dialog-grid--flush {
-  margin-top: 0;
+.dialog-grid--single {
+  flex-wrap: nowrap;
 }
-.export-label-field .dialog-label {
+.dialog-grid--single > * {
+  flex: 1 1 0;
+}
+.dialog-grid--flush {
   margin-top: 0;
 }
 

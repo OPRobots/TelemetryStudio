@@ -230,19 +230,6 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
 
         {step === 1 ? (
           <>
-            <div className="export-label-field" style={{ maxWidth: 360 }}>
-              <label className="dialog-label" htmlFor="export-label">
-                Etiqueta de sesión
-              </label>
-              <input
-                id="export-label"
-                className="dialog-input"
-                placeholder="Sin título"
-                value={sessionLabel}
-                onChange={(e) => setSessionLabel(e.target.value)}
-              />
-            </div>
-
             <ExportBoardEditor
               board={effectiveBoard}
               widgets={visibleWidgets}
@@ -252,6 +239,7 @@ export function ExportDialog({ onClose }: ExportDialogProps): React.ReactElement
               liveWindowMs={liveWindowMs}
               includeOverlays={showLabel}
               sessionLabel={sessionLabel}
+              onSessionLabelChange={setSessionLabel}
               onChange={updateBoard}
             />
 
